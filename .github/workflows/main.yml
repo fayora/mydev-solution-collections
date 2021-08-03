@@ -1,4 +1,4 @@
-name: Upload To Azure Blob Storage
+name: Upload from publish folder Azure Blob Storage
 on:
   push:
     branches:
