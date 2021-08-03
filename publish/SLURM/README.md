@@ -2,7 +2,7 @@
 
 Deploys a SLURM cluster with head node and n worker nodes.
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ffayora%2Fsolution-collections%2Ffelipe-slurm-changes%2FSLURM%2Fazuredeploy.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Ffayora%2Fmydev-solution-collections%2Fpublish%2FSLURM%2Fazuredeploy.json" target="_blank">
    <img alt="Deploy to Azure" src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
