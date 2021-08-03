@@ -12,5 +12,5 @@ jobs:
         with:
           source_dir: publish
           container_name: felipetestrepo
-          sas_toke: ${{ secrets.SASTOKEN_MYDEV }}
+          sas_token: ${{ secrets.SASTOKEN_MYDEV }}
           sync: true
