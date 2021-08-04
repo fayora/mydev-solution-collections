@@ -271,7 +271,7 @@
       },
       "vnetID":"[resourceId('Microsoft.Network/virtualNetworks',variables('networkSettings').virtualNetworkName)]",
       "subnetRef":"[concat(variables('vnetID'),'/subnets/',variables('networkSettings').subnet.dse.name)]",
-      "templateBaseUrl":"https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/SLURM/",
+      "templateBaseUrl":"https://foobarstrorage.blob.core.windows.net/public/",
       "installationCLI":"[concat('bash azuredeploy.sh ', variables('masterVMName'), ' ', variables('workerVMName'), ' ', parameters('workerNodeCount'), ' ', parameters('hpcUserName'), ' ', variables('templateBaseUrl'), ' ', parameters('clusterFilesystemLocation'), ' ', variables('imageOffer'))]"
    },
    "resources":[
