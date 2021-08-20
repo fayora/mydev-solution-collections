@@ -4,74 +4,60 @@
     "parameters": {
       "adminUsername": {
         "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
         "metadata": {
-          "description": "User name for the Administrator's account"
+          "description": "The username for the Administrator's account. A username must only contain letters, numbers, hyphens, and underscores and may not start with a hyphen or number."
         }
       },
         "adminPassword": {
             "type": "securestring",
+            "minLength": 12,
+            "maxLength": 72,
             "metadata": {
-            "description": "Password for the Virtual Machine. Must be at least 12 characters long, and have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character."
+            "description": "Password for the Virtual Machine. It must be at least 12 characters long, and have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character."
             }
       },
       "vmName": {
         "type": "string",
-        "defaultValue": "vmName",
+        "minLength": 4,
         "metadata": {
-          "description": "The name of your Virtual Machine."
+          "description": "The name you want to give your Virtual Machine. Linux VM names may only contain letters, numbers, '.', and '-'."
         }
       },
-      "cpu-gpu": {
+      "Size": {
         "type": "string",
-        "defaultValue": "4x CPUs - 16GB RAM",
+        "defaultValue": "4-CPUs,16GB-RAM",
         "allowedValues": [
-          "4x CPUs - 16GB RAM",
-          "8x CPUs - 32GB RAM",
-          "16x CPUs - 64GB RAM",
-          "1x V100 GPU - 6x CPUs - 112 GB RAM"
+          "4-CPUs,16GB-RAM",
+          "8-CPUs,32GB-RAM",
+          "16-CPUs,64GB-RAM",
+          "V100-GPU,6-CPUs,112GB-RAM"
         ],
         "metadata": {
           "description": "Choose a VM size with or without a GPU."
-        }
-      },
-      "virtualNetworkName": {
-        "type": "string",
-        "defaultValue": "vNet",
-        "metadata": {
-          "description": "Name of the Virtual Network for the VM"
-        }
-      },
-      "subnetName": {
-        "type": "string",
-        "defaultValue": "subnet",
-        "metadata": {
-          "description": "Name of the subnet in the virtual network"
-        }
-      },
-      "networkSecurityGroupName": {
-        "type": "string",
-        "defaultValue": "SecGroupNet",
-        "metadata": {
-          "description": "Name of the Network Security Group"
         }
       }
     },
     "variables": {
       "location": "[resourceGroup().location]",
+      "virtualNetworkName": "[concat('VNet', copyIndex())]",
+      "subnetName": "[concat('Subnet', copyIndex())]",
+      "networkSecurityGroupName": "[concat('NSG', copyIndex())]",
       "networkInterfaceName": "[concat(parameters('vmName'),'NetInt')]",
       "virtualMachineName": "[parameters('vmName')]",
       "publicIpAddressName": "[concat(parameters('vmName'), 'PublicIP' )]",
-      "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), parameters('subnetName'))]",
-      "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', parameters('networkSecurityGroupName'))]",
+      "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
+      "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
       "osDiskType": "Standard_LRS",
       "storageAccountName": "[concat('storage', uniqueString(resourceGroup().id))]",
       "storageAccountType": "Standard_LRS",
       "storageAccountKind": "Storage",
       "vmSize": {
-        "4x CPUs - 16GB RAM": "Standard_B4ms",
-        "8x CPUs - 32GB RAM": "Standard_B8ms",
-        "16x CPUs - 64GB RAM": "Standard_B16ms",
-        "1x V100 GPU - 6x CPUs - 112 GB RAM": "Standard_NC6s_v3"
+        "4-CPUs,16GB-RAM": "Standard_B4ms",
+        "8-CPUs,32GB-RAM": "Standard_B8ms",
+        "16-CPUs,64GB-RAM": "Standard_B16ms",
+        "V100-GPU,6-CPUs,112GB-RAM": "Standard_NC6s_v3"
       }
     },
     "resources": [
@@ -81,8 +67,8 @@
         "name": "[variables('networkInterfaceName')]",
         "location": "[variables('location')]",
         "dependsOn": [
-          "[resourceId('Microsoft.Network/networkSecurityGroups/', parameters('networkSecurityGroupName'))]",
-          "[resourceId('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
+          "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]",
+          "[resourceId('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
           "[resourceId('Microsoft.Network/publicIpAddresses/', variables('publicIpAddressName'))]"
         ],
         "properties": {
@@ -108,7 +94,7 @@
       {
         "type": "Microsoft.Network/networkSecurityGroups",
         "apiVersion": "2020-05-01",
-        "name": "[parameters('networkSecurityGroupName')]",
+        "name": "[variables('networkSecurityGroupName')]",
         "location": "[variables('location')]",
         "properties": {
           "securityRules": [
@@ -157,7 +143,7 @@
       {
         "type": "Microsoft.Network/virtualNetworks",
         "apiVersion": "2020-05-01",
-        "name": "[parameters('virtualNetworkName')]",
+        "name": "[variables('virtualNetworkName')]",
         "location": "[variables('location')]",
         "properties": {
           "addressSpace": {
@@ -167,7 +153,7 @@
           },
           "subnets": [
             {
-              "name": "[parameters('subnetName')]",
+              "name": "[variables('subnetName')]",
               "properties": {
                 "addressPrefix": "10.0.0.0/24",
                 "privateEndpointNetworkPolicies": "Enabled",
@@ -203,7 +189,7 @@
       {
         "type": "Microsoft.Compute/virtualMachines",
         "apiVersion": "2019-07-01",
-        "name": "[concat(variables('virtualMachineName'),'-', parameters('Cpu-Gpu'))]",
+        "name": "[concat(variables('virtualMachineName'),'-', parameters('Size'))]",
         "location": "[variables('location')]",
         "dependsOn": [
           "[resourceId('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]",
@@ -211,7 +197,7 @@
         ],
         "properties": {
           "hardwareProfile": {
-            "vmSize": "[variables('vmSize')[parameters('Cpu-Gpu')]]"
+            "vmSize": "[variables('vmSize')[parameters('Size')]]"
           },
           "storageProfile": {
             "osDisk": {

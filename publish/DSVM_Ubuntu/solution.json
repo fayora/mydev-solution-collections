@@ -1,6 +1,6 @@
 {
     "name": "Data Science Virtual Machine on Ubuntu",
-    "description": "Deploys very powerful workstation using one of the most popular images provided by Microsoft. For more information, see: https://azure.microsoft.com/en-us/services/virtual-machines/data-science-virtual-machines/#product-overview.",
+    "description": "Deploys very powerful workstation using one of the most popular images provided by Microsoft. This VM comes packed with applications and solutions for complex data analytics and machine learning. It can be deployed with or without a GPU.",
     "version": "2021.16.07.1",
     "upgradeAllowed": true,
     "deploymentMode": "User"
