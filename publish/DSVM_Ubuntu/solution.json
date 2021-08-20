@@ -1,0 +1,7 @@
+{
+    "name": "Data Science Virtual Machine on Ubuntu",
+    "description": "Deploys very powerful workstation using one of the most popular images provided by Microsoft. For more information, see: https://azure.microsoft.com/en-us/services/virtual-machines/data-science-virtual-machines/#product-overview.",
+    "version": "2021.16.07.1",
+    "upgradeAllowed": true,
+    "deploymentMode": "User"
+}
