@@ -20,7 +20,7 @@
       },
       "VirtualMachineName": {
         "type": "string",
-        "defaultValue": "[concat('MyDSVM', copyIndex())]",
+        "defaultValue": "MyDSVM",
         "minLength": 4,
         "metadata": {
           "description": "The name you want to give your Virtual Machine. Linux VM names may only contain letters, numbers, '.', and '-'."
@@ -36,15 +36,15 @@
           "V100-GPU,6-CPUs,112GB-RAM"
         ],
         "metadata": {
-          "description": "Choose a VM size with or without a GPU."
+          "description": "Choose a virtual machine size with or without a GPU."
         }
       }
     },
     "variables": {
       "location": "[resourceGroup().location]",
-      "virtualNetworkName": "[concat('VNet', copyIndex())]",
-      "subnetName": "[concat('Subnet', copyIndex())]",
-      "networkSecurityGroupName": "[concat('NSG', copyIndex())]",
+      "virtualNetworkName": "[concat('VNet', uniqueString(resourceGroup().id))]",
+      "subnetName": "[concat('Subnet', uniqueString(resourceGroup().id))]",
+      "networkSecurityGroupName": "[concat('NSG', uniqueString(resourceGroup().id))]",
       "networkInterfaceName": "[concat(parameters('VirtualMachineName'),'NetInt')]",
       "virtualMachineName": "[parameters('VirtualMachineName')]",
       "publicIpAddressName": "[concat(parameters('VirtualMachineName'), 'PublicIP' )]",
