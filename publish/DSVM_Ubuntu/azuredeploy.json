@@ -23,22 +23,22 @@
       },
       "cpu-gpu": {
         "type": "string",
-        "defaultValue": "CPU-4GB",
+        "defaultValue": "4x CPUs - 16GB RAM",
         "allowedValues": [
-          "CPU-4GB",
-          "CPU-8GB",
-          "CPU-16GB",
-          "GPU-56GB"
+          "4x CPUs - 16GB RAM",
+          "8x CPUs - 32GB RAM",
+          "16x CPUs - 64GB RAM",
+          "1x V100 GPU - 6x CPUs - 112 GB RAM"
         ],
         "metadata": {
-          "description": "Choose between CPU or GPU processing"
+          "description": "Choose a VM size with or without a GPU."
         }
       },
       "virtualNetworkName": {
         "type": "string",
         "defaultValue": "vNet",
         "metadata": {
-          "description": "Name of the VNET"
+          "description": "Name of the Virtual Network for the VM"
         }
       },
       "subnetName": {
@@ -68,10 +68,10 @@
       "storageAccountType": "Standard_LRS",
       "storageAccountKind": "Storage",
       "vmSize": {
-        "CPU-4GB": "Standard_B2s",
-        "CPU-8GB": "Standard_D2s_v3",
-        "CPU-16GB": "Standard_D4s_v3",
-        "GPU-56GB": "Standard_NC6s_v3"
+        "4x CPUs - 16GB RAM": "Standard_B4ms",
+        "8x CPUs - 32GB RAM": "Standard_B8ms",
+        "16x CPUs - 64GB RAM": "Standard_B16ms",
+        "1x V100 GPU - 6x CPUs - 112 GB RAM": "Standard_NC6s_v3"
       }
     },
     "resources": [
