@@ -229,9 +229,9 @@
       }
     ],
     "outputs": {
-      "Public IP SSH": {
+      "AddressToSSH": {
         "type": "string",
-        "value": "[concat(reference(resourceId('Microsoft.Compute/virtualMachines',parameters('VirtualMachineName'))).osProfile.adminUsername, '@', reference(resourceId('Microsoft.Network/publicIPAddresses',variables('publicIpAddressName'))).IpAddress)]"
+        "value": "[concat(parameters('adminUsername'), '@', reference(variables('publicIpAddressName')).properties.ipAddress)]"
       }
     }
 }
