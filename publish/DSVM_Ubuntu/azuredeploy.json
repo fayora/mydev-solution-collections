@@ -20,7 +20,7 @@
       },
       "VirtualMachineName": {
         "type": "string",
-        "defaultValue": "MyDSVM",
+        "defaultValue": "",
         "minLength": 4,
         "metadata": {
           "description": "The name you want to give your Virtual Machine. Linux VM names may only contain letters, numbers, '.', and '-'."
@@ -46,7 +46,6 @@
       "subnetName": "[concat('Subnet', uniqueString(resourceGroup().id))]",
       "networkSecurityGroupName": "[concat('NSG', uniqueString(resourceGroup().id))]",
       "networkInterfaceName": "[concat(parameters('VirtualMachineName'),'NetInt')]",
-      "virtualMachineName": "[parameters('VirtualMachineName')]",
       "publicIpAddressName": "[concat(parameters('VirtualMachineName'), 'PublicIP' )]",
       "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
       "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
@@ -190,7 +189,7 @@
       {
         "type": "Microsoft.Compute/virtualMachines",
         "apiVersion": "2019-07-01",
-        "name": "variables('virtualMachineName')",
+        "name": "[parameters('VirtualMachineName')]",
         "location": "[variables('location')]",
         "dependsOn": [
           "[resourceId('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]",
@@ -222,7 +221,7 @@
             ]
           },
           "osProfile": {
-            "computerName": "[variables('virtualMachineName')]",
+            "computerName": "[parameters('VirtualMachineName')]",
             "adminUsername": "[parameters('adminUsername')]",
             "adminPassword": "[parameters('adminPassword')]"
           }
