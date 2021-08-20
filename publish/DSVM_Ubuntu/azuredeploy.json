@@ -18,8 +18,9 @@
             "description": "Password for the Virtual Machine. It must be at least 12 characters long, and have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character."
             }
       },
-      "vmName": {
+      "VirtualMachineName": {
         "type": "string",
+        "defaultValue": "[concat('MyDSVM', copyIndex())]",
         "minLength": 4,
         "metadata": {
           "description": "The name you want to give your Virtual Machine. Linux VM names may only contain letters, numbers, '.', and '-'."
@@ -44,9 +45,9 @@
       "virtualNetworkName": "[concat('VNet', copyIndex())]",
       "subnetName": "[concat('Subnet', copyIndex())]",
       "networkSecurityGroupName": "[concat('NSG', copyIndex())]",
-      "networkInterfaceName": "[concat(parameters('vmName'),'NetInt')]",
-      "virtualMachineName": "[parameters('vmName')]",
-      "publicIpAddressName": "[concat(parameters('vmName'), 'PublicIP' )]",
+      "networkInterfaceName": "[concat(parameters('VirtualMachineName'),'NetInt')]",
+      "virtualMachineName": "[parameters('VirtualMachineName')]",
+      "publicIpAddressName": "[concat(parameters('VirtualMachineName'), 'PublicIP' )]",
       "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
       "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
       "osDiskType": "Standard_LRS",
