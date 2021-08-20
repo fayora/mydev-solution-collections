@@ -6,7 +6,7 @@ param (
     [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
     [string]$resourceGroupName,
     [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
-    [string]$publicIPAddressName,
+    [string]$publicIpAddressName,
     [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
     [string]$adminUsername
 )
