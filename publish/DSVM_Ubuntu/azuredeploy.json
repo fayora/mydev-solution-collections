@@ -231,7 +231,7 @@
     "outputs": {
       "AddressToSSH": {
         "type": "string",
-        "value": "[concat(parameters('adminUsername'), '@', reference(variables('publicIpAddressName')).properties.ipAddress)]"
+        "value": "[parameters('adminUsername')]"
       }
     }
 }
