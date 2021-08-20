@@ -23,7 +23,7 @@ process {
         
         # Use the access token to get resource information for the VM
         $publicIpAddressResponse = Invoke-WebRequest `
-            -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Network/publicIPAddresses/$publicIPAddressName\?api-version=2020-11-01" `
+            -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Network/publicIPAddresses/$publicIpAddressName\?api-version=2020-11-01" `
             -Method GET `
             -ContentType "application/json" `
             -Headers @{ Authorization = "Bearer $access_token" } 
