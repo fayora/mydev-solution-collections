@@ -233,9 +233,13 @@
         "type": "string",
         "value": "[variables('publicIpAddressName')]"
       },
-      "AdminUsername": {
-          "type": "string",
-          "value": "[parameters('adminUsername')]"
-      }
+      "subscriptionId": {
+        "type": "string",
+        "value": "[subscription().subscriptionId]"
+       },
+       "resourceGroupName": {
+        "type": "string",
+        "value": "[resourceGroup().name]"
+       }
     }
 }
