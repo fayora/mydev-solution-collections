@@ -233,7 +233,7 @@
         "type": "string",
         "value": "[variables('publicIpAddressName')]"
       },
-      "AttemptWithProperties": {
+      "AdminUsername": {
           "type": "string",
           "value": "[parameters('adminUsername')]"
       }
