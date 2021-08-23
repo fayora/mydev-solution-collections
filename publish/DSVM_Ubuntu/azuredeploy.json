@@ -232,10 +232,6 @@
       "publicIpAddressName": {
         "type": "string",
         "value": "[variables('publicIpAddressName')]"
-      },
-      "AttemptWithProperties": {
-          "type": "string",
-          "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).ipAddress]"
       }
     }
 }
