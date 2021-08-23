@@ -233,11 +233,11 @@
         "type": "string",
         "value": "[variables('publicIpAddressName')]"
       },
-      "Attempt with Properties": {
+      "AttemptWithProperties": {
           "type": "string",
           "value": "[reference(variables('publicIpAddressName')).properties.ipAddress]"
       },
-      "Attempt withOUT Properties": {
+      "AttemptWithOUTProperties": {
           "type": "string",
           "value": "[reference(variables('publicIpAddressName')).ipAddress]"
       }
