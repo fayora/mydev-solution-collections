@@ -182,7 +182,7 @@
         },
         "properties": {
           "publicIpAllocationMethod": "Dynamic","dnsSettings": {
-            "domainNameLabel": "[concat(parameters('publicIPAddressDns'), '-dsvm-', parameters('VirtualMachineName'))]"
+            "domainNameLabel": "[concat(parameters('publicIPAddressDns'), '-', uniqueString(parameters('VirtualMachineName')))]"
             }
         }
       },
