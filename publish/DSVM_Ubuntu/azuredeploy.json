@@ -237,7 +237,7 @@
         "type": "string",
         "value": "[subscription().subscriptionId]"
        },
-       "resourceGroupName": {
+       "resourceGroupName1": {
         "type": "string",
         "value": "[resourceGroup().name]"
        }
