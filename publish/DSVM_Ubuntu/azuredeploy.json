@@ -229,9 +229,17 @@
       }
     ],
     "outputs": {
-      "AddressToSSH": {
+      "publicIpAddressName": {
         "type": "string",
-        "value": "[parameters('adminUsername')]"
+        "value": "[variables('publicIpAddressName')]"
+      },
+      "Attempt with Properties": {
+          "type": "string",
+          "value": "[reference(variables('publicIpAddressName')).properties.ipAddress]"
+      },
+      "Attempt withOUT Properties": {
+          "type": "string",
+          "value": "[reference(variables('publicIpAddressName')).ipAddress]"
       }
     }
 }
