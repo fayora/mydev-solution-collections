@@ -38,14 +38,6 @@
         "metadata": {
           "description": "Choose a virtual machine size with or without a GPU."
         }
-      },
-      "publicIPAddressDns": {
-        "type": "string",
-        "defaultValue": "",
-        "minLength": 1,
-        "metadata": {
-            "description": "A unique hostname for the virtual machine, to generate its fully qualified domain name (FQDN, e.g., myvirtualmachine.australiaeast.cloudapp.azure.com.) You can only specify letters (a-z) and numbers (0-9)."
-        }
       }
     },
     "variables": {
@@ -182,7 +174,7 @@
         },
         "properties": {
           "publicIpAllocationMethod": "Dynamic","dnsSettings": {
-            "domainNameLabel": "[concat(parameters('publicIPAddressDns'), '-', uniqueString(parameters('VirtualMachineName')))]"
+            "domainNameLabel": "[concat(replace(toLower(parameters('VirtualMachineName')), '.', ''), '-', uniqueString(parameters('VirtualMachineName')))]"
             }
         }
       },
