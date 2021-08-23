@@ -235,11 +235,7 @@
       },
       "AttemptWithProperties": {
           "type": "string",
-          "value": "[reference(variables('publicIpAddressName')).properties.ipAddress]"
-      },
-      "AttemptWithOUTProperties": {
-          "type": "string",
-          "value": "[reference(variables('publicIpAddressName')).ipAddress]"
+          "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).ipAddress]"
       }
     }
 }
