@@ -4,5 +4,11 @@
         "icon": "fa fa-arrow-down",
         "fileName": "getsshcommand.ps1",
         "actionType": "String"
+    },
+    {
+        "name": "Connect to Jupyter Hub",
+        "icon": "fa fa-arrow-up",
+        "fileName": "getjupyterhub.ps1",
+        "actionType": "String"
     }
 ]

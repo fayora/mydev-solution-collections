@@ -35,7 +35,7 @@ process {
         $ipAddress = $publicIpAddressContent.properties.ipAddress
        
         
-        New-Object -Property @{ReturnText = "$adminUsername@$ipAddress" } -TypeName psobject
+        New-Object -Property @{ReturnText = "ssh $adminUsername@$ipAddress" } -TypeName psobject
     }
     catch {
         Write-Host "Unable to get IP address." $_.Exception.Message
