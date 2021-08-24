@@ -35,6 +35,7 @@ process {
             $result = "It is currently: $vmStatus"
         }
         #>
+        Write-Host "The status is: $vmStatus"
         New-Object -Property @{ReturnText = "The status is: $vmStatus" } -TypeName psobject
     }
     catch {
