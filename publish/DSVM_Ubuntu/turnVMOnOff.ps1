@@ -32,16 +32,36 @@ process {
         $vmStatus = $currentStatusContent.statuses[1].displayStatus
        
         if ($vmStatus -eq "VM running") {
-            $result = "It is running!"
+            # The VM is currently running, so stopping it
+            $statusChangeResponse = Invoke-WebRequest `
+            -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName1/providers/Microsoft.Compute/virtualMachines/$deployedVirtualMachineName/deallocate?api-version=2021-03-01" `
+            -Method POST `
+            -ContentType "application/json" `
+            -Headers @{ Authorization = "Bearer $access_token" } 
+
+            ###NEEDS CODE TO CHECK 200 vs. DIFF RETURN! <--LOOK AT LOOME API CODE
+
+            New-Object -Property @{ReturnText = "The VM is currently stopping." } -TypeName psobject
+
         } elseif ($vmStatus -eq "VM deallocated") {
-            $result = "It is stopped (deallocated)!"
+             # The VM is currently stopped, so starting it
+             $statusChangeResponse = Invoke-WebRequest `
+             -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName1/providers/Microsoft.Compute/virtualMachines/$deployedVirtualMachineName/start?api-version=2021-03-01" `
+             -Method POST `
+             -ContentType "application/json" `
+             -Headers @{ Authorization = "Bearer $access_token" } 
+
+             ###NEEDS CODE TO CHECK 200 vs. DIFF RETURN! <--LOOK AT LOOME API CODE
+
+             New-Object -Property @{ReturnText = "The VM is currently starting." } -TypeName psobject
         } else {
-            $result = "It is currently transitioning: $vmStatus"
+            $result = "The VM is currently in a transitioning state: $vmStatus. Wait a couple of minutes and try again."
         }
         New-Object -Property @{ReturnText = "$result" } -TypeName psobject
     }
     catch {
-        Write-Error "Unable to get VM status. Please try again in a few minutes." $_.Exception.Message
+        Write-Error "Unable to determine the status of this VM. Please try again in a few minutes." $_.Exception.Message
+        New-Object -Property @{ReturnText = "Unable to determine the status of this VM. Please try again in a few minutes. " + $_.Exception.Message } -TypeName psobject
     }
 }
 

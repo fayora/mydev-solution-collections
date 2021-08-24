@@ -21,7 +21,7 @@
         "name": "Start or stop the VM",
         "icon": "fa fa-power-off",
         "fileName": "turnVMOnOff.ps1",
-        "actionType": "String"
+        "actionType": "Notification"
     },
     {
         "name": "Check if VM is running",
