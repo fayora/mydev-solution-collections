@@ -12,9 +12,15 @@
         "actionType": "Url"
     },
     {
-        "name": "Connect to R Studio Server",
+        "name": "X2Go Connection 1",
         "icon": "fa fa-registered",
-        "fileName": "getRStudioServer.ps1",
-        "actionType": "Url"
+        "fileName": "X2GoInfo.ps1",
+        "actionType": "String"
+    },
+    {
+        "name": "X2Go Connection 2",
+        "icon": "fa fa-registered",
+        "fileName": "X2GoInfo.ps1",
+        "actionType": "Notification"
     }
 ]
