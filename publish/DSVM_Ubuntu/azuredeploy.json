@@ -42,6 +42,7 @@
     },
     "variables": {
       "location": "[resourceGroup().location]",
+      "uniqueVMName": "[concat(replace(toLower(parameters('VirtualMachineName')), '.', ''), '-', uniqueString(parameters('VirtualMachineName')))]"
       "virtualNetworkName": "[concat('VNet', uniqueString(resourceGroup().id))]",
       "subnetName": "[concat('Subnet', uniqueString(resourceGroup().id))]",
       "networkSecurityGroupName": "[concat('NSG', uniqueString(resourceGroup().id))]",
@@ -174,7 +175,7 @@
         },
         "properties": {
           "publicIpAllocationMethod": "Dynamic","dnsSettings": {
-            "domainNameLabel": "[concat(replace(toLower(parameters('VirtualMachineName')), '.', ''), '-', uniqueString(parameters('VirtualMachineName')))]"
+            "domainNameLabel": "[variables('uniqueVMName')]"
             }
         }
       },
@@ -250,6 +251,10 @@
        "loginUsername": {
         "type": "string",
         "value": "[parameters('adminUsername')]"
+       },
+       "virtualMachineName": {
+        "type": "string",
+        "value": "[variables('uniqueVMName')]"
        }
     }
 }

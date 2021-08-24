@@ -16,5 +16,11 @@
         "icon": "fa fa-plug",
         "fileName": "X2GoFile.ps1",
         "actionType": "File"
+    },
+    {
+        "name": "Turn On or Off",
+        "icon": "fa fa-power-off",
+        "fileName": "turnVMOnOff.ps1",
+        "actionType": "Notification"
     }
 ]
