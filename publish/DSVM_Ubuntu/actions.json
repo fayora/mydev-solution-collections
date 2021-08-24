@@ -12,12 +12,6 @@
         "actionType": "Url"
     },
     {
-        "name": "X2Go Connection String",
-        "icon": "fa fa-desktop",
-        "fileName": "X2GoInfo.ps1",
-        "actionType": "String"
-    },
-    {
         "name": "X2Go Connection File",
         "icon": "fa fa-plug",
         "fileName": "X2GoFile.ps1",
