@@ -5,6 +5,6 @@ param (
     [string]$fullyQualifiedDomainName
 )
 process {
-    $JupyterHubURL = "https://" + $fullyQualifiedDomainName + ":8000"
-    New-Object -Property @{ReturnText = "$JupyterHubURL"} -TypeName psobject
+    $RStudioServerURL = "https://" + $fullyQualifiedDomainName + ":8787"
+    New-Object -Property @{ReturnText = "$RStudioServerURL"} -TypeName psobject
 }

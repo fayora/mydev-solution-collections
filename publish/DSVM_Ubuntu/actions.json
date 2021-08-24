@@ -7,8 +7,14 @@
     },
     {
         "name": "Connect to Jupyter Hub",
-        "icon": "fa fa-planet-ringed",
+        "icon": "fa fa-play-circle-o",
         "fileName": "getjupyterhub.ps1",
+        "actionType": "Url"
+    },
+    {
+        "name": "Connect to R Studio Server",
+        "icon": "fa fa-registered",
+        "fileName": "getRStudioServer.ps1",
         "actionType": "Url"
     }
 ]
