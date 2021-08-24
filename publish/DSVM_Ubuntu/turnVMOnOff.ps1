@@ -23,20 +23,19 @@ process {
         
         # Use the access token to get resource information for the VM
         $currentStatusResponse = Invoke-WebRequest `
-            -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName1/providers/Microsoft.Compute/virtualMachines/$deployedVirtualMachineName/instanceView\?api-version=2021-03-01" `
+            -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName1/providers/Microsoft.Compute/virtualMachines/$deployedVirtualMachineName/instanceView?api-version=2021-03-01" `
             -Method GET `
             -ContentType "application/json" `
             -Headers @{ Authorization = "Bearer $access_token" } 
         
         $currentStatusContent = $currentStatusResponse.Content | ConvertFrom-Json
-        $vmStatus = "foobar" #$currentStatusContent.statuses[1].displayStatus
+        $vmStatus = $currentStatusContent.statuses[1].displayStatus
        
-        <#if ($vmStatus -eq "VM running") {
+        if ($vmStatus -eq "VM running") {
             $result = "It is running!"
         } else {
             $result = "It is currently: $vmStatus"
         }
-        #>
         Write-Host "The status is: $vmStatus"
         New-Object -Property @{ReturnText = "The status is: $vmStatus" } -TypeName psobject
     }

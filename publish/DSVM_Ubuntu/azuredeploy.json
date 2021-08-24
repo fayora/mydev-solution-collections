@@ -192,7 +192,7 @@
       {
         "type": "Microsoft.Compute/virtualMachines",
         "apiVersion": "2019-07-01",
-        "name": "[parameters('VirtualMachineName')]",
+        "name": "[variables('uniqueVMName')]",
         "location": "[variables('location')]",
         "dependsOn": [
           "[resourceId('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]",
