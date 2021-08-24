@@ -252,7 +252,7 @@
         "type": "string",
         "value": "[parameters('adminUsername')]"
        },
-       "virtualMachineName": {
+       "deployedVirtualMachineName": {
         "type": "string",
         "value": "[variables('uniqueVMName')]"
        }
