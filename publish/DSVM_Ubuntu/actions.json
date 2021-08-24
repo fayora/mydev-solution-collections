@@ -1,6 +1,6 @@
 [
     {
-        "name": "Get SSH Command",
+        "name": "Get SSH command",
         "icon": "fa fa-arrow-down",
         "fileName": "getsshcommand.ps1",
         "actionType": "String"
@@ -12,15 +12,21 @@
         "actionType": "Url"
     },
     {
-        "name": "X2Go Connection File",
+        "name": "Connect with X2Go Client",
         "icon": "fa fa-plug",
         "fileName": "X2GoFile.ps1",
         "actionType": "File"
     },
     {
-        "name": "Turn On or Off",
+        "name": "Start or stop the VM",
         "icon": "fa fa-power-off",
         "fileName": "turnVMOnOff.ps1",
         "actionType": "String"
+    },
+    {
+        "name": "Check if VM is running",
+        "icon": "fa fa-question-circle",
+        "fileName": "checkVMOnOff.ps1",
+        "actionType": "Notification"
     }
 ]
