@@ -7,8 +7,8 @@
     },
     {
         "name": "Connect to Jupyter Hub",
-        "icon": "fa fa-arrow-up",
+        "icon": "fa fa-planet-ringed",
         "fileName": "getjupyterhub.ps1",
-        "actionType": "String"
+        "actionType": "Url"
     }
 ]

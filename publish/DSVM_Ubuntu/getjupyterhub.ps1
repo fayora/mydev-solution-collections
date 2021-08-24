@@ -2,7 +2,9 @@
 [OutputType([psobject])]
 param (
     [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
-    [string]$FQDN
+    [string]$fullyQualifiedDomainName
 )
-$JupyterHubURL = "https://" + $FQDN + ":1010"
-Start-Process "$JupyterHubURL"
+process {
+    $JupyterHubURL = "https://" + $fullyQualifiedDomainName + ":1010"
+    New-Object -Property @{ReturnText = "$JupyterHubURL"} -TypeName psobject
+}
