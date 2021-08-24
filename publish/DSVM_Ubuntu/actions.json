@@ -21,6 +21,6 @@
         "name": "Turn On or Off",
         "icon": "fa fa-power-off",
         "fileName": "turnVMOnOff.ps1",
-        "actionType": "Notification"
+        "actionType": "String"
     }
 ]
