@@ -29,13 +29,13 @@ process {
         $currentStatusContent = $currentStatusResponse.Content | ConvertFrom-Json
         $vmStatus = $currentStatusContent.statuses[1].displayStatus
        
-        if ($vmStatus -eq "VM running") {
+        <#if ($vmStatus -eq "VM running") {
             $result = "It is running!"
         } else {
             $result = "It is currently: $vmStatus"
         }
-        
-        New-Object -Property @{ReturnText = "$result" } -TypeName psobject
+        #>
+        New-Object -Property @{ReturnText = "The status is: $vmStatus" } -TypeName psobject
     }
     catch {
         Write-Host "Unable to get VM status. Please try again in a few minutes." $_.Exception.Message
