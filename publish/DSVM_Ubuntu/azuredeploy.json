@@ -42,7 +42,7 @@
     },
     "variables": {
       "location": "[resourceGroup().location]",
-      "uniqueVMName": "[concat(replace(toLower(parameters('VirtualMachineName')), '.', ''), '-', uniqueString(parameters('VirtualMachineName')))]"
+      "uniqueVMName": "[concat(replace(toLower(parameters('VirtualMachineName')), '.', ''), '-', uniqueString(parameters('VirtualMachineName')))]",
       "virtualNetworkName": "[concat('VNet', uniqueString(resourceGroup().id))]",
       "subnetName": "[concat('Subnet', uniqueString(resourceGroup().id))]",
       "networkSecurityGroupName": "[concat('NSG', uniqueString(resourceGroup().id))]",
