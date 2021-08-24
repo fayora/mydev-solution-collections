@@ -247,7 +247,7 @@
         "type": "string",
         "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).dnsSettings.fqdn]"
        },
-       "LoginUsername": {
+       "loginUsername": {
         "type": "string",
         "value": "[parameters('adminUsername')]"
        }
