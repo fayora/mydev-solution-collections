@@ -12,15 +12,15 @@
         "actionType": "Url"
     },
     {
-        "name": "X2Go Connection 1",
-        "icon": "fa fa-registered",
+        "name": "X2Go Connection String",
+        "icon": "fa fa-desktop",
         "fileName": "X2GoInfo.ps1",
         "actionType": "String"
     },
     {
-        "name": "X2Go Connection 2",
-        "icon": "fa fa-registered",
-        "fileName": "X2GoInfo.ps1",
-        "actionType": "Notification"
+        "name": "X2Go Connection File",
+        "icon": "fa fa-plug",
+        "fileName": "X2GoFile.ps1",
+        "actionType": "File"
     }
 ]

@@ -246,6 +246,10 @@
        "fullyQualifiedDomainName": {
         "type": "string",
         "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).dnsSettings.fqdn]"
-  }
+       },
+       "AdminUsername": {
+        "type": "string",
+        "value": "[parameters('adminUsername')]"
+       }
     }
 }
