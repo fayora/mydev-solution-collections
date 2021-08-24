@@ -224,7 +224,7 @@
             ]
           },
           "osProfile": {
-            "computerName": "[parameters('VirtualMachineName')]",
+            "computerName": "[variables('uniqueVMName')]",
             "adminUsername": "[parameters('adminUsername')]",
             "adminPassword": "[parameters('adminPassword')]"
           }
