@@ -8,6 +8,8 @@ param (
     [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
     [string]$deployedVirtualMachineName
 )
+
+
 process {
     try {
 
@@ -27,7 +29,7 @@ process {
             -Headers @{ Authorization = "Bearer $access_token" } 
         
         $currentStatusContent = $currentStatusResponse.Content | ConvertFrom-Json
-        $vmStatus = $currentStatusContent.statuses[1].displayStatus
+        $vmStatus = "foobar" #$currentStatusContent.statuses[1].displayStatus
        
         <#if ($vmStatus -eq "VM running") {
             $result = "It is running!"
