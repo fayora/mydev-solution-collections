@@ -33,14 +33,15 @@ process {
        
         if ($vmStatus -eq "VM running") {
             $result = "It is running!"
+        } elseif ($vmStatus -eq "VM deallocated") {
+            $result = "It is stopped (deallocated)!"
         } else {
-            $result = "It is currently: $vmStatus"
+            $result = "It is currently transitioning: $vmStatus"
         }
-        Write-Host "The status is: $vmStatus"
-        New-Object -Property @{ReturnText = "The status is: $vmStatus" } -TypeName psobject
+        New-Object -Property @{ReturnText = "$result" } -TypeName psobject
     }
     catch {
-        Write-Host "Unable to get VM status. Please try again in a few minutes." $_.Exception.Message
+        Write-Error "Unable to get VM status. Please try again in a few minutes." $_.Exception.Message
     }
 }
 
