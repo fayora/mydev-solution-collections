@@ -110,7 +110,7 @@
                 "sourceAddressPrefix": "*",
                 "sourcePortRange": "*",
                 "destinationAddressPrefix": "*",
-                "destinationPortRange": "8000"
+                "destinationPortRange": "8888"
               }
             },
             {
