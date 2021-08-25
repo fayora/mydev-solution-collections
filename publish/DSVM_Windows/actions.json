@@ -1,0 +1,26 @@
+[
+    {
+        "name": "Get RDP command",
+        "icon": "fa fa-arrow-down",
+        "fileName": "getRDP.ps1",
+        "actionType": "String"
+    },
+    {
+        "name": "Connect to Jupyter Hub",
+        "icon": "fa fa-play-circle-o",
+        "fileName": "getjupyterhub.ps1",
+        "actionType": "Url"
+    },
+    {
+        "name": "Start or stop the VM",
+        "icon": "fa fa-power-off",
+        "fileName": "turnVMOnOff.ps1",
+        "actionType": "Notification"
+    },
+    {
+        "name": "Check if VM is running",
+        "icon": "fa fa-question-circle",
+        "fileName": "checkVMOnOff.ps1",
+        "actionType": "Notification"
+    }
+]

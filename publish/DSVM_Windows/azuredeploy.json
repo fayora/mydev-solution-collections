@@ -127,7 +127,7 @@
               }
             },
             {
-              "name": "SSH",
+              "name": "RDP",
               "properties": {
                 "priority": 1030,
                 "protocol": "TCP",
@@ -136,7 +136,7 @@
                 "sourceAddressPrefix": "*",
                 "sourcePortRange": "*",
                 "destinationAddressPrefix": "*",
-                "destinationPortRange": "22"
+                "destinationPortRange": "3389"
               }
             }
           ]
@@ -212,8 +212,8 @@
             },
             "imageReference": {
               "publisher": "microsoft-dsvm",
-              "offer": "ubuntu-1804",
-              "sku": "1804-gen2",
+              "offer": "dsvm-win-2019",
+              "sku": "server-2019",
               "version": "latest"
             }
           },
@@ -227,7 +227,11 @@
           "osProfile": {
             "computerName": "[parameters('VirtualMachineName')]",
             "adminUsername": "[parameters('adminUsername')]",
-            "adminPassword": "[parameters('adminPassword')]"
+            "adminPassword": "[parameters('adminPassword')]",
+            "windowsConfiguration": {
+                        "enableAutomaticUpdates": true,
+                        "provisionVmAgent": true
+                        }
           }
         }
       }
