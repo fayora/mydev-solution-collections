@@ -1,12 +1,6 @@
 [
     {
-        "name": "Get RDP command",
-        "icon": "fa fa-arrow-down",
-        "fileName": "getRDP.ps1",
-        "actionType": "String"
-    },
-    {
-        "name": "Get RDP file",
+        "name": "Get remote connection file (RDP)",
         "icon": "fa fa-arrow-up",
         "fileName": "createRDPFile.ps1",
         "actionType": "File"
