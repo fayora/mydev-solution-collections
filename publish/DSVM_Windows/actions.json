@@ -8,7 +8,7 @@
     {
         "name": "Get RDP file",
         "icon": "fa fa-arrow-up",
-        "fileName": "createRDP.ps1",
+        "fileName": "createRDPFile.ps1",
         "actionType": "File"
     },
     {
