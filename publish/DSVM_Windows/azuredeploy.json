@@ -101,32 +101,6 @@
         "properties": {
           "securityRules": [
             {
-              "name": "JupyterHub",
-              "properties": {
-                "priority": 1010,
-                "protocol": "TCP",
-                "access": "Allow",
-                "direction": "Inbound",
-                "sourceAddressPrefix": "*",
-                "sourcePortRange": "*",
-                "destinationAddressPrefix": "*",
-                "destinationPortRange": "8888"
-              }
-            },
-            {
-              "name": "RStudioServer",
-              "properties": {
-                "priority": 1020,
-                "protocol": "TCP",
-                "access": "Allow",
-                "direction": "Inbound",
-                "sourceAddressPrefix": "*",
-                "sourcePortRange": "*",
-                "destinationAddressPrefix": "*",
-                "destinationPortRange": "8787"
-              }
-            },
-            {
               "name": "RDP",
               "properties": {
                 "priority": 1030,

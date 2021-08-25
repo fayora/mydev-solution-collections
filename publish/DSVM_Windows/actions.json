@@ -6,12 +6,6 @@
         "actionType": "File"
     },
     {
-        "name": "Connect to Jupyter Hub",
-        "icon": "fa fa-play-circle-o",
-        "fileName": "getjupyterhub.ps1",
-        "actionType": "Url"
-    },
-    {
         "name": "Start or stop the VM",
         "icon": "fa fa-power-off",
         "fileName": "turnVMOnOff.ps1",
