@@ -6,6 +6,12 @@
         "actionType": "String"
     },
     {
+        "name": "Get RDP file",
+        "icon": "fa fa-arrow-up",
+        "fileName": "createRDP.ps1",
+        "actionType": "File"
+    },
+    {
         "name": "Connect to Jupyter Hub",
         "icon": "fa fa-play-circle-o",
         "fileName": "getjupyterhub.ps1",
