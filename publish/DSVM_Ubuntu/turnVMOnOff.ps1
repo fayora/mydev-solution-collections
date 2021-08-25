@@ -41,7 +41,7 @@ process {
 
             ###NEEDS CODE TO CHECK 200 vs. DIFF RETURN! <--LOOK AT LOOME API CODE
 
-            New-Object -Property @{ReturnText = "The VM is currently stopping." } -TypeName psobject
+            $result = "The VM is currently stopping."
 
         } elseif ($vmStatus -eq "VM deallocated") {
              # The VM is currently stopped, so starting it
@@ -53,7 +53,7 @@ process {
 
              ###NEEDS CODE TO CHECK 200 vs. DIFF RETURN! <--LOOK AT LOOME API CODE
 
-             New-Object -Property @{ReturnText = "The VM is currently starting." } -TypeName psobject
+             $result = "The VM is currently starting."
         } else {
             $result = "The VM is currently in a transitioning state: $vmStatus. Wait a couple of minutes and try again."
         }
