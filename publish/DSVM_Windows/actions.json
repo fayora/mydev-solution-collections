@@ -1,7 +1,7 @@
 [
     {
         "name": "Get remote connection file (RDP)",
-        "icon": "fa fa-arrow-up",
+        "icon": "fa fa-arrow-down",
         "fileName": "createRDPFile.ps1",
         "actionType": "File"
     },
