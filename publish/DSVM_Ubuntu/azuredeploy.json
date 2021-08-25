@@ -113,19 +113,6 @@
               }
             },
             {
-              "name": "RStudioServer",
-              "properties": {
-                "priority": 1020,
-                "protocol": "TCP",
-                "access": "Allow",
-                "direction": "Inbound",
-                "sourceAddressPrefix": "*",
-                "sourcePortRange": "*",
-                "destinationAddressPrefix": "*",
-                "destinationPortRange": "8787"
-              }
-            },
-            {
               "name": "SSH",
               "properties": {
                 "priority": 1030,
