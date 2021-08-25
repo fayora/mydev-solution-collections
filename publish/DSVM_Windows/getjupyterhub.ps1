@@ -5,6 +5,6 @@ param (
     [string]$fullyQualifiedDomainName
 )
 process {
-    $JupyterHubURL = "https://" + $fullyQualifiedDomainName + ":8000"
+    $JupyterHubURL = "https://" + $fullyQualifiedDomainName + ":8888"
     New-Object -Property @{ReturnText = "$JupyterHubURL"} -TypeName psobject
 }
