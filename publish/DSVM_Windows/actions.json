@@ -19,7 +19,7 @@
     },
     {
         "name": "Check UPGRADE WORKS",
-        "icon": "fa fa-windows",
+        "icon": "fa fa-question",
         "fileName": "checkVMOnOff.ps1",
         "actionType": "Notification"
     }
