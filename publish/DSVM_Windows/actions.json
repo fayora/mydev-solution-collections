@@ -16,11 +16,5 @@
         "icon": "fa fa-question-circle",
         "fileName": "checkVMOnOff.ps1",
         "actionType": "Notification"
-    },
-    {
-        "name": "Check UPGRADE WORKS",
-        "icon": "fa fa-linux",
-        "fileName": "checkVMOnOff.ps1",
-        "actionType": "Notification"
     }
 ]
