@@ -57,7 +57,7 @@
       "storageAccountKind": "Storage",
       "vmSize": {
         "4-CPUs,16GB-RAM": "Standard_B4ms",
-        "8-CPUs,32GB-RAM": "Standard_B12ms",
+        "8-CPUs,32GB-RAM": "Standard_B8ms",
         "16-CPUs,64GB-RAM": "Standard_B16ms",
         "V100-GPU,6-CPUs,112GB-RAM": "Standard_NC6s_v3"
       }
