@@ -103,7 +103,7 @@
             {
               "name": "RDP",
               "properties": {
-                "priority": 1030,
+                "priority": 1010,
                 "protocol": "TCP",
                 "access": "Allow",
                 "direction": "Inbound",
