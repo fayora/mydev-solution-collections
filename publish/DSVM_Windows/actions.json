@@ -9,6 +9,7 @@
         "name": "Start or stop the VM",
         "icon": "fa fa-power-off",
         "fileName": "turnVMOnOff.ps1",
+        "confirmationMessage": "Are you sure that you want to stop or start this VM? If you are stopping the VM, you can lose data that has not been downloaded or saved in persistent storage.",
         "actionType": "Notification"
     },
     {
