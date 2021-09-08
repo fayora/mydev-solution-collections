@@ -4,5 +4,6 @@
     "version": "2021.09.08.1",
     "icon": "fa fa-linux",
     "upgradeAllowed": true,
-    "deploymentMode": "User"
+    "deploymentMode": "User",
+    "statusCheckFileName": "checkStatus.ps1"
 }
