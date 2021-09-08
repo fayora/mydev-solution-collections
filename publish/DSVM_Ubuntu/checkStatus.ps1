@@ -46,9 +46,9 @@ process {
 
         } elseif ($vmStatus -eq "VM deallocated") {
              # The VM is currently stopped
-             $result = "{""code"":""Information"", ""message"":""Transitioning"", ""isOngoing"": false}" 
+             $result = "{""code"":""Information"", ""message"":""Stopped (deallocated)"", ""isOngoing"": false}" 
         } else {
-            $result = "{""code"":""Failed"", ""message"":""Stopped (deallocated)"", ""isOngoing"": false}" 
+            $result = "{""code"":""Failed"", ""message"":""Transitioning"", ""isOngoing"": true}" 
         }
         New-Object -Property @{ReturnText = "$result" } -TypeName psobject
     }
