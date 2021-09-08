@@ -46,7 +46,7 @@ process {
 
         } elseif ($vmStatus -eq "VM deallocated") {
              # The VM is currently stopped
-             $result = "{""code"":""Information"", ""message"":""Stopped (deallocated)"", ""isOngoing"": false}" 
+             $result = "{""code"":""Information"", ""message"":""Stopped"", ""isOngoing"": false}" 
         } else {
             $result = "{""code"":""Failed"", ""message"":""Transitioning"", ""isOngoing"": true}" 
         }
