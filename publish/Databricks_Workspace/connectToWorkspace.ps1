@@ -5,6 +5,6 @@ param (
     [string]$workspace
 )
 process {
-    $workspaceURL = $workspace.workspaceUrl
+    $workspaceURL = "foobar" #$workspace.workspaceUrl
     New-Object -Property @{ReturnText = "$workspaceURL"} -TypeName psobject
 }
