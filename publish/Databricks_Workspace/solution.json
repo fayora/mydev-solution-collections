@@ -1,0 +1,8 @@
+{
+    "name": "Azure Databricks Workspace",
+    "description": "Deploys a Databricks Workspace that you can deploy analysis and storage resources for data anlytics, machine learning, genomics, and more.",
+    "version": "2021.09.09.1",
+    "icon": "fa fa-windows",
+    "upgradeAllowed": true,
+    "deploymentMode": "User"
+}
