@@ -1,0 +1,8 @@
+[
+    {
+        "name": "Connect to workspace",
+        "icon": "fa fa-external-link",
+        "fileName": "connectToWorkspace.ps1",
+        "actionType": "Url"
+    }
+]
