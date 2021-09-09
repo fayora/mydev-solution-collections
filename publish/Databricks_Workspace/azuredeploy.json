@@ -34,7 +34,7 @@
         "name": "[parameters('pricingTier')]"
       },
       "properties": {
-        "managedResourceGroupId": "[resourceGroup()]",
+        "managedResourceGroupId": "[resourceGroup().id]",
         "parameters": {
           "enableNoPublicIp": {
             "value": "[variables('disablePublicIp')]"
