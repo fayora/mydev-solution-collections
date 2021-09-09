@@ -21,13 +21,7 @@
         "name": "Start or stop the VM",
         "icon": "fa fa-power-off",
         "fileName": "turnVMOnOff.ps1",
-        "confirmationMessage": "Are you sure that you want to stop or start this VM? If you are stopping the VM, you can lose data that has not been downloaded or saved in persistent storage.",
-        "actionType": "Notification"
-    },
-    {
-        "name": "Check if VM is running",
-        "icon": "fa fa-question-circle",
-        "fileName": "checkVMOnOff.ps1",
+        "confirmationMessage": "Are you sure that you want to stop or start this VM? If you are stopping the VM, you can lose data that has not been downloaded or saved in persistent storage. If you are starting the VM, usage charges will start to apply until you stop it again.",
         "actionType": "Notification"
     }
 ]
