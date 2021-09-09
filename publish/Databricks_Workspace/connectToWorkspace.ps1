@@ -2,9 +2,11 @@
 [OutputType([psobject])]
 param (
     [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
-    [string]$workspace
+    [string]$workspaceURL,
+    [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
+    [string]$workspaceURL2
 )
 process {
-    $workspaceURL = "foobar" #$workspace.workspaceUrl
-    New-Object -Property @{ReturnText = "$workspaceURL"} -TypeName psobject
+    $workspaceURL3 = "URL1: " + $workspaceURL + " ; URL2: " + $workspaceURL2
+    New-Object -Property @{ReturnText = "$workspaceURL3"} -TypeName psobject
 }

@@ -45,9 +45,13 @@
     }
   ],
   "outputs": {
-    "workspace": {
+    "workspaceURL": {
       "type": "object",
-      "value": "[reference(resourceId('Microsoft.Databricks/workspaces', parameters('workspaceName')))]"
+      "value": "[reference(resourceId('Microsoft.Databricks/workspaces', parameters('workspaceName'))).Url]"
+    },
+     "workspaceURL2": {
+      "type": "object",
+      "value": "[reference(resourceId('Microsoft.Databricks/workspaces', parameters('workspaceName'))).workspaceUrl]"
     }
   }
 }
