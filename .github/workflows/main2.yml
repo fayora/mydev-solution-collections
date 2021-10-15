@@ -1,0 +1,17 @@
+name: Upload from publish folder Azure Blob Storage
+on:
+  push:
+    branches:
+      - main
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: bacongobbler/azure-blob-storage-upload@v1.2.0
+        with:
+          source_dir: publish
+          account_name: prodausolutionrepos
+          container_name: felipe-dev
+          sas_token: ${{ secrets.SASTOKEN_MYDEV2 }}
+          sync: true
