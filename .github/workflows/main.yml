@@ -12,6 +12,6 @@ jobs:
         with:
           source_dir: publish
           account_name: devsolutionrepos
-          container_name: felipe-mydev-repo
+          container_name: private-solution-collection
           sas_token: ${{ secrets.SASTOKEN_MYDEV }}
           sync: true
