@@ -11,7 +11,7 @@ jobs:
       - uses: bacongobbler/azure-blob-storage-upload@v1.2.0
         with:
           source_dir: publish
-          account_name: devsolutionrepos
-          container_name: private-solution-collection
-          sas_token: ${{ secrets.SASTOKEN_MYDEV }}
+          account_name: prodausolutionrepos
+          container_name: felipe-dev
+          sas_token: ${{ secrets.SASTOKEN_MYDEV2 }}
           sync: true
