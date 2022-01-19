@@ -19,11 +19,11 @@
         },
         "VMsize": {
             "type": "String",
-            "defaultValue": "4 CPUs, 16GB of RAM",
+            "defaultValue": "4-CPUs,16GB-RAM",
             "allowedValues": [
-              "4 CPUs, 16GB of RAM",
-              "8 CPUs, 32GB of RAM",
-              "16 CPUs, 64GB of RAM"
+              "4-CPUs,16GB-RAM",
+              "8-CPUs,32GB-RAM",
+              "16-CPUs,64GB-RAM"
         ],
             "metadata": {
                 "description": "The amount of resources provided for the appication to run. More resources will run the application faster, but they will also have a higher cost per hour. The default value is suggested."
@@ -46,9 +46,9 @@
         "diskSizeGb": 256,
         "diskName": "[concat('OSDisk',toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6)))]",
         "virtualMachineSize": {
-          "4 CPUs, 16GB of RAM": "Standard_B4ms",
-          "8 CPUs, 32GB of RAM": "Standard_B8ms",
-          "16 CPUs, 64GB of RAM": "Standard_B16ms"
+          "4-CPUs,16GB-RAM": "Standard_B4ms",
+          "8-CPUs,32GB-RAM": "Standard_B8ms",
+          "16-CPUs,64GB-RAM": "Standard_B16ms"
         }
 
         
