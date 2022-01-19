@@ -7,26 +7,26 @@
             "minlength": 5,
             "type": "string",
             "metadata": {
-                "description": "The username for authentication into the scCloudMine web appication"
+                "description": "Specify the username that you want to use when you log into the application."
             }
         },
         "password": {
             "type": "securestring",
             "minlength": 5,
             "metadata": {
-                "description": "The password for authentication into the scCloudMine web appication. IMPORTANT: do not include '$' in the password!"
+                "description": "Specify the password that you want to use when you log into the application."
             }
         },
         "VMsize": {
             "type": "String",
             "defaultValue": "4-CPUs,16GB-RAM",
             "allowedValues": [
-              "4-CPUs,16GB-RAM",
-              "8-CPUs,32GB-RAM",
-              "16-CPUs,64GB-RAM"
+              "4 CPUs,16 GB of RAM",
+              "8 CPUs,32 GB of RAM",
+              "16 CPUs,64 GB of RAM"
         ],
             "metadata": {
-                "description": "The amount of resources provided for the appication to be run. More resources will run the application faster, but they will also have a higher cost per hour. The default value is suggested."
+                "description": "The amount of resources provided for the appication to run. More resources will run the application faster, but they will also have a higher cost per hour. The default value is suggested."
             }
         }
     },
@@ -46,9 +46,9 @@
         "diskSizeGb": 256,
         "diskName": "[concat('OSDisk',toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6)))]",
         "virtualMachineSize": {
-          "4-CPUs,16GB-RAM": "Standard_B4ms",
-          "8-CPUs,32GB-RAM": "Standard_B8ms",
-          "16-CPUs,64GB-RAM": "Standard_B16ms"
+          "4 CPUs,16 GB of RAM": "Standard_B4ms",
+          "8 CPUs,32 GB of RAM": "Standard_B8ms",
+          "16 CPUs,64 GB of RAM": "Standard_B16ms"
         }
 
         
