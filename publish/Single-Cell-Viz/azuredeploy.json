@@ -17,7 +17,7 @@
                 "description": "Specify the password that you want to use when you log into the application."
             }
         },
-        "VMsize": {
+        "Resources": {
             "type": "String",
             "defaultValue": "4-CPUs,16GB-RAM",
             "allowedValues": [
@@ -187,7 +187,7 @@
             ],
             "properties": {
                 "hardwareProfile": {
-                    "vmSize": "[variables('virtualMachineSize')[parameters('VMsize')]]"
+                    "vmSize": "[variables('virtualMachineSize')[parameters('Resources')]]"
                 },
                 "storageProfile": {
                     "osDisk": {
