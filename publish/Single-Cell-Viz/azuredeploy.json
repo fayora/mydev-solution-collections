@@ -1,0 +1,247 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "username": {
+            "maxLength": 20,
+            "minlength": 5,
+            "type": "string",
+            "metadata": {
+                "description": "The username for authentication into the scCloudMine web appication"
+            }
+        },
+        "password": {
+            "type": "securestring",
+            "minlength": 5,
+            "metadata": {
+                "description": "The password for authentication into the scCloudMine web appication. IMPORTANT: do not include '$' in the password!"
+            }
+        },
+        "virtualMachineSize": {
+            "type": "String",
+            "defaultValue": "Standard_B4ms",
+            "metadata": {
+                "description": "The size of the virtual machine where the web appication will be running. A larger virtual machine will run the application faster, but it will also cost more per hour. The default size is suggested."
+            }
+        }
+    },
+    "variables": {
+        "virtualMachineName": "[toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6))]",
+        "location": "[resourceGroup().location]",
+        "FQDN": "[concat('sccloudmine',toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6)))]",
+        "networkInterfaceName": "[concat('nic',toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6)))]",
+        "networkSecurityGroupName": "[concat('nsg',toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6)))]",
+        "subnetName": "default",
+        "virtualNetworkName": "[concat('vnet',toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6)))]",
+        "publicIPAddressName": "[concat('ip',toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6)))]",
+        "nsgId": "[resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
+        "vnetId": "[resourceId(resourceGroup().name,'Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
+        "subnetRef": "[concat(variables('vnetId'), '/subnets/', variables('subnetName'))]",
+        "VHDUri": "https://latrobeagribioapp.blob.core.windows.net/vhd/OSdisk.vhd",
+        "diskSizeGb": 256,
+        "diskName": "[concat('OSDisk',toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6)))]"
+
+        
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2021-03-01",
+            "name": "[variables('networkInterfaceName')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]",
+                "[concat('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
+                "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[variables('subnetRef')]"
+                            },
+                            "publicIPAddress": {
+                                "id": "[resourceId(resourceGroup().name, 'Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[variables('nsgId')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "apiVersion": "2019-02-01",
+            "name": "[variables('networkSecurityGroupName')]",
+            "location": "[variables('location')]",
+            "properties": {
+                "securityRules": [
+                {
+                    "name": "RDP",
+                    "properties": {
+                        "priority": 300,
+                        "protocol": "TCP",
+                        "access": "Allow",
+                        "direction": "Inbound",
+                        "sourceAddressPrefix": "*",
+                        "sourcePortRange": "*",
+                        "destinationAddressPrefix": "*",
+                        "destinationPortRange": "3389"
+                    }
+                },
+                {
+                    "name": "Port_81",
+                    "properties": {
+                        "priority": 100,
+                        "protocol": "TCP",
+                        "access": "Allow",
+                        "direction": "Inbound",
+                        "sourceAddressPrefix": "*",
+                        "sourcePortRange": "*",
+                        "destinationAddressPrefix": "*",
+                        "destinationPortRange": "80"
+                    }
+                }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-11-01",
+            "name": "[variables('virtualNetworkName')]",
+            "location": "[variables('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes":  [
+                            "172.16.0.0/16"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "default",
+                        "properties": {
+                            "addressPrefix": "172.16.0.0/24"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIpAddresses",
+            "apiVersion": "2019-02-01",
+            "name": "[variables('publicIPAddressName')]",
+            "location": "[variables('location')]",
+            "properties": {
+                "publicIPAddressVersion": "IPv4",
+                "publicIpAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('FQDN')]"
+                    }
+            }
+        },
+        {
+            "apiVersion": "2021-04-01",
+            "type": "Microsoft.Compute/disks",
+            "name": "[variables('diskName')]",
+            "location": "[variables('location')]",
+            "properties": {
+                "osType": "Windows",
+                "creationData": {
+                    "createOption": "import",
+                    "sourceUri": "[variables('VHDUri')]",
+                    "storageAccountId": "/subscriptions/74bdf443-9081-4138-9af1-61f8542cdb45/resourceGroups/LaTrobeAgriBio/providers/Microsoft.Storage/storageAccounts/latrobeagribioapp"
+                },
+                "diskSizeGB": "[variables('diskSizeGb')]",
+                "hyperVGeneration": "V1",
+                "networkAccessPolicy": "AllowAll"
+            },
+            "sku": {
+                "name": "Premium_LRS"
+            },
+            "tags": {}
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2021-07-01",
+            "name": "[variables('virtualMachineName')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]",
+                "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]",
+                "[resourceId('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
+                "[resourceId('Microsoft.Compute/disks/', variables('diskName'))]"
+            ],
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[parameters('virtualMachineSize')]"
+                },
+                "storageProfile": {
+                    "osDisk": {
+                        "createOption": "attach",
+                        "osType": "Windows",
+                        "managedDisk": {
+                            "id": "[resourceId('Microsoft.Compute/disks/', variables('diskName'))]"
+                        }
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true
+                    }
+                }
+            },
+            "resources": [
+                {
+                    "apiVersion": "2020-12-01",
+                    "type": "extensions",
+                    "name": "CustomScriptExtension",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[variables('virtualMachineName')]"
+                    ],
+                    "properties": {
+                        "publisher": "Microsoft.Compute",
+                        "type": "CustomScriptExtension",
+                        "typeHandlerVersion": "1.8",
+                        "autoUpgradeMinorVersion": true,
+                        "settings":{
+                            "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File configureAppSettings.ps1 ', ' ', parameters('username'), ' ' , base64(parameters('password')), ' ', reference(variables('publicIPAddressName')).dnsSettings.fqdn)]",
+                            "fileUris": [
+                                "https://latrobeagribioapp.blob.core.windows.net/vhd/configureAppSettings.ps1"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "outputs": {
+      "fqdn": {
+        "value": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]",
+        "type": "string"
+      },
+      "subscriptionId": {
+        "type": "string",
+        "value": "[subscription().subscriptionId]"
+      },
+      "resourceGroupName": {
+        "type": "string",
+        "value": "[resourceGroup().name]"
+      },
+      "deployedVirtualMachineName": {
+        "type": "string",
+        "value": "[variables('virtualMachineName')]"
+      }
+    }
+}

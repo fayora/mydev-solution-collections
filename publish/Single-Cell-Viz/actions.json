@@ -1,0 +1,15 @@
+[
+    {
+        "name": "Browse to the app",
+        "icon": "fa fa-plug",
+        "fileName": "getappurl.ps1",
+        "actionType": "Url"
+    },
+    {
+        "name": "Start or stop the app",
+        "icon": "fa fa-power-off",
+        "fileName": "turnVMOnOff.ps1",
+        "confirmationMessage": "Are you sure that you want to stop or start the app? If you are stopping it, remember to start it before try accessing it again.",
+        "actionType": "Notification"
+    }
+]
