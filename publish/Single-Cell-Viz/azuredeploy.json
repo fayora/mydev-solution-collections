@@ -49,11 +49,24 @@
           "4-CPUs,16GB-RAM": "Standard_B4ms",
           "8-CPUs,32GB-RAM": "Standard_B8ms",
           "16-CPUs,64GB-RAM": "Standard_B16ms"
-        }
+        },
+        "vhdStorageName": "[concat('stvhd', uniqueString(resourceGroup().id))]",
+        "vhdStorageType": "Standard_LRS"
 
-        
     },
     "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('vhdStorageName')]",
+            "apiVersion": "2015-06-15",
+            "location": "[resourceGroup().location]",
+            "tags": {
+              "displayName": "StorageAccount"
+            },
+            "properties": {
+              "accountType": "[variables('vhdStorageType')]"
+            }
+         },
         {
             "type": "Microsoft.Network/networkInterfaces",
             "apiVersion": "2020-05-01",
@@ -141,28 +154,15 @@
             }
         },
         {
-            "apiVersion": "2018-09-30",
-            "type": "Microsoft.Compute/disks",
-            "name": "[variables('diskName')]",
-            "location": "[variables('location')]",
-            "properties": {
-                "osType": "Windows",
-                "creationData": {
-                    "createOption": "Import",
-                    "sourceUri": "[variables('VHDUri')]"
-                   }
-            }
-        },
-        {
             "type": "Microsoft.Compute/virtualMachines",
             "apiVersion": "2021-07-01",
             "name": "[variables('virtualMachineName')]",
             "location": "[variables('location')]",
             "dependsOn": [
+                "[concat('Microsoft.Storage/storageAccounts/', variables('vhdStorageName'))]",
                 "[resourceId('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]",
                 "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]",
-                "[resourceId('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
-                "[resourceId('Microsoft.Compute/disks/', variables('diskName'))]"
+                "[resourceId('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]"
             ],
             "properties": {
                 "hardwareProfile": {
@@ -170,11 +170,13 @@
                 },
                 "storageProfile": {
                     "osDisk": {
-                        "createOption": "attach",
+                        "name": "osdisk",
                         "osType": "Windows",
-                        "managedDisk": {
-                            "id": "[resourceId('Microsoft.Compute/disks/', variables('diskName'))]"
-                        }
+                        "vhd": {
+                            "uri": "[variables('VHDUri')]"
+                        },
+                        "caching": "ReadWrite",
+                        "createOption": "Attach"
                     }
                 },
                 "networkProfile": {
@@ -183,11 +185,6 @@
                             "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
                         }
                     ]
-                },
-                "diagnosticsProfile": {
-                    "bootDiagnostics": {
-                        "enabled": true
-                    }
                 }
             },
             "resources": [
