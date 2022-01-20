@@ -1,5 +1,5 @@
 {
-    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
         "username": {
@@ -18,7 +18,7 @@
             }
         },
         "Resources": {
-            "type": "String",
+            "type": "string",
             "defaultValue": "4-CPUs,16GB-RAM",
             "allowedValues": [
               "4-CPUs,16GB-RAM",
@@ -56,7 +56,7 @@
     "resources": [
         {
             "type": "Microsoft.Network/networkInterfaces",
-            "apiVersion": "2021-03-01",
+            "apiVersion": "2020-05-01",
             "name": "[variables('networkInterfaceName')]",
             "location": "[variables('location')]",
             "dependsOn": [
@@ -85,26 +85,13 @@
         },
         {
             "type": "Microsoft.Network/networkSecurityGroups",
-            "apiVersion": "2019-02-01",
+            "apiVersion": "2020-05-01",
             "name": "[variables('networkSecurityGroupName')]",
             "location": "[variables('location')]",
             "properties": {
                 "securityRules": [
                 {
-                    "name": "RDP",
-                    "properties": {
-                        "priority": 300,
-                        "protocol": "TCP",
-                        "access": "Allow",
-                        "direction": "Inbound",
-                        "sourceAddressPrefix": "*",
-                        "sourcePortRange": "*",
-                        "destinationAddressPrefix": "*",
-                        "destinationPortRange": "3389"
-                    }
-                },
-                {
-                    "name": "Port_81",
+                    "name": "Port_80",
                     "properties": {
                         "priority": 100,
                         "protocol": "TCP",
@@ -154,25 +141,17 @@
             }
         },
         {
-            "apiVersion": "2021-04-01",
+            "apiVersion": "2018-09-30",
             "type": "Microsoft.Compute/disks",
             "name": "[variables('diskName')]",
             "location": "[variables('location')]",
             "properties": {
                 "osType": "Windows",
                 "creationData": {
-                    "createOption": "import",
-                    "sourceUri": "[variables('VHDUri')]",
-                    "storageAccountId": "/subscriptions/74bdf443-9081-4138-9af1-61f8542cdb45/resourceGroups/LaTrobeAgriBio/providers/Microsoft.Storage/storageAccounts/latrobeagribioapp"
-                },
-                "diskSizeGB": "[variables('diskSizeGb')]",
-                "hyperVGeneration": "V1",
-                "networkAccessPolicy": "AllowAll"
-            },
-            "sku": {
-                "name": "Premium_LRS"
-            },
-            "tags": {}
+                    "createOption": "Import",
+                    "sourceUri": "[variables('VHDUri')]"
+                   }
+            }
         },
         {
             "type": "Microsoft.Compute/virtualMachines",
@@ -225,6 +204,7 @@
                         "type": "CustomScriptExtension",
                         "typeHandlerVersion": "1.8",
                         "autoUpgradeMinorVersion": true,
+                        "protectedSettings": {},
                         "settings":{
                             "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File configureAppSettings.ps1 ', ' ', parameters('username'), ' ' , base64(parameters('password')), ' ', reference(variables('publicIPAddressName')).dnsSettings.fqdn)]",
                             "fileUris": [
@@ -253,5 +233,5 @@
         "type": "string",
         "value": "[variables('virtualMachineName')]"
       }
-    }
+  }
 }
