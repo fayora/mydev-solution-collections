@@ -219,7 +219,7 @@
     ],
     "outputs": {
     "deployedVirtualMachineName": {
-        "value:": "[reference(variables('virtualMachineName'))]",
+        "value:": "[variables('virtualMachineName')]",
         "type": "string"
     },
     "fqdn": {
