@@ -1,6 +1,6 @@
 {
     "name": "Single-Cell 3D Visualisation App",
-    "description": "Deploys the Single Cell Cloud Mine (scCloudMine) demonstration application for the visualisation, comparison and discovery of single-cell transcriptomic data",
+    "description": "Deploys the Single Cell Cloud Mine (scCloudMine) demonstration application for the visualisation, comparison and discovery of single-cell transcriptomic data. Please contact BizData to discuss a production deployment of this solution.",
     "version": "2022.02.25.1",
     "icon": "fa fa-flask",
     "upgradeAllowed": true,
