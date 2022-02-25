@@ -1,10 +1,8 @@
 [CmdletBinding()]
 [OutputType([psobject])]
 param (
-    [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
     [string]$subscriptionId,
-    [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
-    [string]$resourceGroupName1,
+    [string]$resourceGroupName,
     [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
     [string]$deployedVirtualMachineName
 )
@@ -23,7 +21,7 @@ process {
         
         # Use the access token to get resource information for the VM
         $currentStatusResponse = Invoke-WebRequest `
-            -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName1/providers/Microsoft.Compute/virtualMachines/$deployedVirtualMachineName/instanceView?api-version=2021-03-01" `
+            -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Compute/virtualMachines/$deployedVirtualMachineName/instanceView?api-version=2021-03-01" `
             -Method GET `
             -ContentType "application/json" `
             -Headers @{ Authorization = "Bearer $access_token" } 
@@ -34,7 +32,7 @@ process {
         if ($vmStatus -eq "VM running") {
             # The VM is currently running, so stopping it
             $statusChangeResponse = Invoke-WebRequest `
-            -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName1/providers/Microsoft.Compute/virtualMachines/$deployedVirtualMachineName/deallocate?api-version=2021-03-01" `
+            -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Compute/virtualMachines/$deployedVirtualMachineName/deallocate?api-version=2021-03-01" `
             -Method POST `
             -ContentType "application/json" `
             -Headers @{ Authorization = "Bearer $access_token" } 
@@ -46,7 +44,7 @@ process {
         } elseif ($vmStatus -eq "VM deallocated") {
              # The VM is currently stopped, so starting it
              $statusChangeResponse = Invoke-WebRequest `
-             -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName1/providers/Microsoft.Compute/virtualMachines/$deployedVirtualMachineName/start?api-version=2021-03-01" `
+             -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Compute/virtualMachines/$deployedVirtualMachineName/start?api-version=2021-03-01" `
              -Method POST `
              -ContentType "application/json" `
              -Headers @{ Authorization = "Bearer $access_token" } 
