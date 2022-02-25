@@ -19,7 +19,7 @@
         }
     },
     "variables": {
-        "virtualMachineName": "[toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6))]",
+        "uniqueVMName": "[toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6))]",
         "virtualMachineSize": "Standard_B8ms",
         "location": "[resourceGroup().location]",
         "FQDN": "[concat('sccloudmine',toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6)))]",
@@ -135,7 +135,7 @@
         {
             "type": "Microsoft.Compute/virtualMachines",
             "apiVersion": "2021-07-01",
-            "name": "[variables('virtualMachineName')]",
+            "name": "[variables('uniqueVMName')]",
             "location": "[variables('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]",
@@ -162,7 +162,7 @@
                     }
                 },
                 "osProfile": {
-                    "computerName": "[variables('virtualMachineName')]",
+                    "computerName": "[variables('uniqueVMName')]",
                     "adminUsername": "[parameters('username')]",
                     "adminPassword": "[parameters('password')]",
                     "windowsConfiguration": {
@@ -199,7 +199,7 @@
                     "name": "CustomScriptExtension",
                     "location": "[resourceGroup().location]",
                     "dependsOn": [
-                        "[variables('virtualMachineName')]"
+                        "[variables('uniqueVMName')]"
                     ],
                     "properties": {
                         "publisher": "Microsoft.Compute",
@@ -218,11 +218,6 @@
         }
     ],
     "outputs": {
-        
-        "deployedVirtualMachineName": {
-            "value": "[reference(variables('virtualMachineName'))]",
-            "type": "string"
-        },
         "fqdn": {
             "value": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]",
             "type": "string"
@@ -230,6 +225,10 @@
         "ipaddress": {
             "value": "[reference(variables('publicIPAddressName')).ipAddress]",
             "type": "string"
-        }
+        },
+        "deployedVirtualMachineName": {
+            "type": "string",
+            "value": "[variables('uniqueVMName')]"
+       }
     }
 }
