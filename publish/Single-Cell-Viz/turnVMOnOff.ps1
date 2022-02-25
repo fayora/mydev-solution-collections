@@ -39,7 +39,7 @@ process {
 
             ###NEEDS CODE TO CHECK 200 vs. DIFF RETURN! <--LOOK AT LOOME API CODE
 
-            $result = "The VM is currently stopping."
+            $result = "The app is currently stopping."
 
         } elseif ($vmStatus -eq "VM deallocated") {
              # The VM is currently stopped, so starting it
@@ -51,15 +51,15 @@ process {
 
              ###NEEDS CODE TO CHECK 200 vs. DIFF RETURN! <--LOOK AT LOOME API CODE
 
-             $result = "The VM is currently starting."
+             $result = "The app is currently starting."
         } else {
-            $result = "The VM is currently in a transitioning state: $vmStatus. Wait a couple of minutes and try again."
+            $result = "The app is currently in a transitioning state: $vmStatus. Wait a couple of minutes and try again."
         }
         New-Object -Property @{ReturnText = "$result" } -TypeName psobject
     }
     catch {
-        Write-Error "Unable to determine the status of this VM. Please try again in a few minutes." $_.Exception.Message
-        New-Object -Property @{ReturnText = "Unable to determine the status of this VM. Please try again in a few minutes. " + $_.Exception.Message } -TypeName psobject
+        Write-Error "Unable to determine the current status of this app. Please try again in a few minutes." $_.Exception.Message
+        New-Object -Property @{ReturnText = "Unable to determine the current status of this app. Please try again in a few minutes. " + $_.Exception.Message } -TypeName psobject
     }
 }
 
