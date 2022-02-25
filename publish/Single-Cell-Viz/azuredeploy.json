@@ -16,17 +16,11 @@
             "metadata": {
                 "description": "The password for authentication into the scCloudMine web appication. IMPORTANT: do not include '$' in the password!"
             }
-        },
-        "virtualMachineSize": {
-            "type": "string",
-            "defaultValue": "Standard_B4ms",
-            "metadata": {
-                "description": "The size of the virtual machine where the web appication will be running. A larger virtual machine will run the application faster, but it will also cost more per hour. The default size is suggested."
-            }
         }
     },
     "variables": {
         "virtualMachineName": "[toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6))]",
+        "virtualMachineSize": "Standard_B8ms",
         "location": "[resourceGroup().location]",
         "FQDN": "[concat('sccloudmine',toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6)))]",
         "networkInterfaceName": "[concat('nic',toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6)))]",
@@ -150,7 +144,7 @@
             ],
             "properties": {
                 "hardwareProfile": {
-                    "vmSize": "[parameters('virtualMachineSize')]"
+                    "vmSize": "[variables('virtualMachineSize')]"
                 },
                 "storageProfile": {
                     "imageReference": {
