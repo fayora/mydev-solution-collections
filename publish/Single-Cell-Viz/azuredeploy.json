@@ -218,6 +218,10 @@
         }
     ],
     "outputs": {
+    "deployedVirtualMachineName": {
+        "value:": "[variables('virtualMachineName')]",
+        "type": "string"
+    },
     "fqdn": {
         "value": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]",
         "type": "string"
