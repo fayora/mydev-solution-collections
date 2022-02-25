@@ -1,7 +1,7 @@
 {
     "name": "Single-Cell 3D Visualisation App",
-    "description": "Deploys the Single Cell Cloud Mine (scCloudMine) application for the visualisation, comparison and discovery of single-cell transcriptomic data",
-    "version": "2022.01.19.1",
+    "description": "Deploys the Single Cell Cloud Mine (scCloudMine) demonstration application for the visualisation, comparison and discovery of single-cell transcriptomic data",
+    "version": "2022.02.25.1",
     "icon": "fa fa-flask",
     "upgradeAllowed": true,
     "deploymentMode": "User",

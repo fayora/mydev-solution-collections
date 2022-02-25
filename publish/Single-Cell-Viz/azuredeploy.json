@@ -7,26 +7,21 @@
             "minlength": 5,
             "type": "string",
             "metadata": {
-                "description": "Specify the username that you want to use when you log into the application."
+                "description": "The username for authentication into the scCloudMine web appication"
             }
         },
         "password": {
             "type": "securestring",
             "minlength": 5,
             "metadata": {
-                "description": "Specify the password that you want to use when you log into the application."
+                "description": "The password for authentication into the scCloudMine web appication. IMPORTANT: do not include '$' in the password!"
             }
         },
-        "Resources": {
+        "virtualMachineSize": {
             "type": "string",
-            "defaultValue": "4-CPUs,16GB-RAM",
-            "allowedValues": [
-              "4-CPUs,16GB-RAM",
-              "8-CPUs,32GB-RAM",
-              "16-CPUs,64GB-RAM"
-        ],
+            "defaultValue": "Standard_B4ms",
             "metadata": {
-                "description": "The amount of resources provided for the appication to run. More resources will run the application faster, but they will also have a higher cost per hour. The default value is suggested."
+                "description": "The size of the virtual machine where the web appication will be running. A larger virtual machine will run the application faster, but it will also cost more per hour. The default size is suggested."
             }
         }
     },
@@ -41,35 +36,12 @@
         "publicIPAddressName": "[concat('ip',toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6)))]",
         "nsgId": "[resourceId(resourceGroup().name, 'Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
         "vnetId": "[resourceId(resourceGroup().name,'Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
-        "subnetRef": "[concat(variables('vnetId'), '/subnets/', variables('subnetName'))]",
-        "VHDUri": "https://latrobeagribioapp.blob.core.windows.net/vhd/OSdisk.vhd",
-        "diskSizeGb": 256,
-        "diskName": "[concat('OSDisk',toLower(take(uniqueString(subscription().subscriptionId, resourceGroup().id), 6)))]",
-        "virtualMachineSize": {
-          "4-CPUs,16GB-RAM": "Standard_B4ms",
-          "8-CPUs,32GB-RAM": "Standard_B8ms",
-          "16-CPUs,64GB-RAM": "Standard_B16ms"
-        },
-        "vhdStorageName": "[concat('stvhd', uniqueString(resourceGroup().id))]",
-        "vhdStorageType": "Standard_LRS"
-
+        "subnetRef": "[concat(variables('vnetId'), '/subnets/', variables('subnetName'))]"
     },
     "resources": [
         {
-            "type": "Microsoft.Storage/storageAccounts",
-            "name": "[variables('vhdStorageName')]",
-            "apiVersion": "2015-06-15",
-            "location": "[resourceGroup().location]",
-            "tags": {
-              "displayName": "StorageAccount"
-            },
-            "properties": {
-              "accountType": "[variables('vhdStorageType')]"
-            }
-         },
-        {
             "type": "Microsoft.Network/networkInterfaces",
-            "apiVersion": "2020-05-01",
+            "apiVersion": "2021-03-01",
             "name": "[variables('networkInterfaceName')]",
             "location": "[variables('location')]",
             "dependsOn": [
@@ -98,11 +70,24 @@
         },
         {
             "type": "Microsoft.Network/networkSecurityGroups",
-            "apiVersion": "2020-05-01",
+            "apiVersion": "2019-02-01",
             "name": "[variables('networkSecurityGroupName')]",
             "location": "[variables('location')]",
             "properties": {
                 "securityRules": [
+                // {
+                //     "name": "RDP",
+                //     "properties": {
+                //         "priority": 300,
+                //         "protocol": "TCP",
+                //         "access": "Allow",
+                //         "direction": "Inbound",
+                //         "sourceAddressPrefix": "*",
+                //         "sourcePortRange": "*",
+                //         "destinationAddressPrefix": "*",
+                //         "destinationPortRange": "3389"
+                //     }
+                // },
                 {
                     "name": "Port_80",
                     "properties": {
@@ -159,24 +144,40 @@
             "name": "[variables('virtualMachineName')]",
             "location": "[variables('location')]",
             "dependsOn": [
-                "[concat('Microsoft.Storage/storageAccounts/', variables('vhdStorageName'))]",
                 "[resourceId('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]",
                 "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]",
                 "[resourceId('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]"
             ],
             "properties": {
                 "hardwareProfile": {
-                    "vmSize": "[variables('virtualMachineSize')[parameters('Resources')]]"
+                    "vmSize": "[parameters('virtualMachineSize')]"
                 },
                 "storageProfile": {
+                    "imageReference": {
+                        "publisher": "bizdataloome",
+                        "offer": "sccloudmine",
+                        "sku": "loome-assist_sccloudmine",
+                        "version": "1.0.0"
+                    },
                     "osDisk": {
-                        "name": "osdisk",
-                        "osType": "Windows",
-                        "vhd": {
-                            "uri": "[variables('VHDUri')]"
+                        "createOption": "fromImage",
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
                         },
-                        "caching": "ReadWrite",
-                        "createOption": "Attach"
+                        "deleteOption": "Delete"
+                    }
+                },
+                "osProfile": {
+                    "computerName": "[variables('virtualMachineName')]",
+                    "adminUsername": "[parameters('username')]",
+                    "adminPassword": "[parameters('password')]",
+                    "windowsConfiguration": {
+                        "enableAutomaticUpdates": true,
+                        "provisionVmAgent": true,
+                        "patchSettings": {
+                            "enableHotpatching": false,
+                            "patchMode": "AutomaticByOS"
+                        }
                     }
                 },
                 "networkProfile": {
@@ -185,7 +186,17 @@
                             "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
                         }
                     ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true
+                    }
                 }
+            },
+            "plan": {
+                "publisher": "bizdataloome",
+                "name": "loome-assist_sccloudmine",
+                "product": "sccloudmine"
             },
             "resources": [
                 {
@@ -201,7 +212,6 @@
                         "type": "CustomScriptExtension",
                         "typeHandlerVersion": "1.8",
                         "autoUpgradeMinorVersion": true,
-                        "protectedSettings": {},
                         "settings":{
                             "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -File configureAppSettings.ps1 ', ' ', parameters('username'), ' ' , base64(parameters('password')), ' ', reference(variables('publicIPAddressName')).dnsSettings.fqdn)]",
                             "fileUris": [
@@ -214,21 +224,13 @@
         }
     ],
     "outputs": {
-      "fqdn": {
+    "fqdn": {
         "value": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]",
         "type": "string"
-      },
-      "subscriptionId": {
-        "type": "string",
-        "value": "[subscription().subscriptionId]"
-      },
-      "resourceGroupName": {
-        "type": "string",
-        "value": "[resourceGroup().name]"
-      },
-      "deployedVirtualMachineName": {
-        "type": "string",
-        "value": "[variables('virtualMachineName')]"
-      }
-  }
+    },
+    "ipaddress": {
+        "value": "[reference(variables('publicIPAddressName')).ipAddress]",
+        "type": "string"
+    }
+    }
 }
