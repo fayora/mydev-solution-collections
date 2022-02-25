@@ -14,7 +14,7 @@
             "type": "securestring",
             "minlength": 5,
             "metadata": {
-                "description": "The password for authentication into the scCloudMine web appication. IMPORTANT: do not include '$' in the password!"
+                "description": "The password for authentication into the scCloudMine web appication."
             }
         }
     },
@@ -218,17 +218,17 @@
         }
     ],
     "outputs": {
-    "deployedVirtualMachineName": {
-        "value:": "[variables('virtualMachineName')]",
-        "type": "string"
-    },
-    "fqdn": {
-        "value": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]",
-        "type": "string"
-    },
-    "ipaddress": {
-        "value": "[reference(variables('publicIPAddressName')).ipAddress]",
-        "type": "string"
-    }
+        "deployedVirtualMachineName": {
+            "value:": "[variables('virtualMachineName')]",
+            "type": "string"
+        },
+        "fqdn": {
+            "value": "[reference(variables('publicIPAddressName')).dnsSettings.fqdn]",
+            "type": "string"
+        },
+        "ipaddress": {
+            "value": "[reference(variables('publicIPAddressName')).ipAddress]",
+            "type": "string"
+        }
     }
 }
