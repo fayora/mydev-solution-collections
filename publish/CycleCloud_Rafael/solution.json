@@ -1,0 +1,8 @@
+{
+    "name": "Deploy a managed cyclecloud machine",
+    "description": "This template deploys a managed instance cyclecloud VM. You can provide the VM Name, OS Version, VM size, admin username and password.",
+    "version": "2021.19.07.1",
+    "icon": "fa fa-linux",
+    "upgradeAllowed": true,
+    "deploymentMode": "Incremental"
+}
