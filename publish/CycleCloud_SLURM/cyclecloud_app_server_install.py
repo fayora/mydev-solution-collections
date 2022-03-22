@@ -471,7 +471,7 @@ def import_bizcluster(vm_metadata):
     # *IMPORTANT: this string value has a dependency on the name specified to the subnet in the ARM template that deploys the CycleCloud App 
     subnet_name = "compute"
     # *********************************************************
-    subnet_string_value = resource_group + "/vnet/" + vm_name + subnet_name
+    subnet_string_value = resource_group + "/vnet" + vm_name + "/" + subnet_name
     subnet_param = "SubnetId=" + subnet_string_value
     print("The subnet for the worker nodes is: %s" % subnet_param)
     
@@ -613,11 +613,10 @@ def main():
     install_cc_cli()
 
     vm_metadata = get_vm_metadata()
-    # decoded_password = base64.b64decode(args.password).decode('ascii')
-    # decoded_publicKey = base64.b64decode(args.publickey).decode('ascii')
 
-    decoded_password = args.password
-    decoded_publicKey = args.publickey
+    # We decode the password and publick key back to an ASCII string because they are passed as Base64 to avoid issues with special characters
+    decoded_password = base64.b64decode(args.password).decode('ascii')
+    decoded_publicKey = base64.b64decode(args.publickey).decode('ascii')
 
     print("The raw password is: %s" % args.password)
     print("The decoded password is: %s" % decoded_password)
