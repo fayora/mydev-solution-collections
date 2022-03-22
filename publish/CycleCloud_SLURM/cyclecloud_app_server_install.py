@@ -457,12 +457,12 @@ def install_pre_req():
 
 def add_slurm_fix():
      # Download the file with the Slurm fix and save it in the required path 
-    _catch_sys_error(["wget","-q","-O","/tmp/cluster-init-slurm-2.5.1.txt","https://raw.githubusercontent.com/rafdesouza/rafbizdata/main/cluster-init-slurm-2.5.1.txt"])
+    _catch_sys_error(["wget","-q","-O","/tmp/cluster-init-slurm-2.5.1.txt","https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/CycleCloud_SLURM/cluster-init-slurm-2.5.1.txt"])
     _catch_sys_error(["mv", "/tmp/cluster-init-slurm-2.5.1.txt", "/opt/cycle_server/config/data/"])
 
 def import_bizcluster(vm_metadata):
-    _catch_sys_error(["sudo", "wget", "-q", "-O", "/tmp/slurm_template.ini", "https://raw.githubusercontent.com/rafdesouza/rafbizdata/main/slurm_template.ini"])
-    _catch_sys_error(["sudo", "wget", "-q", "-O", "/tmp/slurm_params.json", "https://raw.githubusercontent.com/rafdesouza/rafbizdata/main/slurm_params.json"])
+    _catch_sys_error(["sudo", "wget", "-q", "-O", "/tmp/slurm_template.ini", "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/CycleCloud_SLURM/slurm_template.ini"])
+    _catch_sys_error(["sudo", "wget", "-q", "-O", "/tmp/slurm_params.json", "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/CycleCloud_SLURM/slurm_params.json"])
 
     # Construct the Subnet ID value by using the information in the VM metadata for Resource Group and the VM name
     resource_group = vm_metadata["compute"]["resourceGroupName"]

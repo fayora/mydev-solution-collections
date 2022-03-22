@@ -56,7 +56,7 @@
             "V100-GPU,6-CPUs,112GB-RAM": "Standard_NC6s_v3"
         },
         "workerVMSize": "[variables('WorkerSize')[parameters('Size of Worker Nodes')]]",
-        "installScriptURL": "https://bizdataresearch.blob.core.windows.net/public/cyclecloud_app_server_install.py",
+        "installScriptURL": "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/CycleCloud_SLURM/cyclecloud_app_server_install.py",
         "networkApiVersion": "2017-06-01",
         "contributor": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
         "nestedDeploymentName": "[concat('dep', variables('uniqueHash'))]" 
