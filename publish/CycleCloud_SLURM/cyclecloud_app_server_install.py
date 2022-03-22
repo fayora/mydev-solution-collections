@@ -455,6 +455,33 @@ def install_pre_req():
     # Not strictly needed, but it's useful to have the AZ CLI
     _catch_sys_error(["apt", "install", "-y", "azure-cli"])
 
+def add_slurm_fix():
+     # Download the file with the Slurm fix and save it in the required path 
+    _catch_sys_error(["wget","-q","-O","/tmp/cluster-init-slurm-2.5.1.txt","https://raw.githubusercontent.com/rafdesouza/rafbizdata/main/cluster-init-slurm-2.5.1.txt"])
+    _catch_sys_error(["mv", "/tmp/cluster-init-slurm-2.5.1.txt", "/opt/cycle_server/config/data/"])
+
+def import_bizcluster(vm_metadata):
+    _catch_sys_error(["sudo", "wget", "-q", "-O", "/tmp/slurm_template.ini", "https://raw.githubusercontent.com/rafdesouza/rafbizdata/main/slurm_template.ini"])
+    _catch_sys_error(["sudo", "wget", "-q", "-O", "/tmp/slurm_params.json", "https://raw.githubusercontent.com/rafdesouza/rafbizdata/main/slurm_params.json"])
+
+    # Construct the Subnet ID value by using the information in the VM metadata for Resource Group and the VM name
+    resource_group = vm_metadata["compute"]["resourceGroupName"]
+    vm_name = vm_metadata["compute"]["name"]
+    # *********************************************************
+    # *IMPORTANT: this string value has a dependency on the name specified to the subnet in the ARM template that deploys the CycleCloud App 
+    subnet_name = "compute"
+    # *********************************************************
+    subnet_string_value = resource_group + "/vnet/" + vm_name + subnet_name
+    subnet_param = "SubnetId=" + subnet_string_value
+    print("The subnet for the worker nodes is: %s" % subnet_param)
+    
+    # We import the cluster, passing the subnet name as a parameter override
+    _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", "/tmp/slurm_template.ini", "-p", "/tmp/slurm_params.json", "--parameter-override", subnet_param])
+
+
+def start_cluster():
+    _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "Slurm"])
+    
 def main():
 
     parser = argparse.ArgumentParser(description="usage: %prog [options]")
@@ -586,8 +613,11 @@ def main():
     install_cc_cli()
 
     vm_metadata = get_vm_metadata()
-    decoded_password = base64.b64decode(args.password).decode('ascii')
-    decoded_publicKey = base64.b64decode(args.publickey).decode('ascii')
+    # decoded_password = base64.b64decode(args.password).decode('ascii')
+    # decoded_publicKey = base64.b64decode(args.publickey).decode('ascii')
+
+    decoded_password = args.password
+    decoded_publicKey = args.publickey
 
     print("The raw password is: %s" % args.password)
     print("The decoded password is: %s" % decoded_password)
@@ -611,6 +641,17 @@ def main():
 
     #  Create user requires root privileges
     create_user_credential(args.username, decoded_publicKey)
+
+    # Sleep for 5 minutes while CycleCloud retrieves Azure information and finish its internal configuration
+    sleep(300)
+
+    # Add the temporary fix provided by the CycleCloud Engineerig team for SLURM, and then restart the CycleCloud server
+    add_slurm_fix()
+    start_cc()
+
+    # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
+    import_bizcluster(vm_metadata)
+    start_cluster()
 
     clean_up()
 
