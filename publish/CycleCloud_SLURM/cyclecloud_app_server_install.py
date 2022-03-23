@@ -670,7 +670,7 @@ def main():
 
     # Add the temporary fix provided by the CycleCloud Engineerig team for SLURM, and then restart the CycleCloud server
     add_slurm_fix()
-    start_cc()
+    #start_cc()
 
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
     import_cluster(vm_metadata)
