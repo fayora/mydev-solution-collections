@@ -42,7 +42,7 @@
         "cycleNsgName": "[concat('nsg', variables('cycleName'))]",
         "cycleIPName": "[concat('ip', variables('cycleName'))]",
         "cycleSubnet": "cycle",
-        "cyclecloudVmSize": "Standard_B4ms",
+        "cyclecloudVmSize": "Standard_B8ms",
         "cyclecloudVmStorage": "Premium_LRS",
         "azureSovereignCloud": "public",
         "vnetName": "[concat('vnet', variables('cycleName'))]",
