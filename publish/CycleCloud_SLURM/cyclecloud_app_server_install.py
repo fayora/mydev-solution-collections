@@ -502,7 +502,7 @@ def import_cluster(vm_metadata):
 
 
 def start_cluster():
-    _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "Slurm"])
+    _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "Slurm-Custom"])
     
 def main():
 
