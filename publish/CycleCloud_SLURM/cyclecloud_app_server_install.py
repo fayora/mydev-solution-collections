@@ -662,6 +662,8 @@ def main():
     # Sleep for 5 minutes while CycleCloud retrieves Azure information and finish its internal configuration
     sleep(300)
 
+    clean_up()
+
     # Add the temporary fix provided by the CycleCloud Engineerig team for SLURM, and then restart the CycleCloud server
     add_slurm_fix()
     start_cc()
@@ -669,8 +671,6 @@ def main():
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
     import_cluster(vm_metadata)
     start_cluster()
-
-    clean_up()
 
 if __name__ == "__main__":
     try:
