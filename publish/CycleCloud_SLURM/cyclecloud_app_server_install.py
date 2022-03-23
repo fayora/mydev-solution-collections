@@ -645,15 +645,14 @@ def main():
     sleep(300)
 
     # Add the temporary fix provided by the CycleCloud Engineerig team for SLURM, and then restart the CycleCloud server
-    add_slurm_fix()
-    start_cc()
+    #add_slurm_fix()
+    #start_cc()
 
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
     import_bizcluster(vm_metadata)
     start_cluster()
 
     clean_up()
-
 
 if __name__ == "__main__":
     try:
