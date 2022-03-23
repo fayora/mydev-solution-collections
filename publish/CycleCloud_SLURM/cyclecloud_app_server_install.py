@@ -431,6 +431,10 @@ def configure_msft_repos():
 
 def configure_msft_apt_repos():
     print("Configuring Microsoft apt repository for CycleCloud install")
+
+    # First clear the apt lists to avoid error code 100
+    _catch_sys_error (["rm", "-rf", "/var/lib/apt/lists/*"])
+    
     _catch_sys_error(
         ["wget", "-q", "-O", "/tmp/microsoft.asc", "https://packages.microsoft.com/keys/microsoft.asc"])
     _catch_sys_error(
