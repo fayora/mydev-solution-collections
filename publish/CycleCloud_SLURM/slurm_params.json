@@ -38,6 +38,7 @@
     "HTCSpotMaxPrice" : -1,
     "HTCClusterInitSpecs" : null,
     "HTCWorkerOSDiskSize" : 32,
+    "HPCWorkerOSDiskSize" : 32,
     "SharedDiskSize" : 32,
     "About shared" : null,
     "Additional NFS Mount Readme" : null,
