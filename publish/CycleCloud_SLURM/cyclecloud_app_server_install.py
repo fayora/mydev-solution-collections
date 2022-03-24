@@ -373,7 +373,6 @@ def start_cc():
             else:
                 raise 
 
-
 def modify_cs_config(options):
     print("Editing CycleCloud server system properties file")
     # modify the CS config files
@@ -435,9 +434,6 @@ def download_install_cc():
     print("Installing Azure CycleCloud server")
     _catch_sys_error(["apt", "install", "-y", "cyclecloud8"])
 
-def configure_msft_repos():
-    configure_msft_apt_repos()
-
 def configure_msft_apt_repos():
     print("Configuring Microsoft apt repository for CycleCloud install")
 
@@ -457,6 +453,7 @@ def configure_msft_apt_repos():
 
     with open('/etc/apt/sources.list.d/cyclecloud.list', 'w') as f:
         f.write("deb [arch=amd64] https://packages.microsoft.com/repos/cyclecloud {} main".format(lsb_release))
+    _catch_sys_error(["apt-get", "install", "-y", "apt-transport-https"]) 
     _catch_sys_error(["apt", "update", "-y"])
 
 def install_pre_req():
@@ -629,7 +626,7 @@ def main():
     print("Debugging arguments: %s" % args)
 
     if not already_installed():
-        configure_msft_repos()
+        configure_msft_apt_repos()
         install_pre_req()
         download_install_cc()
         modify_cs_config(options = {'webServerMaxHeapSize': args.webServerMaxHeapSize,
