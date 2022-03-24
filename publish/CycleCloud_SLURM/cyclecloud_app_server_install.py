@@ -672,7 +672,7 @@ def main():
     # Sleep for 5 minutes while CycleCloud retrieves Azure information and finish its internal configuration
     sleep(300)
 
-    clean_up()
+    #clean_up()
 
     # Add the temporary fix provided by the CycleCloud Engineerig team for SLURM, and then restart the CycleCloud server
     add_slurm_fix()
