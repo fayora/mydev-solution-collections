@@ -251,18 +251,27 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
                 get_vm_managed_identity()
 
             # create the cloud provided account
-                # Retry await_startup in case it takes much longer than expected 
+            # Retry in case it takes much longer than expected 
             # (this is common in local testing with limited compute resources)
             max_tries = 10
             created = False
             print("Registering Azure subscription in CycleCloud")
-            try:
-                cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
-                output = subprocess.run(cmd_list, capture_output=True).stdout
-                print("Command list:", cmd_list)
-                print("Command output:", output)
-            except CalledProcessError as e:
-                print("Error adding the subscription")
+
+            while not created:
+                try:
+                    max_tries -= 1
+                    cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
+                    output = subprocess.run(cmd_list, capture_output=True).stdout
+                    created = True
+                    print("Command list:", cmd_list)
+                    print("Command output:", output)
+                except:
+                    if max_tries >  0:
+                            print("Retrying after 10 seconds...")
+                            sleep(10)
+                    else:
+                        print("Error adding the subscription")
+                        raise                    
 
 def initialize_cyclecloud_cli(admin_user, cyclecloud_admin_pw, webserver_port):
     print("Setting up azure account in CycleCloud and initializing cyclecloud CLI")
