@@ -34,7 +34,7 @@
     "variables": {
         "computeApiVersion": "2019-03-01",
         "username": "hpcadmin",
-        "password": "LoomeRockS12",
+        "password": "LoomeRock$12",
         "resourceLocation": "[resourceGroup().location]",
         "dateTimeString": "[substring(deployment().name, 19, 14)]",
         "cycleName": "[concat('ccvm', variables('dateTimeString'))]",
