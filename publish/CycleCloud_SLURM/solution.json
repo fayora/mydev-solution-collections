@@ -1,6 +1,6 @@
 {
-    "name": "Deploy a managed cyclecloud machine",
-    "description": "This template deploys a managed instance cyclecloud VM. You can provide the VM Name, OS Version, VM size, admin username and password.",
+    "name": "Deploy a SLURM cluster",
+    "description": "This template deploys a SLURM cluster with the number of nodes and operating system of your choice.",
     "version": "2021.19.07.1",
     "icon": "fa fa-linux",
     "upgradeAllowed": true,
