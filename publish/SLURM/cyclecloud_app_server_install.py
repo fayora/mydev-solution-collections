@@ -1,20 +1,22 @@
 #!/usr/bin/python3
 # Prepare an Azure provider account for CycleCloud usage.
 import os
-import sys
 import argparse
 import json
 import re
 import random
-from string import ascii_uppercase, ascii_lowercase, digits
 import subprocess
+import base64
+import hmac
+import hashlib
 from subprocess import CalledProcessError, run
+from string import ascii_uppercase, ascii_lowercase, digits
 from os import path, listdir, chdir, fdopen, remove
 from urllib.request import urlopen, Request
-from shutil import rmtree, copy2, move
+from shutil import rmtree, copy2, move  
 from tempfile import mkstemp, mkdtemp
 from time import sleep
-import base64
+from datetime import datetime
 
 
 tmpdir = mkdtemp()
@@ -37,6 +39,42 @@ def _catch_sys_error(cmd_list):
         print("Output: %s" % e.output)
         raise
 
+def create_shared_key_signature(storage_account_key, verb, canonicalized_headers, canonicalised_resource, content_length="", content_type=""):
+    string_params = {
+        "VERB": verb,
+        "Content-Encoding": "",
+        "Content-Language": "",
+        "Content-Length": content_length,
+        "Content-MD5": "",
+        "Content-Type": content_type,
+        "Date": "",
+        "If-Modified-Since": "",
+        "If-Match": "",
+        "If-None-Match": "",
+        "If-Unmodified-Since": "",
+        "Range": "",
+        "CanonicalizedHeaders": canonicalized_headers,
+        "CanonicalizedResource": canonicalised_resource
+    }
+    
+    string_to_sign = (string_params["VERB"] + "\n"
+        + string_params["Content-Encoding"] + "\n"
+        + string_params["Content-Language"] + "\n"
+        + string_params["Content-Length"] + "\n"
+        + string_params["Content-MD5"] + "\n"
+        + string_params["Content-Type"] + "\n"
+        + string_params["Date"] + "\n"
+        + string_params["If-Modified-Since"] + "\n"
+        + string_params["If-Match"] + "\n"
+        + string_params["If-None-Match"] + "\n"
+        + string_params["If-Unmodified-Since"] + "\n"
+        + string_params["Range"] + "\n"
+        + string_params["CanonicalizedHeaders"]
+        + string_params["CanonicalizedResource"])
+    
+    signed_string = base64.b64encode(hmac.new(base64.b64decode(storage_account_key), msg=string_to_sign.encode('utf-8'), digestmod=hashlib.sha256).digest()).decode()
+    return signed_string
+
 def create_user(username):
     import pwd
     try:
@@ -46,35 +84,138 @@ def create_user(username):
         _catch_sys_error(["useradd", "-m", "-d", "/home/{}".format(username), username])
     _catch_sys_error(["chown", "-R", username + ":" + username, "/home/{}".format(username)])
 
-def create_keypair(username, public_key=None):
-    if not os.path.isdir("/home/{}/.ssh".format(username)):
-        _catch_sys_error(["mkdir", "-p", "/home/{}/.ssh".format(username)])
-    public_key_file  = "/home/{}/.ssh/id_rsa.pub".format(username)
-    if not os.path.exists(public_key_file):
-        if public_key:
-            with open(public_key_file, 'w') as pubkeyfile:
-                pubkeyfile.write(public_key)
-                pubkeyfile.write("\n")
-        else:
-            _catch_sys_error(["ssh-keygen", "-f", "/home/{}/.ssh/id_rsa".format(username), "-N", ""])
-            with open(public_key_file, 'r') as pubkeyfile:
-                public_key = pubkeyfile.read()
+def create_keypair(use_managed_identity, vm_metadata, ssh_key_name):
+    if use_managed_identity:
+        managed_identify = get_vm_managed_identity()
+        access_token = managed_identify["access_token"]
+        access_headers = {
+            "Authorization": f"Bearer {access_token}"
+        }
 
-    authorized_key_file = "/home/{}/.ssh/authorized_keys".format(username)
-    authorized_keys = ""
-    if os.path.exists(authorized_key_file):
-        with open(authorized_key_file, 'r') as authkeyfile:
-            authorized_keys = authkeyfile.read()
-    if public_key not in authorized_keys:
-        with open(authorized_key_file, 'w') as authkeyfile:
-            authkeyfile.write(public_key)
-            authkeyfile.write("\n")
-    _catch_sys_error(["chown", "-R", username + ":" + username, "/home/{}".format(username)])
-    return public_key
+    subscriptionId = vm_metadata["compute"]["subscriptionId"]
+    resourceGroup = vm_metadata["compute"]["resourceGroupName"]
+    
+    sshkey_url = "https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/sshPublicKeys/{}/generateKeyPair?api-version=2021-11-01".format(subscriptionId, resourceGroup, ssh_key_name)
+    sshkey_req = Request(sshkey_url, method="POST", headers=access_headers)
 
-def create_user_credential(username, public_key=None):
-    create_user(username)    
-    public_key = create_keypair(username, public_key)
+    for _ in range(30):
+        print("Generating SSH key")
+        sshkey_response = urlopen(sshkey_req, timeout=2)
+        
+        try:
+            return json.load(sshkey_response)
+        except ValueError as e:
+            print("Failed to generate SSH key %s" % e)
+            print("    Retrying")
+            sleep(2)
+            continue
+        except:
+            print("Unable to generate SSH key after 30 tries")
+            raise
+
+def get_storage_account_keys(use_managed_identity, vm_metadata, storage_account_name):
+    if use_managed_identity:
+        managed_identify = get_vm_managed_identity()
+        access_token = managed_identify["access_token"]
+        access_headers = {
+            "Authorization": f"Bearer {access_token}"
+        }
+
+    subscriptionId = vm_metadata["compute"]["subscriptionId"]
+    resourceGroup = vm_metadata["compute"]["resourceGroupName"]
+    
+    blob_url = "https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/listKeys?api-version=2021-09-01&$expand=kerb".format(subscriptionId, resourceGroup, storage_account_name)
+    blob_req = Request(blob_url, method="POST", headers=access_headers)
+    
+    for _ in range(30):
+        print("Fetching storage account access keys")
+        blob_response = urlopen(blob_req, timeout=2)
+        
+        try:
+            return json.load(blob_response)
+        except ValueError as e:
+            print("Failed to obtain storage account access keys %s" % e)
+            print("    Retrying")
+            sleep(2)
+            continue
+        except:
+            print("Unable to obtain storage account access keys after 30 tries")
+            raise
+
+def create_blob_container(storage_account_key, storage_account_name, container_name):
+    api_version = "2021-06-08"
+    current_timestamp = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
+    canonicalized_headers = "x-ms-date:" + current_timestamp + "\nx-ms-version:" + api_version + "\n"
+    canonicalized_resource = "/" + storage_account_name + "/" + container_name + "\nrestype:container"
+
+    signed_string = create_shared_key_signature(storage_account_key, "PUT", canonicalized_headers, canonicalized_resource)
+    
+    headers = {
+        "x-ms-version": api_version,
+        "x-ms-date": current_timestamp,
+        "Authorization": f"SharedKey {storage_account_name}:{signed_string}"
+    }
+    
+    container_url = "https://{}.blob.core.windows.net/{}?restype=container".format(storage_account_name, container_name)
+    container_req = Request(container_url, method="PUT", headers=headers)
+    
+    for _ in range(30):
+        print("Creating blob container for holding ssh key")
+        container_response = urlopen(container_req, timeout=2)
+        
+        try:
+            return container_response.status
+        except ValueError as e:
+            print("Failed to create blob container %s" % e)
+            print("    Retrying")
+            sleep(2)
+            continue
+        except:
+            print("Unable to create blob container after 30 tries")
+            raise
+
+def upload_key_file(storage_account_key, storage_account_name, private_key, container_name):
+    data = private_key.encode("utf-8")
+    api_version = "2021-06-08"
+    blob_name = "schedulernodeaccesskey.pem"
+    blob_type = "BlockBlob"
+    current_timestamp = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
+    content_length = str(len(data))
+    content_type = "text/plain; charset=utf-8"
+    canonicalized_headers = "x-ms-blob-type:" + blob_type +"\nx-ms-date:" + current_timestamp + "\nx-ms-version:" + api_version + "\n"
+    canonicalized_resource = "/" + storage_account_name + "/" + container_name + "/" + blob_name
+
+    signed_string = create_shared_key_signature(storage_account_key, "PUT", canonicalized_headers, canonicalized_resource, content_length, content_type)
+    
+    headers = {
+        'x-ms-date' : current_timestamp,
+        'x-ms-version' : api_version,
+        'Content-Length': content_length,
+        'Content-Type': content_type,
+        'x-ms-blob-type': blob_type,
+        'Authorization' : f"SharedKey {storage_account_name}:{signed_string}"
+    }
+    
+    upload_url = "https://{}.blob.core.windows.net/{}/{}".format(storage_account_name, container_name, blob_name)  
+    upload_req = Request(upload_url, method="PUT", headers=headers, data=data)
+
+    for _ in range(30):
+        print("Uploading the ssh key file to the blob container")
+        upload_response = urlopen(upload_req, timeout=2)
+        
+        try:
+            return upload_response.status
+        except ValueError as e:
+            print("Failed to upload the sshkey files to the blob container %s" % e)
+            print("    Retrying")
+            sleep(2)
+            continue
+        except:
+            print("Unable to upload the ssh key file to the blob container after 30 tries")
+            raise
+
+def create_user_credential(username, public_key):
+    create_user(username)
 
     credential_record = {
         "PublicKey": public_key,
@@ -102,7 +243,6 @@ def generate_password_string():
     return ''.join(random_pw_chars)
 
 def reset_cyclecloud_pw(username):
-
     reset_pw = subprocess.Popen( [cs_cmd, "reset_access", username],
                                 stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE,
@@ -122,7 +262,6 @@ def reset_cyclecloud_pw(username):
 def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, application_id, application_secret,
                              admin_user, azure_cloud, accept_terms, password, storageAccount, no_default_account, 
                              webserver_port):
-
     print("Setting up azure account in CycleCloud and initializing cyclecloud CLI")
 
     if not accept_terms:
@@ -453,8 +592,9 @@ def configure_msft_apt_repos():
 
     with open('/etc/apt/sources.list.d/cyclecloud.list', 'w') as f:
         f.write("deb [arch=amd64] https://packages.microsoft.com/repos/cyclecloud {} main".format(lsb_release))
-    _catch_sys_error(["apt-get", "install", "-y", "apt-transport-https"]) 
     _catch_sys_error(["apt", "update", "-y"])
+    _catch_sys_error(["apt-get", "install", "-y", "apt-transport-https"]) 
+    #_catch_sys_error(["apt", "update", "-y"])
 
 def install_pre_req():
     print("Installing pre-requisites for CycleCloud server")
@@ -465,6 +605,7 @@ def install_pre_req():
     # Not strictly needed, but it's useful to have the AZ CLI
     _catch_sys_error(["apt", "install", "-y", "azure-cli"])
 
+'''
 def add_slurm_fix():
     # Download the file with the Slurm fix, save it in the required path and give the cycle_server ownership of it
     slurm_fix_file_name = "cluster-init-slurm-2.5.1.txt"
@@ -477,8 +618,9 @@ def add_slurm_fix():
     _catch_sys_error(["mv", slurm_fix_file_download_path, slurm_fix_file_path])
     _catch_sys_error(["chown", "-R", "cycle_server:cycle_server", slurm_fix_file_full_path])
     sleep(30)
+'''
 
-def import_cluster(vm_metadata):
+def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores):
     cluster_template_file_name = "slurm_template.ini"
     cluster_parameters_file_name = "slurm_params.json"
     cluster_files_download_url = "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/CycleCloud_SLURM/"
@@ -503,15 +645,27 @@ def import_cluster(vm_metadata):
     subnet_param = "SubnetId=" + subnet_string_value
     print("The subnet for the worker nodes is: %s" % subnet_param)
     
+    schedulerImage_param = "SchedulerImageName=" + cluster_image
+    print("The os image for the scheduler nodes is: %s" % schedulerImage_param)
+    
+    workerImage_param = "HPCImageName=" + cluster_image
+    print("The os image for the worker nodes is: %s" % workerImage_param)
+
+    machineType_param = "HPCMachineType=" + machine_type
+    print("The machine type for the worker nodes is: %s" % machineType_param)
+
+    max_core = int(node_size) * int(node_cores)
+    maxCore_param = "MaxHPCExecuteCoreCount=" + str(max_core)
+    print("The amount of execute core for the worker nodes is: %s" % maxCore_param)
+    
     # We import the cluster, passing the subnet name as a parameter override
-    _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", subnet_param, "--parameter-override", MaxHPCExecuteCoreCount="VA", ])
+    _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param])
 
 
 def start_cluster():
     _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "Slurm-Custom"])
     
 def main():
-
     parser = argparse.ArgumentParser(description="usage: %prog [options]")
 
     parser.add_argument("--azureSovereignCloud",
@@ -568,10 +722,10 @@ def main():
                         default="",
                         help="The password for the CycleCloud UI user")
 
-    parser.add_argument("--publickey",
-                        dest="publickey",
+    parser.add_argument("--sshkey",
+                        dest="sshkey",
                         default="",
-                        help="The public ssh key for the CycleCloud UI user")
+                        help="The Azure ssh key instance that stores the public ssh key for remote accessing scheduler node")
 
     parser.add_argument("--storageAccount",
                         dest="storageAccount",
@@ -620,6 +774,17 @@ def main():
                         dest="numberOfWorkerNodes",
                         default=2,
                         help="The VM size for worker nodes")
+    
+    parser.add_argument("--osOfClusterNodes",
+                        dest="osOfClusterNodes",
+                        default="Canonical:UbuntuServer:18.04-LTS:latest",
+                        help="The VM OS for both scheduler & worker nodes")
+
+    parser.add_argument("--countOfNodeCores",
+                        dest="countOfNodeCores",
+                        default=2,
+                        help="The amount of cores for worker nodes")
+
 
     args = parser.parse_args()
 
@@ -642,16 +807,11 @@ def main():
 
     vm_metadata = get_vm_metadata()
 
-    # We decode the password and publick key back to an ASCII string because they are passed as Base64 to avoid issues with special characters
+    # We decode the password back to an ASCII string because they are passed as Base64 to avoid issues with special characters
     decoded_password = base64.b64decode(args.password).decode('ascii')
-    decoded_publicKey = base64.b64decode(args.publickey).decode('ascii')
 
     print("The raw password is: %s" % args.password)
     print("The decoded password is: %s" % decoded_password)
-
-
-    print("The raw SSH key is: %s" %  args.publickey)
-    print("The decoded SSH key is: %s" % decoded_publicKey)
 
     if args.resourceGroup:
         print("CycleCloud created in resource group: %s" % vm_metadata["compute"]["resourceGroupName"])
@@ -666,8 +826,21 @@ def main():
     if args.useLetsEncrypt:
         letsEncrypt(args.hostname)
 
+    # Populate ssh key
+    ssh_key = create_keypair(args.useManagedIdentity, vm_metadata, args.sshkey)
+    public_key = ssh_key["publicKey"]
+    private_key = ssh_key["privateKey"]
+
+    # Store the private key on the blob storage
+    storage_account_keys = get_storage_account_keys(args.useManagedIdentity, vm_metadata, args.storageAccount)
+    storage_account_key = storage_account_keys["keys"][0]["value"]
+    container_name = "sshkeyholder"
+
+    create_blob_container(storage_account_key, args.storageAccount, container_name)
+    upload_key_file(storage_account_key, args.storageAccount, private_key, container_name)
+    
     #  Create user requires root privileges
-    create_user_credential(args.username, decoded_publicKey)
+    create_user_credential(args.username, public_key)
 
     # Sleep for 5 minutes while CycleCloud retrieves Azure information and finish its internal configuration
     sleep(300)
@@ -675,11 +848,11 @@ def main():
     #clean_up()
 
     # Add the temporary fix provided by the CycleCloud Engineerig team for SLURM, and then restart the CycleCloud server
-    add_slurm_fix()
+    #add_slurm_fix()
     #start_cc()
 
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
-    import_cluster(vm_metadata)
+    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores)
     start_cluster()
 
 if __name__ == "__main__":
@@ -688,4 +861,3 @@ if __name__ == "__main__":
     except:
         print("Deployment failed...")
         raise
-

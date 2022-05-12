@@ -1,44 +1,34 @@
-[CmdletBinding()]
-[OutputType([psobject])]
-param (
-    [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
-    [string]$subscriptionId,
-    [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
-    [string]$resourceGroupName,
-    [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
-    [string]$publicIpAddressName,
-    [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
-    [string]$adminUserName
-)
-process {
-    try {
-
-        # Get an access token for managed identities for Azure resources
-        $response = Invoke-WebRequest `
-            -Uri 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fmanagement.azure.com%2F' `
-            -Headers @{Metadata = "true" }
-        $content = $response.Content | ConvertFrom-Json
-        $access_token = $content.access_token
-
-        
-        # Use the access token to get resource information for the VM
-        $publicIpAddressResponse = Invoke-WebRequest `
-            -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Network/publicIPAddresses/$publicIpAddressName\?api-version=2020-11-01" `
-            -Method GET `
-            -ContentType "application/json" `
-            -Headers @{ Authorization = "Bearer $access_token" } 
-        
-        $publicIpAddressContent = $publicIpAddressResponse.Content | ConvertFrom-Json
-       
-        if (!$publicIpAddressContent.properties.ipAddress) { throw "IP address does not exist." }
-       
-        $ipAddress = $publicIpAddressContent.properties.ipAddress
-       
-        
-        New-Object -Property @{ReturnText = "$adminUserName@$ipAddress" } -TypeName psobject
+try {
+    # Only install modules that are used to avoid agent timeout (3mins)
+    if (-Not (Get-Module -ListAvailable -Name Az.Accounts)) {
+        Install-Module -Name Az.Accounts -Repository PSGallery -Force
     }
-    catch {
-        Write-Host "Unable to get IP address." $_.Exception.Message
+    if (-Not (Get-Module -ListAvailable -Name Az.Network)) {
+        Install-Module -Name Az.Network -Repository PSGallery -Force
     }
+
+    # Connect to azure account via managed identity
+    Connect-AzAccount -Identity
+
+    # Set context for current subscription
+    Set-AzContext -Subscription $subscriptionId
+
+    # Get the network interface detail of the scheduler node
+    $networkInterfaces = Get-AzNetworkInterface -ResourceGroupName $resourceGroupName
+    $schedulerNetworkInterface = $networkInterfaces | Where-Object {($_.VirtualMachine.Id.Split("/"))[-1] -match "scheduler-*"}
+
+    # Pick up its public IP address name
+    $publicIpAddressName = ($schedulerNetworkInterface.IpConfigurations.PublicIpAddress.Id.Split("/"))[-1]
+
+    # Get the public IP address of the scheduler
+    $schedulerPublicIpAddress = (Get-AzPublicIpAddress -ResourceGroupName $resourceGroupName -Name $publicIpAddressName).IpAddress
+
+    # Disconnect account after use
+    Disconnect-AzAccount
+
+    # Assign value  to $result so it can be return to the UI
+    $result = "ssh -i <private key path> cyclecloud@" + $schedulerPublicIpAddress
 }
-
+catch {
+    Write-Host "Unable to get ssh detail of the scheduler node." $_.Exception.Message
+}
