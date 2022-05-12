@@ -1,0 +1,6 @@
+AdType = "Cloud.Project"
+Version = "2.5.1"
+ProjectType = "scheduler"
+Url = "https://github.com/Azure/cyclecloud-slurm/releases/2.5.1"
+AutoUpgrade = false
+name="slurm"
