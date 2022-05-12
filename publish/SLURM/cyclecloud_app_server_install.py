@@ -612,7 +612,10 @@ def add_slurm_fix():
     slurm_fix_file_download_path = "/tmp/" + slurm_fix_file_name
     slurm_fix_file_path = "/opt/cycle_server/config/data/"
     slurm_fix_file_full_path = slurm_fix_file_path + slurm_fix_file_name
+    ###########################################################################################!!!!!
+    ### NEEDS A FINAL LOCATION for PRODUCTION!!
     slurm_fix_file_download_url = "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/CycleCloud_SLURM/" + slurm_fix_file_name
+    ###########################################################################################!!!!!
     
     _catch_sys_error(["wget","-q","-O", slurm_fix_file_download_path, slurm_fix_file_download_url])
     _catch_sys_error(["mv", slurm_fix_file_download_path, slurm_fix_file_path])
@@ -623,7 +626,12 @@ def add_slurm_fix():
 def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores):
     cluster_template_file_name = "slurm_template.ini"
     cluster_parameters_file_name = "slurm_params.json"
+
+    ###########################################################################################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ### NEEDS A FINAL LOCATION for PRODUCTION!!
     cluster_files_download_url = "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/CycleCloud_SLURM/"
+    ###########################################################################################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
     cluster_template_file_download_path = "/tmp/" + cluster_template_file_name
     cluster_parameters_file_download_path = "/tmp/" + cluster_parameters_file_name
     cluster_template_file_url = cluster_files_download_url + cluster_template_file_name
