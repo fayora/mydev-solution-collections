@@ -27,7 +27,7 @@ try {
     Disconnect-AzAccount
 
     # Assign value  to $result so it can be return to the UI
-    $result = "ssh -i <private key path> cyclecloud@" + $schedulerPublicIpAddress
+    $result = "ssh -i <private key path> hpc@" + $schedulerPublicIpAddress
 }
 catch {
     Write-Host "Unable to get ssh detail of the scheduler node." $_.Exception.Message
