@@ -1,7 +1,7 @@
 {
     "name": "SLURM cluster for HPC",
     "description": "Deploys a SLURM cluster your specified number of worker nodes and node sizes.",
-    "version": "2022.25.05.1",
+    "version": "2022.25.05.2",
     "deploymentMode": "User",
     "upgradeAllowed": true
 }
