@@ -390,7 +390,7 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
     config_path = os.path.join(cycle_root, "config/data/")
     _catch_sys_error(["chown", "cycle_server:cycle_server", account_data_file])
     _catch_sys_error(["mv", account_data_file, config_path])
-    sleep(15)
+    sleep(5)
 
     if not accept_terms:
         # reset the installation status so the splash screen re-appears
@@ -458,7 +458,7 @@ def initialize_cyclecloud_cli(admin_user, cyclecloud_admin_pw, webserver_port):
 
 
 def letsEncrypt(fqdn):
-    sleep(90)
+    sleep(60)
     try:
         cmd_list = [cs_cmd, "keystore", "automatic", "--accept-terms", fqdn]
         output = subprocess.run(cmd_list, capture_output=True, check=True, text=True).stdout
@@ -655,23 +655,6 @@ def install_pre_req():
     # Not strictly needed, but it's useful to have the AZ CLI
     _catch_sys_error(["apt", "install", "-y", "azure-cli"])
 
-'''
-def add_slurm_fix():
-    # Download the file with the Slurm fix, save it in the required path and give the cycle_server ownership of it
-    slurm_fix_file_name = "cluster-init-slurm-2.5.1.txt"
-    slurm_fix_file_download_path = "/tmp/" + slurm_fix_file_name
-    slurm_fix_file_path = "/opt/cycle_server/config/data/"
-    slurm_fix_file_full_path = slurm_fix_file_path + slurm_fix_file_name
-    ###########################################################################################!!!!!
-    ### NEEDS A FINAL LOCATION for PRODUCTION!!
-    slurm_fix_file_download_url = "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/CycleCloud_SLURM/" + slurm_fix_file_name
-    ###########################################################################################!!!!!
-    
-    _catch_sys_error(["wget","-q","-O", slurm_fix_file_download_path, slurm_fix_file_download_url])
-    _catch_sys_error(["mv", slurm_fix_file_download_path, slurm_fix_file_path])
-    _catch_sys_error(["chown", "-R", "cycle_server:cycle_server", slurm_fix_file_full_path])
-    sleep(30)
-'''
 
 def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores):
     cluster_template_file_name = "slurm_template.ini"
@@ -900,8 +883,8 @@ def main():
     # Create user requires root privileges
     create_user_credential(args.username, public_key)
 
-    # Sleep for 6 minutes while CycleCloud retrieves Azure information and finish its internal configuration
-    sleep(360)
+    # Sleep for 2 minutes while CycleCloud retrieves Azure information and finish its internal configuration
+    sleep(120)
 
     #clean_up()
 
