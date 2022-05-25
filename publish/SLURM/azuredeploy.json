@@ -79,7 +79,7 @@
             "Ubuntu 18.04-LTS": "Canonical:UbuntuServer:18.04-LTS:latest"
         },
         "clusterOSImage": "[variables('clusterOS')[parameters('OSOfClusterNodes')]]",
-        "installScriptURL": "https://raw.githubusercontent.com/LCBuzGit/SolutionCollectionTemp/main/cyclecloud_app_server_install.py",
+        "installScriptURL": "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/SLURM/cyclecloud_app_server_install.py",
         "networkApiVersion": "2017-06-01",
         "contributor": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]" 
     },

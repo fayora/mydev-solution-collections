@@ -629,7 +629,7 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
 
     ###########################################################################################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ### NEEDS A FINAL LOCATION for PRODUCTION!!
-    cluster_files_download_url = "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/CycleCloud_SLURM/"
+    cluster_files_download_url = "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/SLURM/"
     ###########################################################################################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     cluster_template_file_download_path = "/tmp/" + cluster_template_file_name
