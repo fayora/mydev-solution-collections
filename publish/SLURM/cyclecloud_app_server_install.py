@@ -17,13 +17,53 @@ from shutil import rmtree, copy2, move
 from tempfile import mkstemp, mkdtemp
 from time import sleep
 from datetime import datetime
-
+from functools import wraps
+from urllib.error import URLError
 
 tmpdir = mkdtemp()
 print("Creating temp directory {} for installing CycleCloud".format(tmpdir))
 cycle_root = "/opt/cycle_server"
 cs_cmd = cycle_root + "/cycle_server"
 
+def retry(ExceptionToCheck, tries=4, delay=3, backoff=2, logger=None):
+    """Retry calling the decorated function using an exponential backoff.
+
+    http://www.saltycrane.com/blog/2009/11/trying-out-retry-decorator-python/
+    original from: http://wiki.python.org/moin/PythonDecoratorLibrary#Retry
+
+    :param ExceptionToCheck: the exception to check. may be a tuple of
+        exceptions to check
+    :type ExceptionToCheck: Exception or tuple
+    :param tries: number of times to try (not retry) before giving up
+    :type tries: int
+    :param delay: initial delay between retries in seconds
+    :type delay: int
+    :param backoff: backoff multiplier e.g. value of 2 will double the delay
+        each retry
+    :type backoff: int
+    :param logger: logger to use. If None, print
+    :type logger: logging.Logger instance
+    """
+    def deco_retry(f):
+
+        @wraps(f)
+        def f_retry(*args, **kwargs):
+            mtries, mdelay = tries, delay
+            while mtries > 1:
+                try:
+                    return f(*args, **kwargs)
+                except ExceptionToCheck as e:
+                    message = "%s, Retrying in %d seconds..." % (str(e), mdelay)
+                    if logger:
+                        logger.warning(msg)
+                    else:
+                        print (message)
+                    sleep(mdelay)
+                    mtries -= 1
+                    mdelay *= backoff
+            return f(*args, **kwargs)
+        return f_retry  # true decorator
+    return deco_retry
 
 def clean_up():
     rmtree(tmpdir)
@@ -262,15 +302,11 @@ def reset_cyclecloud_pw(username):
 def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, application_id, application_secret,
                              admin_user, azure_cloud, accept_terms, password, storageAccount, no_default_account, 
                              webserver_port):
-    print("Setting up azure account in CycleCloud and initializing cyclecloud CLI")
+    print("Setting up the Azure account in CycleCloud and initializing cyclecloud CLI")
 
     if not accept_terms:
-        print("Accept terms was FALSE !!!!!  Over-riding for now...")
+        print("Accept terms was false. Overriding for now...")
         accept_terms = True
-
-    # if path.isfile(cycle_root + "/config/data/account_data.json.imported"):
-    #     print 'Azure account is already configured in CycleCloud. Skipping...'
-    #     return
 
     subscription_id = vm_metadata["compute"]["subscriptionId"]
     location = vm_metadata["compute"]["location"]
@@ -353,10 +389,8 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
 
     config_path = os.path.join(cycle_root, "config/data/")
     _catch_sys_error(["chown", "cycle_server:cycle_server", account_data_file])
-    # Don't use copy2 here since ownership matters
-    # copy2(account_data_file, config_path)
     _catch_sys_error(["mv", account_data_file, config_path])
-    sleep(5)
+    sleep(15)
 
     if not accept_terms:
         # reset the installation status so the splash screen re-appears
@@ -385,16 +419,16 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
             print("CycleCloud account data:")
             print(json.dumps(azure_data))
 
-            # wait until Managed Identity is ready for use before creating the Account
+            # Wait until Managed Identity is ready for use before creating the Account
             if use_managed_identity:
                 get_vm_managed_identity()
 
-            # create the cloud provided account
+            # Create the cloud provider account
             # Retry in case it takes much longer than expected 
-            # (this is common in local testing with limited compute resources)
-            max_tries = 10
+            # (this is common with limited compute resources)
+            max_tries = 30
             created = False
-            print("Registering Azure subscription in CycleCloud")
+            print("Registering the Azure subscription in CycleCloud")
 
             while not created:
                 try:
@@ -434,46 +468,62 @@ def letsEncrypt(fqdn):
         print("Error getting SSL cert from Lets Encrypt")
         print("Proceeding with self-signed cert")
 
-
+@retry(URLError, tries=30, delay=5, backoff=2)
 def get_vm_metadata():
     metadata_url = "http://169.254.169.254/metadata/instance?api-version=2017-08-01"
     metadata_req = Request(metadata_url, headers={"Metadata": True})
+    print("Getting VM metadata...")
+    metadata_response = urlopen(metadata_req, timeout=2)
+    return json.load(metadata_response)
 
-    for _ in range(30):
-        print("Fetching metadata")
-        metadata_response = urlopen(metadata_req, timeout=2)
+            # def get_vm_metadata():
+            #     metadata_url = "http://169.254.169.254/metadata/instance?api-version=2017-08-01"
+            #     metadata_req = Request(metadata_url, headers={"Metadata": True})
 
-        try:
-            return json.load(metadata_response)
-        except ValueError as e:
-            print("Failed to get metadata %s" % e)
-            print("    Retrying")
-            sleep(2)
-            continue
-        except:
-            print("Unable to obtain metadata after 30 tries")
-            raise
+            #     for _ in range(30):
+            #         print("Fetching metadata")
+            #         metadata_response = urlopen(metadata_req, timeout=2)
 
+            #         try:
+            #             return json.load(metadata_response)
+            #         except ValueError as e:
+            #             print("Failed to get metadata %s" % e)
+            #             print("    Retrying")
+            #             sleep(5)
+            #             continue
+            #         except:
+            #             print("Unable to obtain metadata after 30 tries")
+            #             raise
+
+@retry(URLError, tries=30, delay=5, backoff=2)
 def get_vm_managed_identity():
-    # Managed Identity may  not be available immediately at VM startup...
-    # Test/Pause/Retry to see if it gets assigned
+    # Managed Identity may  not be available immediately at VM startup so retrying several times and backing off with each retry
     metadata_url = 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/'
     metadata_req = Request(metadata_url, headers={"Metadata": True})
+    print("Getting the Managed Identity of the VM...")
+    metadata_response = urlopen(metadata_req, timeout=2)
+    return json.load(metadata_response)
 
-    for _ in range(30):
-        print("Fetching managed identity")
-        metadata_response = urlopen(metadata_req, timeout=2)
+                # def get_vm_managed_identity():
+                #     # Managed Identity may  not be available immediately at VM startup...
+                #     # Test/Pause/Retry to see if it gets assigned
+                #     metadata_url = 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/'
+                #     metadata_req = Request(metadata_url, headers={"Metadata": True})
 
-        try:
-            return json.load(metadata_response)
-        except ValueError as e:
-            print("Failed to get managed identity %s" % e)
-            print("    Retrying")
-            sleep(10)
-            continue
-        except:
-            print("Unable to obtain managed identity after 30 tries")
-            raise    
+                #     for _ in range(30):
+                #         print("Fetching managed identity")
+                #         metadata_response = urlopen(metadata_req, timeout=2)
+
+                #         try:
+                #             return json.load(metadata_response)
+                #         except ValueError as e:
+                #             print("Failed to get managed identity %s" % e)
+                #             print("    Retrying")
+                #             sleep(10)
+                #             continue
+                #         except:
+                #             print("Unable to obtain managed identity after 30 tries")
+#             raise    
 
 def start_cc():
     import glob
@@ -834,12 +884,12 @@ def main():
     if args.useLetsEncrypt:
         letsEncrypt(args.hostname)
 
-    # Populate ssh key
+    # Create the ssh key file
     ssh_key = create_keypair(args.useManagedIdentity, vm_metadata, args.sshkey)
     public_key = ssh_key["publicKey"]
     private_key = ssh_key["privateKey"]
 
-    # Store the private key on the blob storage
+    # Store the private key in blob storage
     storage_account_keys = get_storage_account_keys(args.useManagedIdentity, vm_metadata, args.storageAccount)
     storage_account_key = storage_account_keys["keys"][0]["value"]
     container_name = "sshkeyholder"
@@ -847,17 +897,13 @@ def main():
     create_blob_container(storage_account_key, args.storageAccount, container_name)
     upload_key_file(storage_account_key, args.storageAccount, private_key, container_name)
     
-    #  Create user requires root privileges
+    # Create user requires root privileges
     create_user_credential(args.username, public_key)
 
-    # Sleep for 5 minutes while CycleCloud retrieves Azure information and finish its internal configuration
+    # Sleep for 6 minutes while CycleCloud retrieves Azure information and finish its internal configuration
     sleep(360)
 
     #clean_up()
-
-    # Add the temporary fix provided by the CycleCloud Engineerig team for SLURM, and then restart the CycleCloud server
-    #add_slurm_fix()
-    #start_cc()
 
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
     import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores)
