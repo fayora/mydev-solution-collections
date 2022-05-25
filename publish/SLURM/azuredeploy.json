@@ -55,6 +55,7 @@
         "azureSovereignCloud": "public",
         "vnetName": "[concat('vnet', variables('cycleName'))]",
         "storageAccountName": "[concat('sto', variables('cycleName'))]",
+        "storageAccountType": "Standard_LRS",
         "FQDN": "[concat(variables('cycleName'))]",
         "WorkerSize": {
             "2-CPUs,8GB-RAM": "Standard_B2ms",
@@ -94,6 +95,17 @@
         }
     },
     "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2019-04-01",
+            "name": "[variables('storageAccountName')]",
+            "location": "[variables('resourceLocation')]",
+            "sku": {
+                "name": "[variables('storageAccountType')]"
+            },
+            "kind": "StorageV2",
+            "properties": {}
+        },
         {
             "type": "Microsoft.Network/virtualNetworks",
             "name": "[variables('vnetName')]",
