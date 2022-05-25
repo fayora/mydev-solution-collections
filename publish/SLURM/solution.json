@@ -1,7 +1,7 @@
 {
     "name": "SLURM cluster for HPC",
-    "description": "Deploys a SLURM cluster with head node and your specified number of worker nodes, using CentOS 7.1 or 7.3.",
-    "version": "2021.16.07.1",
+    "description": "Deploys a SLURM cluster your specified number of worker nodes and node sizes.",
+    "version": "2022.25.05.1",
     "deploymentMode": "User",
     "upgradeAllowed": true
 }
