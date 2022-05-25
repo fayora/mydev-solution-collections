@@ -851,7 +851,7 @@ def main():
     create_user_credential(args.username, public_key)
 
     # Sleep for 5 minutes while CycleCloud retrieves Azure information and finish its internal configuration
-    sleep(300)
+    sleep(360)
 
     #clean_up()
 
