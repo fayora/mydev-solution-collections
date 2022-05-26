@@ -882,8 +882,8 @@ def main():
     # Create user requires root privileges
     create_user_credential(args.username, public_key)
 
-    # Sleep for 5 minutes while CycleCloud retrieves Azure information and finish its internal configuration
-    sleep(300)
+    # Sleep for 6 minutes while CycleCloud retrieves Azure information and finish its internal configuration
+    sleep(360)
 
     #clean_up()
 
