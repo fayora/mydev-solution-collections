@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # Prepare an Azure provider account for CycleCloud usage.
 import os
+import sys
 import argparse
 import json
 import re
@@ -713,10 +714,21 @@ def configure_msft_apt_repos():
     # First clear the apt lists to avoid error code 100
     _catch_sys_error (["rm", "-rf", "/var/lib/apt/lists/*"])
 
-    # Install HTTPS transport to avoid error 100 when adding the MSFT repos
-    _catch_sys_error(["apt-get", "update", "-y", "--allow-releaseinfo-change"])
+    # Install HTTPS transport for APT to avoid error 100 when adding the MSFT repos
+    # Running an APT update first
+    print('Running apt-get update for the first time')
+    cmd_list = 'apt-get update -y --allow-releaseinfo-change'
+    output = os.system(cmd_list)
+    if output == 100:  # Catching error 100 because it is a transient, recoverable error, but runnnig again to ensure successful completion
+        print('Apt-get update returned error 100. Running again...')
+        output = os.system(cmd_list)
+    elif output != 0: # Some other error occurred, raising it
+        sys.stderr.write("ERROR: The following command failed with error code {:d}: {:s}\n".format(output, cmd_list))
+        raise
+    # Now we install HTTPS transport for APT
     _catch_sys_error(["apt-get", "install", "-y", "apt-transport-https"])
     
+    # Next we add the MSFT repos
     _catch_sys_error(
         ["wget", "-q", "-O", "/tmp/microsoft.asc", "https://packages.microsoft.com/keys/microsoft.asc"])
     _catch_sys_error(
@@ -724,6 +736,8 @@ def configure_msft_apt_repos():
     
     # Fix while Ubuntu 20 is not available -- we install the Ubuntu 18.04 version of CycleCloud
     lsb_release = "bionic"
+
+    # Finally, we install CycleCloud CLI and application
 
     with open('/etc/apt/sources.list.d/azure-cli.list', 'w') as f:
         f.write("deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ {} main".format(lsb_release))
