@@ -495,14 +495,35 @@ def get_vm_metadata():
             #             print("Unable to obtain metadata after 30 tries")
             #             raise
 
-@retry(URLError, tries=30, delay=2, backoff=2)
+#@retry(URLError, tries=30, delay=2, backoff=2)
 def get_vm_managed_identity():
     # Managed Identity may  not be available immediately at VM startup so retrying several times and backing off with each retry
     metadata_url = 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/'
     metadata_req = Request(metadata_url, headers={"Metadata": True})
-    print("Getting the Managed Identity of the VM...")
-    metadata_response = urlopen(metadata_req, timeout=2)
-    return json.load(metadata_response)
+    print("Getting the Managed System Identity (MSI) of the VM...")
+    for i in range(30):
+        attempts = i
+        print("VM MSI attempt number:", attempts)
+        while True :
+            try:
+                metadata_response = urlopen(metadata_req, timeout=2)
+            except ValueError as e:
+                attempts-=1
+                print("Failed to get managed identity:" % e)
+                print("Rtrying after 10 seconds...")
+                sleep(10)
+                continue
+            else:
+                print("Successfully retrieved the MSI of the VM!")
+                return json.load(metadata_response)
+
+
+
+                # metadata_url = 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/'
+                # metadata_req = Request(metadata_url, headers={"Metadata": True})
+                # print("Getting the Managed Identity of the VM...")
+                # metadata_response = urlopen(metadata_req, timeout=2)
+                # return json.load(metadata_response)
 
                 # def get_vm_managed_identity():
                 #     # Managed Identity may  not be available immediately at VM startup...
