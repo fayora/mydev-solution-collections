@@ -2,6 +2,7 @@
     "name": "SLURM cluster for HPC",
     "description": "Deploys a SLURM cluster your specified number of worker nodes and node sizes.",
     "version": "2022.25.05.2",
+    "icon": "fa fa-cubes",
     "deploymentMode": "User",
     "upgradeAllowed": true
 }
