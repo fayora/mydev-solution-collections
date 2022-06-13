@@ -436,11 +436,12 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
             while True :
                 try:
                     cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
-                    output = subprocess.run(cmd_list, capture_output=True, check=True, text=True).stdout
+                    subprocess.run(cmd_list, capture_output=True, check=True, text=True)
+                    output = subprocess.CompletedProcess.stdout
                     print("Command list:", cmd_list)
                     print("Command output:", output)
-                except:
-                    print("Failed to register Azure subscription!")
+                except subprocess.CalledProcessError as e:
+                    print("Failed to register Azure subscription!! Error:" % e)
                     print("Retrying after 10 seconds...")
                     sleep(10)
                     continue
