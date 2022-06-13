@@ -396,8 +396,7 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
         # reset the installation status so the splash screen re-appears
         print("Resetting installation")
         sql_statement = 'update Application.Setting set Value = false where name ==\"cycleserver.installation.complete\"'
-        _catch_sys_error(
-            ["/opt/cycle_server/cycle_server", "execute", sql_statement])
+        _catch_sys_error(["/opt/cycle_server/cycle_server", "execute", sql_statement])
 
     # If using a random password, we need to reset it on each container restart (since we regenerated it above)
     # But do is AFTER user is created in CC
@@ -434,17 +433,19 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
                 print("Azure account creation attempt number:", attempts)
                 while True :
                     try:
-                        cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
-                        output = subprocess.run(cmd_list, capture_output=True).stdout
+                        # cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
+                        # output = subprocess.run(cmd_list, capture_output=True).stdout
+                        _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file])
                         print("Command list:", cmd_list)
-                        print("Command output:", output)
-                    except ValueError as e:
-                        print("Failed to register Azure subscription! Error:" % e)
+                        # print("Command output:", output)
+                    except:
+                        print("Failed to register Azure subscription!")
                         print("Retrying after 10 seconds...")
                         sleep(10)
                         continue
                     else:
                         print("Successfully registered the Azure subscription!")
+                        break
 
             # while not created:
             #     try:
