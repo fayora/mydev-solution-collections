@@ -428,24 +428,26 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
             max_tries = 30
             # created = False
             print("Registering the Azure subscription in CycleCloud")
-            for i in range(max_tries):
-                attempts = i+1
-                print("Azure account creation attempt number:", attempts)
-                while True :
-                    try:
-                        # cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
-                        # output = subprocess.run(cmd_list, capture_output=True).stdout
-                        _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file])
-                        print("Command list:", cmd_list)
-                        # print("Command output:", output)
-                    except:
-                        print("Failed to register Azure subscription!")
-                        print("Retrying after 10 seconds...")
-                        sleep(10)
-                        continue
-                    else:
-                        print("Successfully registered the Azure subscription!")
-                        break
+            output = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file])
+            print("Command output:", output)
+            # for i in range(max_tries):
+            #     attempts = i+1
+            #     print("Azure account creation attempt number:", attempts)
+            #     while True :
+            #         try:
+            #             # cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
+            #             # output = subprocess.run(cmd_list, capture_output=True).stdout
+            #             output = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file])
+            #             print("Command output:", output)
+            #             # print("Command output:", output)
+            #         except:
+            #             print("Failed to register Azure subscription!")
+            #             print("Retrying after 10 seconds...")
+            #             sleep(10)
+            #             continue
+            #         else:
+            #             print("Successfully registered the Azure subscription!")
+            #             break
 
             # while not created:
             #     try:
