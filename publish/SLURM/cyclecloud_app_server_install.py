@@ -429,10 +429,18 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
             print("Registering the Azure subscription in CycleCloud")
             # output = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file])
             # print("Command output:", output)
+            cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
             for i in range(max_tries):
                 attempts = i+1
                 print("Azure account creation attempt number:", attempts)
-                _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file])
+                try:
+                    output = subprocess.run(cmd_list, capture_output=True, check=True, text=True).stdout
+                    print("Command list:", cmd_list)
+                    print("Command output:", output)
+                except subprocess.CalledProcessError as e:
+                    print("Error with cmd: %s" % e.cmd)
+                    print("Output: %s" % e.output)
+                    continue
                 check_account = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "show", "azure"])
                 if 'Credentials: azure' in str(check_account):
                     print("Azure account created!")
@@ -714,7 +722,7 @@ def configure_msft_apt_repos():
     _catch_sys_error(
         ["apt-key", "add", "/tmp/microsoft.asc"])
     
-    # Fix while Ubuntu 20 is not available -- we install the Ubuntu 18.04 version
+    # Fix while Ubuntu 20 is not available -- we install the Ubuntu 18.04 version of CycleCloud
     lsb_release = "bionic"
 
     with open('/etc/apt/sources.list.d/azure-cli.list', 'w') as f:
