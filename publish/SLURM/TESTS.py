@@ -83,3 +83,16 @@ result_metadata = get_vm_metadata()
 print('Metadata=', result_metadata)
 result_msi = get_vm_managed_identity()
 print('MSI=', result_msi)
+
+/var/lib/waagent/custom-script/download/0/
+
+sudo python3 /var/lib/waagent/custom-script/download/0/cyclecloud_app_server_install.py --acceptTerms --useManagedIdentity --azureSovereignCloud "public" --username "hpcadmin" --password 'TG9vbWVSb2NrUzEy' --useLetsEncrypt --webServerPort 80 --webServerSslPort 443 --webServerMaxHeapSize 4096M --numberOfWorkerNodes 2 --sizeOfWorkerNodes "Standard_B2ms" --osOfClusterNodes "Canonical:UbuntuServer:18.04-LTS:latest" --countOfNodeCores 2 --sshkey "SSHKEY-NAME" --storageAccount "STORAGEACCT-NAME" --hostname "ENTER_HERE" --resourceGroup "RG-NAME" 
+
+CycleCloud account data:
+{"Environment": "public", "AzureRMUseManagedIdentity": true, "AzureResourceGroup": "rg-SLURMSolCollTesting--Felipe-Manual6-FelipeCSPAccount", "AzureRMApplicationId": "", "AzureRMApplicationSecret": "", "AzureRMSubscriptionId": "74bdf443-9081-4138-9af1-61f8542cdb45", "AzureRMTenantId": "", "DefaultAccount": true, "Location": "australiaeast", "Name": "azure", "Provider": "azure", "ProviderId": "74bdf443-9081-4138-9af1-61f8542cdb45", "RMStorageAccount": "stocycleappm7fp3rmcw4", "RMStorageContainer": "cyclecloud"}
+Getting the Managed Identity of the VM...
+Registering the Azure subscription in CycleCloud
+Command list: ['/usr/local/bin/cyclecloud', 'account', 'create', '-f', '/tmp/tmptecizfpy/azure_data.json']
+Command output: b''
+
+{"Environment": "public", "AzureRMUseManagedIdentity": true, "AzureResourceGroup": "rg-SLURMSolCollTesting--Felipe-Manual6-FelipeCSPAccount", "AzureRMApplicationId": "", "AzureRMApplicationSecret": "", "AzureRMSubscriptionId": "74bdf443-9081-4138-9af1-61f8542cdb45", "AzureRMTenantId": "", "DefaultAccount": true, "Location": "australiaeast", "Name": "azure", "Provider": "azure", "ProviderId": "74bdf443-9081-4138-9af1-61f8542cdb45", "RMStorageAccount": "stocycleappm7fp3rmcw4", "RMStorageContainer": "cyclecloud"}root@cycleappm7fp3rmcw4:/home/hpcadmin#
