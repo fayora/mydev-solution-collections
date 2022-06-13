@@ -705,7 +705,7 @@ def configure_msft_apt_repos():
     lsb_release = "bionic"
 
     # Install HTTPS transport to avoid error 100 when adding the MSFT repos
-    _catch_sys_error(["apt-get", "update"])
+    _catch_sys_error(["apt-get", "update", "-y", "--allow-releaseinfo-change"])
     _catch_sys_error(["apt-get", "install", "-y", "apt-transport-https"])
 
     with open('/etc/apt/sources.list.d/azure-cli.list', 'w') as f:
