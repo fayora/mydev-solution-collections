@@ -497,7 +497,7 @@ def letsEncrypt(fqdn):
         print("Error getting SSL cert from Lets Encrypt")
         print("Proceeding with self-signed cert")
 
-@retry(URLError, tries=30, delay=2, backoff=2)
+#@retry(URLError, tries=30, delay=2, backoff=2)
 def get_vm_metadata():
     metadata_url = "http://169.254.169.254/metadata/instance?api-version=2017-08-01"
     metadata_req = Request(metadata_url, headers={"Metadata": True})
