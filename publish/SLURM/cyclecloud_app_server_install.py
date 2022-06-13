@@ -439,7 +439,7 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
                     output = subprocess.run(cmd_list, capture_output=True, check=True, text=True).stdout
                     print("Command list:", cmd_list)
                     print("Command output:", output)
-                except CalledProcessError as e:
+                except BaseException as e:
                     print("Failed to register Azure subscription!")
                     print("Error with cmd: %s" % e.cmd)
                     print("Output: %s" % e.output)
