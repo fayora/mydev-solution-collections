@@ -427,24 +427,40 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
             # Retry in case it takes much longer than expected 
             # (this is common with limited compute resources)
             max_tries = 30
-            created = False
+            # created = False
             print("Registering the Azure subscription in CycleCloud")
-
-            while not created:
-                try:
-                    max_tries -= 1
-                    cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
-                    output = subprocess.run(cmd_list, capture_output=True).stdout
-                    created = True
-                    print("Command list:", cmd_list)
-                    print("Command output:", output)
-                except:
-                    if max_tries >  0:
-                            print("Retrying after 10 seconds...")
-                            sleep(10)
+            for i in range(max_tries):
+                attempts = i+1
+                print("Azure account creation attempt number:", attempts)
+                while True :
+                    try:
+                        cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
+                        output = subprocess.run(cmd_list, capture_output=True).stdout
+                        print("Command list:", cmd_list)
+                        print("Command output:", output)
+                    except ValueError as e:
+                        print("Failed to register Azure subscription! Error:" % e)
+                        print("Retrying after 10 seconds...")
+                        sleep(10)
+                        continue
                     else:
-                        print("Error adding the subscription")
-                        raise                    
+                        print("Successfully registered the Azure subscription!")
+
+            # while not created:
+            #     try:
+            #         max_tries -= 1
+            #         cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
+            #         output = subprocess.run(cmd_list, capture_output=True).stdout
+            #         created = True
+            #         print("Command list:", cmd_list)
+            #         print("Command output:", output)
+            #     except:
+            #         if max_tries >  0:
+            #                 print("Retrying after 10 seconds...")
+            #                 sleep(10)
+            #         else:
+            #             print("Error adding the subscription")
+            #             raise                    
 
 def initialize_cyclecloud_cli(admin_user, cyclecloud_admin_pw, webserver_port):
     print("Setting up azure account in CycleCloud and initializing cyclecloud CLI")
@@ -453,8 +469,7 @@ def initialize_cyclecloud_cli(admin_user, cyclecloud_admin_pw, webserver_port):
     password_flag = ("--password=%s" % cyclecloud_admin_pw)
 
     print("Initializing cylcecloud CLI")
-    _catch_sys_error(["/usr/local/bin/cyclecloud", "initialize", "--loglevel=debug", "--batch", "--force",
-                      "--url=https://localhost:{}".format(webserver_port), "--verify-ssl=false", "--username=%s" % admin_user, password_flag])
+    _catch_sys_error(["/usr/local/bin/cyclecloud", "initialize", "--loglevel=debug", "--batch", "--force", "--url=https://localhost:{}".format(webserver_port), "--verify-ssl=false", "--username=%s" % admin_user, password_flag])
 
 
 def letsEncrypt(fqdn):
@@ -501,14 +516,15 @@ def get_vm_managed_identity():
     metadata_url = 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/'
     metadata_req = Request(metadata_url, headers={"Metadata": True})
     print("Getting the Managed System Identity (MSI) of the VM...")
-    for i in range(30):
+    max_tries = 30
+    for i in range(max_tries):
         attempts = i+1
         print("VM MSI attempt number:", attempts)
         while True :
             try:
                 metadata_response = urlopen(metadata_req, timeout=2)
             except ValueError as e:
-                print("Failed to get managed identity:" % e)
+                print("Failed to get managed identity! Error:" % e)
                 print("Retrying after 10 seconds...")
                 sleep(10)
                 continue
