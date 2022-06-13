@@ -126,8 +126,8 @@ def create_user(username):
 
 def create_keypair(use_managed_identity, vm_metadata, ssh_key_name):
     if use_managed_identity:
-        managed_identify = get_vm_managed_identity()
-        access_token = managed_identify["access_token"]
+        managed_identity = get_vm_managed_identity()
+        access_token = managed_identity["access_token"]
         access_headers = {
             "Authorization": f"Bearer {access_token}"
         }
@@ -155,8 +155,8 @@ def create_keypair(use_managed_identity, vm_metadata, ssh_key_name):
 
 def get_storage_account_keys(use_managed_identity, vm_metadata, storage_account_name):
     if use_managed_identity:
-        managed_identify = get_vm_managed_identity()
-        access_token = managed_identify["access_token"]
+        managed_identity = get_vm_managed_identity()
+        access_token = managed_identity["access_token"]
         access_headers = {
             "Authorization": f"Bearer {access_token}"
         }
@@ -502,15 +502,14 @@ def get_vm_managed_identity():
     metadata_req = Request(metadata_url, headers={"Metadata": True})
     print("Getting the Managed System Identity (MSI) of the VM...")
     for i in range(30):
-        attempts = i
+        attempts = i+1
         print("VM MSI attempt number:", attempts)
         while True :
             try:
                 metadata_response = urlopen(metadata_req, timeout=2)
             except ValueError as e:
-                attempts-=1
                 print("Failed to get managed identity:" % e)
-                print("Rtrying after 10 seconds...")
+                print("Retrying after 10 seconds...")
                 sleep(10)
                 continue
             else:
