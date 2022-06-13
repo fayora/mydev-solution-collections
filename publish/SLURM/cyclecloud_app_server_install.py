@@ -9,7 +9,6 @@ import subprocess
 import base64
 import hmac
 import hashlib
-import subprocess
 from string import ascii_uppercase, ascii_lowercase, digits
 from os import path, listdir, chdir, fdopen, remove
 from urllib.request import urlopen, Request
@@ -74,7 +73,7 @@ def _catch_sys_error(cmd_list):
         print("Command list:", cmd_list)
         print("Command output:", output)
         return output
-    except CalledProcessError as e:
+    except subprocess.CalledProcessError as e:
         print("Error with cmd: %s" % e.cmd)
         print("Output: %s" % e.output)
         raise
@@ -433,12 +432,11 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
             for i in range(max_tries):
                 attempts = i+1
                 print("Azure account creation attempt number:", attempts)
-                output = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file])
-                print("Command output:", output)
+                _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file])
                 check_account = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "show", "azure"])
                 if 'Credentials: azure' in str(check_account):
                     print("Azure account created!")
-                    i= max_tries
+                    break
                 else:
                     print("Retrying after 10 seconds...")
                     sleep(10)
@@ -505,7 +503,7 @@ def letsEncrypt(fqdn):
         output = subprocess.run(cmd_list, capture_output=True, check=True, text=True).stdout
         print("Command list:", cmd_list)
         print("Command output:", output)
-    except CalledProcessError as e:
+    except subprocess.CalledProcessError as e:
         print("Error getting SSL cert from Lets Encrypt")
         print("Proceeding with self-signed cert")
 
@@ -617,7 +615,7 @@ def start_cc():
             output = subprocess.subprocess.run(['/opt/cycle_server/util/restore.sh'], stdin=yes.stdout)
             yes.wait()
             print(output)
-        except CalledProcessError as e:
+        except subprocess.CalledProcessError as e:
             print("Error with cmd: %s" % e.cmd)
             print("Output: %s" % e.output)
             raise
