@@ -430,21 +430,32 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
             print("Registering the Azure subscription in CycleCloud")
             # output = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file])
             # print("Command output:", output)
-            # for i in range(max_tries):
-            #     attempts = i+1
-            #     print("Azure account creation attempt number:", attempts)
-            while True :
-                try:
-                    cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
-                    subprocess.run(cmd_list, capture_output=True, check=True, text=True)
-                    output = subprocess.STDOUT
-                    print("Command list:", cmd_list)
-                    print("Command output:", output)
-                except subprocess.CalledProcessError as e:
-                    print("Failed to register Azure subscription!! Error: %s", e)
+            for i in range(max_tries):
+                attempts = i+1
+                print("Azure account creation attempt number:", attempts)
+                output = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file])
+                print("Command output:", output)
+                check_account = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "show", "azure"])
+                if 'Credentials: azure' in str(check_account):
+                    print("Azure account created!")
+                    i= max_tries
+                else:
                     print("Retrying after 10 seconds...")
                     sleep(10)
-                    continue
+
+
+            # while True :
+            #     try:
+            #         cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
+            #         subprocess.run(cmd_list, capture_output=True, check=True, text=True)
+            #         output = subprocess.STDOUT
+            #         print("Command list:", cmd_list)
+            #         print("Command output:", output)
+            #     except subprocess.CalledProcessError as e:
+            #         print("Failed to register Azure subscription!! Error: %s", e)
+            #         print("Retrying after 10 seconds...")
+            #         sleep(10)
+            #         continue
                     
                 # try:
                 #     # cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
