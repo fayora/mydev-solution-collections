@@ -657,12 +657,15 @@ def configure_msft_apt_repos():
     # Fix while Ubuntu 20 is not available -- we install the Ubuntu 18.04 version
     lsb_release = "bionic"
 
+    # Install HTTPS transport to avoid error 100 when adding the MSFT repos
+    _catch_sys_error(["apt-get", "update", "-y", "--allow-releaseinfo-change"])
+    _catch_sys_error(["apt-get", "install", "-y", "apt-transport-https"])
+
     with open('/etc/apt/sources.list.d/azure-cli.list', 'w') as f:
         f.write("deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ {} main".format(lsb_release))
 
     with open('/etc/apt/sources.list.d/cyclecloud.list', 'w') as f:
         f.write("deb [arch=amd64] https://packages.microsoft.com/repos/cyclecloud {} main".format(lsb_release))
-    _catch_sys_error(["apt-get", "install", "-y", "apt-transport-https"])
     _catch_sys_error(["apt-get", "update", "-y", "--allow-releaseinfo-change"])
     
 def install_pre_req():
