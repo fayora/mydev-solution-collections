@@ -719,10 +719,10 @@ def configure_msft_apt_repos():
     print('Running apt-get update for the first time')
     cmd_list = 'apt-get update -y --allow-releaseinfo-change'
     output = os.system(cmd_list)
-    if output == 100:  # Catching error 100 because it is a transient, recoverable error, but runnnig again to ensure successful completion
+    if output == 100: # Catching error 100 because it is a transient, recoverable error, but runnnig again to ensure successful completion
         print('Command apt-get update returned error 100. Running again...')
         output = os.system(cmd_list)
-        if output != 0 # It failed again! Raising the error this time
+        if output != 0: # It failed again! Raising the error this time
             sys.stderr.write("ERROR: The following command failed with error code {:d}: {:s}\n".format(output, cmd_list))
             raise
     elif output != 0: # Some other error occurred, raising it
