@@ -425,7 +425,7 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
             # Create the cloud provider account
             # Retry in case it takes much longer than expected 
             # (this is common with limited compute resources)
-            max_tries = 30
+            max_tries = 60
             # created = False
             print("Registering the Azure subscription in CycleCloud")
             # output = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file])
