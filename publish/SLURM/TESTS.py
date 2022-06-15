@@ -96,3 +96,134 @@ Command list: ['/usr/local/bin/cyclecloud', 'account', 'create', '-f', '/tmp/tmp
 Command output: b''
 
 {"Environment": "public", "AzureRMUseManagedIdentity": true, "AzureResourceGroup": "rg-SLURMSolCollTesting--Felipe-Manual6-FelipeCSPAccount", "AzureRMApplicationId": "", "AzureRMApplicationSecret": "", "AzureRMSubscriptionId": "74bdf443-9081-4138-9af1-61f8542cdb45", "AzureRMTenantId": "", "DefaultAccount": true, "Location": "australiaeast", "Name": "azure", "Provider": "azure", "ProviderId": "74bdf443-9081-4138-9af1-61f8542cdb45", "RMStorageAccount": "stocycleappm7fp3rmcw4", "RMStorageContainer": "cyclecloud"}root@cycleappm7fp3rmcw4:/home/hpcadmin#
+
+root@cycleappgpuhbr3g5c:/opt/cycle_server# cat /opt/cycle_server/system/work/.plugins_expanded/.expanded/cloud-ae3a52c5-b8fb-4692-a236-91ef65a01d07/plugins/azure/initial_data/ads/permissions.ini
+AdType=Application.Permission
+Name=Azure.Cluster.CloudMetadata.Read
+Label=View Azure features for {a cloud-provisioned cluster}
+ForTypes=Cloud.Cluster,Cloud.Node
+Operations=Read
+ParentPermission=Cloud.Clusters/View
+Permissions=Azure.ComputeCell.Read
+
+AdType=Application.Permission
+Name=Azure.ComputeCell.Read
+ForTypes=Azure.ComputeCell
+Operations=Read
+Hidden=true
+root@cycleappgpuhbr3g5c:/opt/cycle_server# cat /opt/cycle_server/system/work/.plugins_expanded/.expanded/cloud-ae3a52c5-b8fb-4692-a236-91ef65a01d07/plugins/cloud/initial_data/ads/permissions.ini
+AdType=Application.Permission
+Name=Cloud.Clusters/View
+Label=View {a cloud-provisioned cluster}
+ForTypes=Cloud.Cluster,Cloud.Node
+Operations=Read
+ParentPermission=Clusters/View
+Permissions=Cloud.Clusters/Access,Cloud.ClusterTemplate.ReadSection,Cloud.Cluster.ReadCloudMetadata,Cloud.Cluster.ReadMetadata
+
+AdType=Application.Permission
+Name=Cloud.Clusters/Manage
+Label=Manage {a cloud-provisioned cluster}
+ForTypes=Cloud.Cluster,Cloud.Node
+Operations=Add:Cloud.Node, Remove:Cloud.Node, Start:Cloud.Node, Terminate:Cloud.Node, Deallocate:Cloud.Node, Shutdown:Cloud.Node, Edit:Cloud.Node, Remove:Cloud.Cluster, Start:Cloud.Cluster, Terminate:Cloud.Cluster, Edit:Cloud.Cluster, Copy:Cloud.Cluster, Upgrade:Cloud.Cluster, Share:Cloud.Cluster
+ParentPermission=Clusters/Manage
+Permissions=Cloud.Clusters/View
+
+AdType=Application.Permission
+Name=Cloud.Clusters/Create
+Label=Create new cloud-provisioned clusters
+ParentPermission=Clusters/Create
+Permissions=Cloud.Cluster.Create,Cloud.ClusterTemplate.Read,Cloud.ClusterTemplate.ReadNode,Cloud.ClusterTemplate.ReadSection,Cloud.Cluster.ReadMetadata
+
+AdType=Application.Permission
+Name=Cloud.Clusters/Access
+Label=Access the Clusters page and features
+ParentPermission=Clusters/Access
+Operations=Access:Cloud.Cluster
+
+AdType=Application.Permission
+Name=Cloud.Clusters/Configure
+Label=Modify CycleCloud-related features
+ParentPermission=Clusters/Configure
+Permissions=Cloud.Cluster.ConfigureMetadata,Cloud.Cluster.ConfigureAccount,Cloud.Cluster.ConfigureLocker
+
+AdType=Application.Permission
+Name=Cloud.Clusters/Connect
+Label=Log in to {a cloud-provisioned cluster} as a regular user
+ForTypes=Cloud.Cluster,Cloud.Node
+Operations=Read,Connect:Cloud.Node
+ParentPermission=Clusters/Connect
+
+AdType=Application.Permission
+Name=Cloud.Clusters/Administer
+Label=Log in to {a cloud-provisioned cluster} as an administrator
+ForTypes=Cloud.Cluster,Cloud.Node
+Operations=Read,Connect:Cloud.Node,Administer:Cloud.Node
+ParentPermission=Clusters/Administer
+
+
+# building-block permissions
+AdType=Application.Permission
+Name=Cloud.Cluster.Create
+Operations=Add:Cloud.Cluster
+ForTypes=Cloud.Cluster
+Hidden=true
+
+AdType=Application.Permission
+Name=Cloud.Cluster.ReadMetadata
+ForTypes=Cloud.Instance,Cloud.InstanceSession,Cloud.Locker,Cloud.MachineType,Cloud.Price,Cloud.ProviderAccount,Cloud.Region,ClusterMetrics,NodeMetrics
+Operations=Read
+Hidden=true
+
+AdType=Application.Permission
+Name=Cloud.Cluster.ConfigureMetadata
+ForTypes=Cloud.Instance,Cloud.InstanceSession,Cloud.MachineType,Cloud.Price,Cloud.Region
+Operations=Create,Read,Update,Delete
+Hidden=true
+
+AdType=Application.Permission
+Name=Cloud.Cluster.ConfigureAccount
+ForTypes=Cloud.ProviderAccount
+Operations=Create,Read,Update,Delete,Retry:Cloud.ProviderAccount
+Hidden=true
+
+AdType=Application.Permission
+Name=Cloud.Cluster.ConfigureLocker
+ForTypes=Cloud.Locker
+Operations=Create,Read,Update,Delete,Retry:Cloud.Locker
+Hidden=true
+
+AdType=Application.Permission
+Name=Cloud.ClusterTemplate.Read
+Operations=Read
+Description=View cluster templates
+ForTypes=Cloud.Cluster
+Filter := IsTemplate is true
+Hidden=true
+
+AdType=Application.Permission
+Name=Cloud.ClusterTemplate.ReadNode
+Operations=Read
+Description=View nodes in cluster templates
+ForTypes=Cloud.Node
+Filter := Cluster().IsTemplate is true
+Hidden=true
+
+AdType=Application.Permission
+Name=Cloud.ClusterTemplate.ReadSection
+Operations=Read
+ForTypes=Cloud.ClusterSection,Cloud.ClusterParameter
+Hidden=true
+
+AdType=Application.Permission
+Name=Cloud.Cluster.ReadCloudMetadata
+ForTypes=Cloud.MachineType,Cloud.Price,Cloud.Region
+Operations=Read
+Hidden=true
+
+
+[{"AdType": "Application.Permission", "Name": "hpcadmin", "Role": "Cloud.Clusters/Administer"}]
+Name=Cloud.Clusters/Administer
+Label=Log in to {a cloud-provisioned cluster} as an administrator
+ForTypes=Cloud.Cluster,Cloud.Node
+Operations=Read,Connect:Cloud.Node,Administer:Cloud.Node
+ParentPermission=Clusters/Administer
