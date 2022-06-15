@@ -21,7 +21,7 @@
                 "V100-GPU,6-CPUs,112GB-RAM"
             ],
             "metadata": {
-              "description": "Choose a size with or without a GPU for the worker nodes."
+              "description": "Choose a size for the worker nodes, with or without a GPU ."
             }
         },
         "OSOfClusterNodes": {
