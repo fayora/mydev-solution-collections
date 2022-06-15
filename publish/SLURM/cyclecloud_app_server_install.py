@@ -717,16 +717,16 @@ def configure_msft_apt_repos():
     # Install HTTPS transport for APT to avoid error 100 when adding the MSFT repos
     # Running an APT update first
     print('Running apt-get update for the first time')
-    cmd_list = 'apt-get update -y --allow-releaseinfo-change'
+    cmd_list = 'apt-get update -y'
     output = os.system(cmd_list)
     if output == 100: # Catching error 100 because it is a transient, recoverable error, but runnnig again to ensure successful completion
         print('Command apt-get update returned error 100. Running again...')
         output = os.system(cmd_list)
         if output != 0: # It failed again! Raising the error this time
-            sys.stderr.write("ERROR: The following command failed with error code {:d}: {:s}\n".format(output, cmd_list))
+            sys.stderr.write("APT ERROR: The following command failed with error code {:d}: {:s}\n".format(output, cmd_list))
             raise
     elif output != 0: # Some other error occurred, raising it
-        sys.stderr.write("ERROR: The following command failed with error code {:d}: {:s}\n".format(output, cmd_list))
+        sys.stderr.write("APT ERROR: The following command failed with error code {:d}: {:s}\n".format(output, cmd_list))
         raise
     # Now we install HTTPS transport for APT
     _catch_sys_error(["apt-get", "install", "-y", "apt-transport-https"])
