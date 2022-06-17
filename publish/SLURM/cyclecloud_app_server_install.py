@@ -379,7 +379,7 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
             "Name": admin_user,
             "RawPassword": cyclecloud_admin_pw,
             "Superuser": True,
-            "Roles": {"Global Node Admin"}
+            "Roles": ["Global Node Admin"]
         }
         account_data.append(login_user)
 
