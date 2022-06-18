@@ -257,6 +257,9 @@ def upload_key_file(storage_account_key, storage_account_name, private_key, cont
 def create_user_credential(username, public_key):
     create_user(username)
 
+    #### FOR TESTING
+    public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC02I7+VYCYFyiEP7I5lDQN7RLl7i+LhnqeRIfrUvR8DDR9EzH3HzAp/WY6e+gZ+TKYzRXuALCAiPa9Y/B+cunp+logwvsvmBEDGvJd51+LTL7lofQ7Cjpa09Vqrg3K5oJxU3jOAnyqXErJ3mx0PRj5PdH4VnlErZbP5MbHLf2o2BkDInabcqKcNeJGeNViY8Ae/imxDpds1ydX4Gc2pKCNMlvbTzzqChwcB/Dd3hMOTSARHIt8wUhvmRz8UAKhRW9CGkav73o7X8za1fadG9X1TYnxKHamJ/05nDBhPuToeGkXaoBUvMWU7tqrKimaV+wJhUujKDBaL6PMivcPdMUa53b3X/F+WKxOb9V/qlm0ZEMif2eDLxCNDceIvvpsSxKxQgpyjkfUFl+ysUvOjInHWlqEEkXoVcMIUrOJ6eX7JKu/F1UJYLDt4hF8hheDwDXDgW8SPXm6nzsUFX+t/V3ERTUJ/peqvUlfwT2ALR8ThOzg9gEPsRmXh6ErIa+m4ydjgxjGZczHUyVBPrng5Wu96Yf/IR/deiGybkYmV8nrMZTjyjuf9/5Gx9y3g3Dr1JekW+/RPp9ICMnm6ebaCTTgAgNNVgSjUUr8GHSrisxCeNs6BgZdr4th+LK+JeDqT0Pk176VaRNb//AUJ70I6mD10hwzvPResHKOeJ+dMF0koQ== bizdata"
+
     credential_record = {
         "PublicKey": public_key,
         "AdType": "Credential",
