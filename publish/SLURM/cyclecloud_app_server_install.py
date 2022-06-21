@@ -637,19 +637,19 @@ def start_cc():
 
     # Retry await_startup in case it takes much longer than expected 
     # (this is common in local testing with limited compute resources)
-    max_tries = 60
-    started = False
-    while not started:
-        try:
-            max_tries -= 1
-            _catch_sys_error([cs_cmd, "await_startup"])
-            started = True
-        except:
-            if max_tries >  0:
-                print("Retrying after 20 seconds...")
-                sleep(20)
-            else:
-                raise 
+    # max_tries = 60
+    # started = False
+    # while not started:
+    #     try:
+    #         max_tries -= 1
+    #         _catch_sys_error([cs_cmd, "await_startup"])
+    #         started = True
+    #     except:
+    #         if max_tries >  0:
+    #             print("Retrying after 20 seconds...")
+    #             sleep(20)
+    #         else:
+    #             raise 
 
 def modify_cs_config(options):
     print("Editing CycleCloud server system properties file")
