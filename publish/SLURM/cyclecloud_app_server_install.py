@@ -633,6 +633,9 @@ def start_cc():
             print("Output: %s" % e.output)
             raise
     
+    _catch_sys_error([cs_cmd, "start"])
+
+    # We run await_startup to force the script to wait until CycleCloud is all up and running
     _catch_sys_error([cs_cmd, "await_startup"])
 
     # Retry await_startup in case it takes much longer than expected 
