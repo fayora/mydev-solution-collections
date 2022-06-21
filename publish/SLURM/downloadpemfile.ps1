@@ -1,5 +1,12 @@
 $containerName = "sshkeyholder"
-$fileName = "schedulernodeaccesskey.pem"
+
+# Get the trimmed name of the Solution Collection from the Resource Group name
+$stringArray = $resourceGroupName.Split("-")
+$sollutionCollectionIndex = $stringArray.Count -2
+$sollutionCollectionName = $stringArray[$sollutionCollectionIndex]
+
+# Specify the name of the private key file by using the name of the Solution Collection, so that it is easy to identify
+$fileName = $sollutionCollectionName + ".pem"
 
 try {
     # Only install modules that are used to avoid agent timeout (3mins)
