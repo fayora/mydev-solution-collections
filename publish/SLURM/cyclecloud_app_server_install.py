@@ -633,7 +633,7 @@ def start_cc():
             print("Output: %s" % e.output)
             raise
     
-    _catch_sys_error([cs_cmd, "start"])
+    _catch_sys_error([cs_cmd, "await_startup"])
 
     # Retry await_startup in case it takes much longer than expected 
     # (this is common in local testing with limited compute resources)
