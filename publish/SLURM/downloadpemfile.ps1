@@ -1,12 +1,13 @@
 $containerName = "sshkeyholder"
+$filename = "schedulernodeaccesskey.pem"
 
 # Get the trimmed name of the Solution Collection from the Resource Group name
 $stringArray = $resourceGroupName.Split("-")
-$sollutionCollectionIndex = $stringArray.Count -2
-$sollutionCollectionName = $stringArray[$sollutionCollectionIndex]
+$solutionCollectionIndex = $stringArray.Count - 2
+$solutionCollectionName = $stringArray[$solutionCollectionIndex].Replace("_", "").Replace(".", "")
 
 # Specify the name of the private key file by using the name of the Solution Collection, so that it is easy to identify
-$fileName = $sollutionCollectionName + ".pem"
+$downloadFileName = $solutionCollectionName + "-cluster.pem"
 
 try {
     # Only install modules that are used to avoid agent timeout (3mins)
@@ -17,7 +18,7 @@ try {
         Install-Module -Name Az.Storage -Repository PSGallery -Force
     }
 
-    # Connect to azure account via managed identity
+    # Connect to the Azure account using a managed identity
     Connect-AzAccount -Identity
 
     # Set context for current subscription
@@ -43,7 +44,7 @@ try {
     Disconnect-AzAccount
 
     # Assign value  to $result so it can be return to the UI
-    $result = "{""fileName"":""$($fileName)"", ""fileContent"":""$($fileContent.Replace("`r`n", "\n"))""}"
+    $result = "{""fileName"":""$($downloadFileName)"", ""fileContent"":""$($fileContent.Replace("`r`n", "\n"))""}"
 }
 catch {
     Write-Host "Unable to download the pem file." $_.Exception.Message
