@@ -301,7 +301,6 @@ def reset_cyclecloud_pw(username):
     _catch_sys_error([cs_cmd, 'execute', update_cmd])
     return pw 
 
-  
 def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, application_id, application_secret,
                              admin_user, azure_cloud, accept_terms, password, storageAccount, no_default_account, 
                              webserver_port):
@@ -454,51 +453,6 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
                     print("Retrying after 10 seconds...")
                     sleep(10)
 
-
-            # while True :
-            #     try:
-            #         cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
-            #         subprocess.run(cmd_list, capture_output=True, check=True, text=True)
-            #         output = subprocess.STDOUT
-            #         print("Command list:", cmd_list)
-            #         print("Command output:", output)
-            #     except subprocess.CalledProcessError as e:
-            #         print("Failed to register Azure subscription!! Error: %s", e)
-            #         print("Retrying after 10 seconds...")
-            #         sleep(10)
-            #         continue
-                    
-                # try:
-                #     # cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
-                #     # output = subprocess.run(cmd_list, capture_output=True).stdout
-                #     output = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file])
-                #     print("Command output:", output)
-                #     # print("Command output:", output)
-                # except:
-                #     print("Failed to register Azure subscription!")
-                #     print("Retrying after 10 seconds...")
-                #     sleep(10)
-                #     continue
-                # else:
-                #     print("Successfully registered the Azure subscription!")
-                #     break
-
-            # while not created:
-            #     try:
-            #         max_tries -= 1
-            #         cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
-            #         output = subprocess.run(cmd_list, capture_output=True).stdout
-            #         created = True
-            #         print("Command list:", cmd_list)
-            #         print("Command output:", output)
-            #     except:
-            #         if max_tries >  0:
-            #                 print("Retrying after 10 seconds...")
-            #                 sleep(10)
-            #         else:
-            #             print("Error adding the subscription")
-            #             raise                    
-
 def initialize_cyclecloud_cli(admin_user, cyclecloud_admin_pw, webserver_port):
     print("Setting up azure account in CycleCloud and initializing cyclecloud CLI")
 
@@ -544,26 +498,6 @@ def get_vm_metadata():
                 print("Successfully got VM metadata!")
                 return json.load(metadata_response)
 
-            # def get_vm_metadata():
-            #     metadata_url = "http://169.254.169.254/metadata/instance?api-version=2017-08-01"
-            #     metadata_req = Request(metadata_url, headers={"Metadata": True})
-
-            #     for _ in range(30):
-            #         print("Fetching metadata")
-            #         metadata_response = urlopen(metadata_req, timeout=2)
-
-            #         try:
-            #             return json.load(metadata_response)
-            #         except ValueError as e:
-            #             print("Failed to get metadata %s" % e)
-            #             print("    Retrying")
-            #             sleep(5)
-            #             continue
-            #         except:
-            #             print("Unable to obtain metadata after 30 tries")
-            #             raise
-
-#@retry(URLError, tries=30, delay=2, backoff=2)
 def get_vm_managed_identity():
     # Managed Identity may  not be available immediately at VM startup so retrying several times and backing off with each retry
     metadata_url = 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/'
@@ -584,35 +518,6 @@ def get_vm_managed_identity():
             else:
                 print("Successfully retrieved the MSI of the VM!")
                 return json.load(metadata_response)
-
-
-
-                # metadata_url = 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/'
-                # metadata_req = Request(metadata_url, headers={"Metadata": True})
-                # print("Getting the Managed Identity of the VM...")
-                # metadata_response = urlopen(metadata_req, timeout=2)
-                # return json.load(metadata_response)
-
-                # def get_vm_managed_identity():
-                #     # Managed Identity may  not be available immediately at VM startup...
-                #     # Test/Pause/Retry to see if it gets assigned
-                #     metadata_url = 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/'
-                #     metadata_req = Request(metadata_url, headers={"Metadata": True})
-
-                #     for _ in range(30):
-                #         print("Fetching managed identity")
-                #         metadata_response = urlopen(metadata_req, timeout=2)
-
-                #         try:
-                #             return json.load(metadata_response)
-                #         except ValueError as e:
-                #             print("Failed to get managed identity %s" % e)
-                #             print("    Retrying")
-                #             sleep(10)
-                #             continue
-                #         except:
-                #             print("Unable to obtain managed identity after 30 tries")
-#             raise    
 
 def start_cc():
     import glob
@@ -637,22 +542,6 @@ def start_cc():
 
     # We run await_startup to force the script to wait until CycleCloud is all up and running
     _catch_sys_error([cs_cmd, "await_startup"])
-
-    # Retry await_startup in case it takes much longer than expected 
-    # (this is common in local testing with limited compute resources)
-    # max_tries = 60
-    # started = False
-    # while not started:
-    #     try:
-    #         max_tries -= 1
-    #         _catch_sys_error([cs_cmd, "await_startup"])
-    #         started = True
-    #     except:
-    #         if max_tries >  0:
-    #             print("Retrying after 20 seconds...")
-    #             sleep(20)
-    #         else:
-    #             raise 
 
 def modify_cs_config(options):
     print("Editing CycleCloud server system properties file")
@@ -1000,9 +889,6 @@ def main():
     
     # Create user requires root privileges
     create_user_credential(args.username, public_key)
-
-    # Sleep for 6 minutes while CycleCloud retrieves Azure information and finish its internal configuration
-    # sleep(360)
 
     #clean_up()
 
