@@ -27,7 +27,7 @@ try {
     Disconnect-AzAccount
 
     # Assign value  to $result so it can be return to the UI
-    $result = "ssh -i <private key path> hpc@" + $schedulerPublicIpAddress
+    $result = "ssh hpcadmnin@" + $schedulerPublicIpAddress + " -i <private key path>"
 }
 catch {
     Write-Host "Unable to get ssh detail of the scheduler node." $_.Exception.Message
