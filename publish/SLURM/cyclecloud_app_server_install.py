@@ -834,12 +834,18 @@ def main():
 
     args = parser.parse_args()
 
-    print("Debugging arguments: %s" % args)
+    print("SCRIPT: Debugging arguments: %s" % args)
+
+    print("SCRIPT: Starting the script now...")
 
     if not already_installed():
+        print("SCRIPT: Calling function to configure the MSFT APT repos...")
         configure_msft_apt_repos()
+        print("SCRIPT: Calling function to install pre-requisites...")
         install_pre_req()
+        print("SCRIPT: Calling function to download and install CycleCloud...")
         download_install_cc()
+        print("SCRIPT: Calling function to modify the cs_config file...")
         modify_cs_config(options = {'webServerMaxHeapSize': args.webServerMaxHeapSize,
                                     'webServerPort': args.webServerPort,
                                     'webServerSslPort': args.webServerSslPort,
@@ -847,32 +853,38 @@ def main():
                                     'webServerEnableHttps': True,
                                     'webServerHostname': args.webServerHostname})
 
+    print("SCRIPT: Calling function to start CycleCloud...")
     start_cc()
 
+    print("SCRIPT: Calling function to install the CycleCloud CLI...")
     install_cc_cli()
 
+    print("SCRIPT: Calling function to get the VM metadata...")
     vm_metadata = get_vm_metadata()
 
     # We decode the password back to an ASCII string because they are passed as Base64 to avoid issues with special characters
     decoded_password = base64.b64decode(args.password).decode('ascii')
 
-    print("The raw password is: %s" % args.password)
-    print("The decoded password is: %s" % decoded_password)
+    print("SCRIPT: The raw password is: %s" % args.password)
+    print("SCRIPT: The decoded password is: %s" % decoded_password)
 
     if args.resourceGroup:
-        print("CycleCloud created in resource group: %s" % vm_metadata["compute"]["resourceGroupName"])
-        print("Cluster resources will be created in resource group: %s" %  args.resourceGroup)
+        print("SCRIPT: CycleCloud created in resource group: %s" % vm_metadata["compute"]["resourceGroupName"])
+        print("SCRIPT: Cluster resources will be created in resource group: %s" %  args.resourceGroup)
         vm_metadata["compute"]["resourceGroupName"] = args.resourceGroup
 
+    print("SCRIPT: Calling function to add the Azure account...")
     cyclecloud_account_setup(vm_metadata, args.useManagedIdentity, args.tenantId, args.applicationId,
                              args.applicationSecret, args.username, args.azureSovereignCloud,
                              args.acceptTerms, decoded_password, args.storageAccount, 
                              args.no_default_account, args.webServerSslPort)
 
     if args.useLetsEncrypt:
+        print("SCRIPT: Calling function to get self-signed certificate from LetsEncrypt...")
         letsEncrypt(args.hostname)
 
     # Create the ssh key file
+    print("SCRIPT: Calling function to create the SSH key file for the cluster...")
     ssh_key = create_keypair(args.useManagedIdentity, vm_metadata, args.sshkey)
     public_key_raw = ssh_key["publicKey"]
     # Remove the carriage return characters from the JSON string for the public key
@@ -880,6 +892,7 @@ def main():
     private_key = ssh_key["privateKey"]
 
     # Store the private key in blob storage
+    print("SCRIPT: Calling functions to store the private key in blob storage...")
     storage_account_keys = get_storage_account_keys(args.useManagedIdentity, vm_metadata, args.storageAccount)
     storage_account_key = storage_account_keys["keys"][0]["value"]
     container_name = "sshkeyholder"
@@ -888,13 +901,18 @@ def main():
     upload_key_file(storage_account_key, args.storageAccount, private_key, container_name)
     
     # Create user requires root privileges
+    print("SCRIPT: Calling function to create the user with the provided name and public key...")
     create_user_credential(args.username, public_key)
 
     #clean_up()
 
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
+    print("SCRIPT: Calling function to import the cluster...")
     import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores)
+    print("SCRIPT: Calling function to start the cluster...")
     start_cluster()
+
+    print("SCRIPT: Script completed!")
 
 if __name__ == "__main__":
     try:
