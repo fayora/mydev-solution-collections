@@ -1,3 +1,15 @@
+[{"AdType": "Application.Setting", "Name": "cycleserver.installation.initial_user", "Value": "hpcadmin"}, 
+{"Category": "system", "Status": "internal", "AdType": "Application.Setting", "Description": "CycleCloud distribution method e.g. marketplace, container, manual.", "Value": "manual", "Name": "distribution_method"}, 
+{"AdType": "Application.Setting", "Name": "cycleserver.installation.complete", "Value": true}, 
+{"AdType": "AuthenticatedUser", "Name": "hpcadmin", "RawPassword": "LoomeRockS12", "Superuser": true}]
+
+{"PublicKey": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCslWKt4Xzhbr+31BOrKfiYIPWt\r\nyQPGNkVMgwJb8i781Es58E2L4wFndj8/m9nGOPBqyt7o6KxXmMOUf8V75/vCXW96\r\neok1Szs79GqYmmdOIwnwGd6uf0W3sC6KRfl0Sh4Ms5RfD3r0ZBsbW+NodZFPQTLX\r\nyLC0taqXiNGTpip7B0D/j0biI1uUeH+X+Vqmbv4wV6TvCpm9+gQqxJWzUrpseBWL\r\nxnuMnkYiERCxqZw3namAPL5v78EPTLpSRHCz1bS/x5UbqUmJoJga5MeX9T0KwwdT\r\nQkcHs6hIUEjK0nhqZrcKloF6AuMXQfY7G0G+g/qurwzEc98P2+1qyK/tZ4b+E1JD\r\n8jDWFcoj9iuBqjLWUCUmtd8z5SsXGegd4t0cnTUk+GpzxJ47CeR4Q+2ntKj9l/Et\r\nbJ+Gmvx2wHOGjrmlgwY4/izUluMkhhJl6ThxGYsicJKCxz/3SpO7RYQ98nhXVgmg\r\nRDGWEM4g5/KAjIcoftv00lM/l8balqMQc8AceQE= generated-by-azure\r\n", 
+"AdType": "Credential", 
+"CredentialType": "PublicKey", 
+"Name": "hpcadmin/public"}
+
+[{"AdType" : "AuthenticatedUser", "Name" : "felipe", "Authentication" : "internal", "Roles" : {"Global Node Admin"}, "UID" : 22102, "Superuser" : true, "Description" : "Added via JSON file"}] "CommonName" : "public", "PublicKey": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCslWKt4Xzhbr+31BOrKfiYIPWt\r\nyQPGNkVMgwJb8i781Es58E2L4wFndj8/m9nGOPBqyt7o6KxXmMOUf8V75/vCXW96\r\neok1Szs79GqYmmdOIwnwGd6uf0W3sC6KRfl0Sh4Ms5RfD3r0ZBsbW+NodZFPQTLX\r\nyLC0taqXiNGTpip7B0D/j0biI1uUeH+X+Vqmbv4wV6TvCpm9+gQqxJWzUrpseBWL\r\nxnuMnkYiERCxqZw3namAPL5v78EPTLpSRHCz1bS/x5UbqUmJoJga5MeX9T0KwwdT\r\nQkcHs6hIUEjK0nhqZrcKloF6AuMXQfY7G0G+g/qurwzEc98P2+1qyK/tZ4b+E1JD\r\n8jDWFcoj9iuBqjLWUCUmtd8z5SsXGegd4t0cnTUk+GpzxJ47CeR4Q+2ntKj9l/Et\r\nbJ+Gmvx2wHOGjrmlgwY4/izUluMkhhJl6ThxGYsicJKCxz/3SpO7RYQ98nhXVgmg\r\nRDGWEM4g5/KAjIcoftv00lM/l8balqMQc8AceQE= generated-by-azure\r\n", "AdType": "Credential", "Owner":  "felipe", "CredentialType": "PublicKey", "Name": "felipe/public"}]
+
 from urllib.request import urlopen, Request
 from time import sleep
 import json
