@@ -25,46 +25,6 @@ print("Creating temp directory {} for installing CycleCloud".format(tmpdir))
 cycle_root = "/opt/cycle_server"
 cs_cmd = cycle_root + "/cycle_server"
 
-def retry(ExceptionToCheck, tries=4, delay=3, backoff=2, logger=None):
-    """Retry calling the decorated function using an exponential backoff.
-
-    http://www.saltycrane.com/blog/2009/11/trying-out-retry-decorator-python/
-    original from: http://wiki.python.org/moin/PythonDecoratorLibrary#Retry
-
-    :param ExceptionToCheck: the exception to check. may be a tuple of
-        exceptions to check
-    :type ExceptionToCheck: Exception or tuple
-    :param tries: number of times to try (not retry) before giving up
-    :type tries: int
-    :param delay: initial delay between retries in seconds
-    :type delay: int
-    :param backoff: backoff multiplier e.g. value of 2 will double the delay
-        each retry
-    :type backoff: int
-    :param logger: logger to use. If None, print
-    :type logger: logging.Logger instance
-    """
-    def deco_retry(f):
-
-        @wraps(f)
-        def f_retry(*args, **kwargs):
-            mtries, mdelay = tries, delay
-            while mtries > 1:
-                try:
-                    return f(*args, **kwargs)
-                except ExceptionToCheck as e:
-                    message = "%s, Retrying in %d seconds..." % (str(e), mdelay)
-                    if logger:
-                        logger.warning(msg)
-                    else:
-                        print (message)
-                    sleep(mdelay)
-                    mtries -= 1
-                    mdelay *= backoff
-            return f(*args, **kwargs)
-        return f_retry  # true decorator
-    return deco_retry
-
 def clean_up():
     rmtree(tmpdir)
 
@@ -412,7 +372,7 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
     else:
         output =  _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "show", "azure"])
         if 'Credentials: azure' in str(output):
-            print("Account \"azure\" already exists.   Skipping account setup...")
+            print("Account \"azure\" already exists. Skipping account setup...")
         else:
             azure_data_file = tmpdir + "/azure_data.json"
             with open(azure_data_file, 'w') as fp:
@@ -474,7 +434,6 @@ def letsEncrypt(fqdn):
         print("Error getting SSL cert from Lets Encrypt")
         print("Proceeding with self-signed cert")
 
-#@retry(URLError, tries=30, delay=2, backoff=2)
 def get_vm_metadata():
     metadata_url = "http://169.254.169.254/metadata/instance?api-version=2017-08-01"
     metadata_req = Request(metadata_url, headers={"Metadata": True})
