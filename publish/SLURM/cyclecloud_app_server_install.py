@@ -888,7 +888,7 @@ def main():
     import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores)
     print("SCRIPT: Calling function to start the cluster...")
     start_cluster()
-    pring("SCRIPT: Sleeping for 5 minutes to let the master node boot up and be configured...")
+    print("SCRIPT: Sleeping for 5 minutes to let the master node boot up and be configured...")
     sleep(300)
 
     print("SCRIPT: Script completed!")
