@@ -709,7 +709,7 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
 
 
 def start_cluster():
-    _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "Slurm-Custom"])
+    _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "SLURM cluster"])
     
 def main():
     parser = argparse.ArgumentParser(description="usage: %prog [options]")
