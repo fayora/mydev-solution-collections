@@ -410,6 +410,12 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
                     print("Azure account created!")
                     break
                 else:
+                    print("Account creation failed! Removing CycleCloud and re-installing it before retrying...")
+                    print("Removing first:")
+                    _catch_sys_error(["apt", "remove", "-y", "cyclecloud8"])
+                    print("Waiting 10 seconds before reinstalling it...")
+                    sleep(10)
+                    print("Now re-installing it:")
                     print("Retrying after 10 seconds...")
                     sleep(10)
 
@@ -616,7 +622,7 @@ def install_pre_req():
     _catch_sys_error(["apt", "install", "-y", "openjdk-8-jre-headless"])
     _catch_sys_error(["apt", "install", "-y", "unzip"])
     _catch_sys_error(["apt", "install", "-y", "python3-venv"])
-    # Not strictly needed, but it's useful to have the AZ CLI
+    # Not strictly needed, but it's useful to have the Azure CLI
     _catch_sys_error(["apt", "install", "-y", "azure-cli"])
 
 
