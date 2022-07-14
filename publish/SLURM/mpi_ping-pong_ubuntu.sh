@@ -6,8 +6,11 @@
 #        To check the version, run: module avail mpi/impi
 IMPI_VERSION="2021.6.0"
 
-echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-echo "Run a ping-pong test over RDMA:"
+echo ""
+echo "********************************************************************************"
+echo "****************** Intel MPI 2021 -- Ping-pong test over RDMA ******************"
+echo "********************************************************************************"
+echo ""
 export INTELMPI_ROOT=/opt/intel/oneapi/mpi/latest
 export I_MPI_FABRICS=shm:ofi
 export I_MPI_OFI_PROVIDER=mlx
@@ -20,8 +23,10 @@ source /opt/intel/oneapi/mpi/$IMPI_VERSION/etc/conda/activate.d/mpivars.activate
 mpirun IMB-MPI1 pingpong
 
 echo ""
-echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-echo "Run a ping-pong test over TCP:"
+echo "********************************************************************************"
+echo "****************** Intel MPI 2021 -- Ping-pong test over TCP *******************"
+echo "********************************************************************************"
+echo ""
 export FI_PROVIDER=tcp
 export FI_TCP_IFACE=eth0
 mpirun IMB-MPI1 pingpong
