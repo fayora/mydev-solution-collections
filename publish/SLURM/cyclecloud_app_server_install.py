@@ -402,8 +402,19 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
                     print("Command list:", cmd_list)
                     print("Command output:", output)
                 except subprocess.CalledProcessError as e:
+                    print("Account creation failed!")
                     print("Error with cmd: %s" % e.cmd)
-                    print("Output: %s" % e.output)
+                    print("Stdout: %s" % e.stdout)
+                    print("")
+                    print("Stderr: %s" % e.stderr)
+                    print("")
+                    print("Removing CycleCloud and re-installing it before retrying...")
+                    print("Removing first:")
+                    _catch_sys_error(["apt", "remove", "-y", "cyclecloud8"])
+                    print("Waiting 10 seconds before reinstalling it...")
+                    sleep(10)
+                    print("Now re-installing it:")
+                    _catch_sys_error(["apt", "install", "-y", "cyclecloud8"])
                     continue
                 check_account = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "show", "azure"])
                 if 'Credentials: azure' in str(check_account):
@@ -416,6 +427,7 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
                     print("Waiting 10 seconds before reinstalling it...")
                     sleep(10)
                     print("Now re-installing it:")
+                    _catch_sys_error(["apt", "install", "-y", "cyclecloud8"])
                     print("Retrying after 10 seconds...")
                     sleep(10)
 
