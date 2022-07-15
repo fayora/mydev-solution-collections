@@ -645,6 +645,8 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     ###########################################################################################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ### NEEDS A FINAL LOCATION for PRODUCTION!!
     cluster_files_download_url = "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/SLURM/"
+
+    ### *****Can these 2 files be loaded locally? Are they copied into the CycleApp VM?*****
     ###########################################################################################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     cluster_template_file_download_path = "/tmp/" + cluster_template_file_name
@@ -660,10 +662,13 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     # Construct the Subnet ID value by using the information in the VM metadata for Resource Group and the VM name
     resource_group = vm_metadata["compute"]["resourceGroupName"]
     vm_name = vm_metadata["compute"]["name"]
+    vm_location = vm_metadata["compute"]["location"]
     # *********************************************************
     # *IMPORTANT: this string value has a dependency on the name specified to the subnet in the ARM template that deploys the CycleCloud App 
     subnet_name = "compute"
     # *********************************************************
+
+    location_param = "Region=" + vm_location
     subnet_string_value = resource_group + "/vnet" + vm_name + "/" + subnet_name
     subnet_param = "SubnetId=" + subnet_string_value
     print("The subnet for the worker nodes is: %s" % subnet_param)
@@ -682,7 +687,7 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     print("The amount of execute core for the worker nodes is: %s" % maxCore_param)
     
     # We import the cluster, passing the subnet name as a parameter override
-    _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param])
+    _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", location_param , "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param])
 
 
 def start_cluster():
