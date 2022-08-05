@@ -669,7 +669,7 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     # *********************************************************
 
     location_param = "Region=" + vm_location
-    print("The region for the cluster is: %s" % location_param)
+    print("The region for the cluster is: %s" % vm_location)
 
     subnet_string_value = resource_group + "/vnet" + vm_name + "/" + subnet_name
     subnet_param = "SubnetId=" + subnet_string_value
