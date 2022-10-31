@@ -1,0 +1,8 @@
+{
+    "name": "SLURM cluster with Lustre FS for HPC",
+    "description": "Deploys a SLURM cluster your specified number of worker nodes and node sizes, connected to a fully-managed Lustre File System.",
+    "version": "2022.28.10.1",
+    "icon": "fa fa-cubes",
+    "deploymentMode": "User",
+    "upgradeAllowed": true
+}
