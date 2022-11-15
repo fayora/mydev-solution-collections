@@ -592,13 +592,13 @@ def configure_msft_apt_repos():
     print('Running apt-get update for the first time')
     cmd_list = 'apt-get update -y'
     output = os.system(cmd_list)
-    if output == 100: # Catching error 100 because it is a transient, recoverable error, but runnnig again to ensure successful completion
+    if output == 100: # Catching error 100 because it is a transient, recoverable error, but running again to ensure successful completion
         print('Command apt-get update returned error 100. Running again...')
         output = os.system(cmd_list)
         if output != 0: # It failed again! Raising the error this time
             sys.stderr.write("APT ERROR: The following command failed with error code {:d}: {:s}\n".format(output, cmd_list))
             raise
-    elif output == 25600: # Catching error 25600 because it is a transient,  recoverable error, but runnnig again to ensure successful completion
+    elif output == 25600: # Catching error 25600 because it is a transient,  recoverable error, but running again to ensure successful completion
         print('Command apt-get update returned error 25600. Running again...')
         output = os.system(cmd_list)
         if output != 0: # It failed again! Raising the error this time
@@ -644,7 +644,7 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
 
     ###########################################################################################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ### NEEDS A FINAL LOCATION for PRODUCTION!!
-    cluster_files_download_url = "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/SLURM/"
+    cluster_files_download_url = "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/Lustre-SLURM/"
 
     ### *****Can these 2 files be loaded locally? Are they copied into the CycleApp VM?*****
     ###########################################################################################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -693,8 +693,8 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
 
 
 def start_cluster():
-    _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "SLURM cluster"])
-    
+    _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "SLURM-Cluster"])
+
 def main():
     parser = argparse.ArgumentParser(description="usage: %prog [options]")
 
@@ -814,6 +814,11 @@ def main():
                         dest="countOfNodeCores",
                         default=2,
                         help="The amount of cores for worker nodes")
+
+    parser.add_argument("--lustreMSGIpAddress",
+                        dest="lustreMSGIpAddress",
+                        default="",
+                        help="The IP address of the Lustre management service, if existing")
 
 
     args = parser.parse_args()
