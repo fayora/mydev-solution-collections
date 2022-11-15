@@ -6,7 +6,7 @@
     "SubnetId": "SubnetName",
     "Region" : "southcentralus",
     "configuration_slurm_shutdown_policy" : "Terminate",
-    "configuration_slurm_version" : "20.11.7-1",
+    "configuration_slurm_version" : "22.05.3-1",
     "configuration_slurm_accounting_enabled" : false,
     "configuration_slurm_accounting_url" : null,
     "configuration_slurm_accounting_user" : null,
