@@ -638,7 +638,7 @@ def install_pre_req():
     _catch_sys_error(["apt", "install", "-y", "azure-cli"])
 
 
-def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores):
+def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores, lustreMSGIpAddress):
     cluster_template_file_name = "slurm_template.ini"
     cluster_parameters_file_name = "slurm_params.json"
 
@@ -655,6 +655,14 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     cluster_parameters_file_url = cluster_files_download_url + cluster_parameters_file_name
     _catch_sys_error(["sudo", "wget", "-q", "-O", cluster_template_file_download_path, cluster_template_file_url])
     _catch_sys_error(["sudo", "wget", "-q", "-O", cluster_parameters_file_download_path, cluster_parameters_file_url])
+
+    # Add the Lustre FS MSGIpAddress to the cluster template file
+    if lustreMSGIpAddress:
+        with open(cluster_template_file_download_path, 'r') as file:
+            filedata = file.read()
+        filedata = filedata.replace('LustreMSGIpAddressValue', lustreMSGIpAddress)
+        with open(cluster_template_file_download_path, 'w') as file:
+            file.write(filedata)
 
     _catch_sys_error(["chown", "-R", "cycle_server:cycle_server", cluster_template_file_download_path])
     _catch_sys_error(["chown", "-R", "cycle_server:cycle_server", cluster_parameters_file_download_path])
@@ -897,9 +905,11 @@ def main():
 
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
     print("SCRIPT: Calling function to import the cluster...")
-    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores)
+    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, args.lustreMSGIpAddress)
+
     print("SCRIPT: Calling function to start the cluster...")
     start_cluster()
+
     print("SCRIPT: Sleeping for 8 minutes, which is the typical start time-for the master node to boot up and be configured...")
     sleep(480)
 
