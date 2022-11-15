@@ -4,7 +4,7 @@
     "UsePublicNetwork" : true,
     "Credentials" : "azure",
     "SubnetId": "SubnetName",
-    "Region" : "southcentralus",
+    "Region" : "australiaeast",
     "configuration_slurm_shutdown_policy" : "Terminate",
     "configuration_slurm_version" : "22.05.3-1",
     "configuration_slurm_accounting_enabled" : false,
