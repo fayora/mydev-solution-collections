@@ -393,10 +393,6 @@
         }
     ],
     "outputs": {
-        "AMLFSIPaddress": {
-            "type": "string",
-            "value": "[reference(variables('amlfsName')).mgsAddress]"
-        },
         "AMLFSMountCommand": {
             "type": "string",
             "value": "[reference(variables('amlfsName')).mountCommand]"
