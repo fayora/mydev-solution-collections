@@ -25,6 +25,9 @@ print("Creating temp directory {} for installing CycleCloud".format(tmpdir))
 cycle_root = "/opt/cycle_server"
 cs_cmd = cycle_root + "/cycle_server"
 
+def generate_timestamp():
+    return datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
+
 def clean_up():
     rmtree(tmpdir)
 
@@ -37,6 +40,7 @@ def _catch_sys_error(cmd_list):
     except subprocess.CalledProcessError as e:
         print("Error with cmd: %s" % e.cmd)
         print("Output: %s" % e.output)
+        time.ctime()
         raise
 
 def create_shared_key_signature(storage_account_key, verb, canonicalized_headers, canonicalised_resource, content_length="", content_type=""):
@@ -167,7 +171,7 @@ def create_blob_container(storage_account_key, storage_account_name, container_n
             return container_response.status
         except ValueError as e:
             print("Failed to create blob container %s" % e)
-            print("    Retrying")
+            print("    Retrying")try
             sleep(2)
             continue
         except:
@@ -698,59 +702,56 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     # We import the cluster, passing the subnet name as a parameter override
     _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", location_param , "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param])
 
-def wait_for_lustre_msg(lustre_msg_name):
-    print("SCRIPT: Checking if the Lustre File System is ready...")
-    managed_identity = get_vm_managed_identity()
-    access_token = managed_identity["access_token"]
-    access_headers = {
-        "Authorization": f"Bearer {access_token}"
-        }
-    subscriptionId = managed_identity["subscriptionId"]
-    resourceGroup = managed_identity["resourceGroup"]
-    url = "https://management.azure.com/{}?api-version=2021-11-01-preview".format(amlfsId)
-    url = "https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageCache/amlFilesystems/{}?api-version=2021-11-01-preview".format(subscriptionId, resourceGroup, lustre_msg_name)
-    request = Request(url, method="GET", headers=access_headers)
-    while True:
-        try:
-            # User REST to get the Lustre MSG status
-            response = urlopen(request, timeout=5)
-            json_response = json.load(response)
-            lustre_msg_status = json_response["properties"]["health"]["state"]
-            if lustre_msg_status == "Available":
-                print("SCRIPT: The Lustre File system is ready.")
-                return json_response["properties"]["mgsAddress"]
-        except:
-            print("Lustre MSG is not ready yet, waiting...")
-            print("Retrying after 10 seconds...")
-            sleep(10)
-            continue
-
 def wait_for_lustre_msg(lustre_msg_name, subscription_id, resource_group):
     print("SCRIPT: Checking if the Lustre File System is ready...")
     print("SCRIPT: The Lustre File System name is: %s" % lustre_msg_name)
+    
+    # We get the access token from the managed identity of the VM, and build the header for the REST call
     managed_identity = get_vm_managed_identity()
     access_token = managed_identity["access_token"]
     access_headers = {
         "Authorization": f"Bearer {access_token}"
         }
-    url = "https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageCache/amlFilesystems/{}?api-version=2021-11-01-preview".format(subscription_id, resource_group, lustre_msg_name)
+
+    # We build the URL for the REST call using the Lustre File System name, the subscription ID and the resource group name
+    ############################# UPDATE WHEN THE AMLFS GOES TO PROD #############################
+    amlfs_api_version = "2021-11-01-preview"
+    ##############################################################################################
+    url = "https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageCache/amlFilesystems/{}?api-version={}".format(subscription_id, resource_group, lustre_msg_name, amlfs_api_version)
+    
+    # We build the body of the REST call
     request = Request(url, method="GET", headers=access_headers)
+    
+    #We loop until the Lustre File System is ready
     while True:
-        try:
-            # User a REST call to get the Lustre MSG status
-            response = urlopen(request, timeout=5)
-            json_response = json.load(response)
-            lustre_msg_status = json_response["properties"]["health"]["state"]
-            print("SCRIPT: The current status is: %s" % lustre_msg_status)
-            if lustre_msg_status == "Available":
-                # When the Lustre MSG is available, return the IP address
-                print("SCRIPT: The Lustre File system is ready.")
-                return json_response["properties"]["mgsAddress"]
-        except:
-            print("Lustre MSG is not ready yet, waiting...")
-            print("Retrying after 10 seconds...")
+        time_stamp = generate_timestamp()
+        response = urlopen(request, timeout=5)
+        json_response = json.load(response)
+        lustre_msg_status = json_response["properties"]["health"]["state"]
+        if lustre_msg_status != "Available":
+            print("(%s)SCRIPT: The Lustre File system is not ready. Status is: %s" % time_stamp, lustre_msg_status) 
+            print("(%s)SCRIPT: Waiting 10 seconds and trying again..." % time_stamp)
             sleep(10)
-            continue
+        elif lustre_msg_status == "Available":
+            print("SCRIPT: The Lustre File system is ready.")
+            return json_response["properties"]["mgsAddress"]
+        # try:
+        #     response = urlopen(request, timeout=5)
+        #     json_response = json.load(response)
+        #     lustre_msg_status = json_response["properties"]["health"]["state"]
+        #     print("SCRIPT: The current status is: %s" % lustre_msg_status)
+        #     if lustre_msg_status == "Available":
+        #         # When the Lustre MSG is available, return the IP address
+        #         print("SCRIPT: The Lustre File system is ready.")
+        #         return json_response["properties"]["mgsAddress"]
+        #     else:
+        #         print("SCRIPT: The Lustre File system is not ready. Waiting 30 seconds...")
+        #         sleep(30)
+        # except:
+        #     print("Lustre MSG is not ready yet, waiting...")
+        #     print("Retrying after 10 seconds...")
+        #     sleep(10)
+        #     continue
 
 def start_cluster():
     _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "SLURM-Cluster"])
