@@ -702,8 +702,10 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", location_param , "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param])
 
 def wait_for_lustre_msg(lustre_msg_name, subscription_id, resource_group):
-    print("SCRIPT: Checking if the Lustre File System is ready...")
-    print("SCRIPT: The Lustre File System name is: %s" % lustre_msg_name)
+    time_stamp = generate_timestamp()
+    print("[%s] SCRIPT: Checking if the Lustre File System is ready..." % time_stamp)
+    time_stamp = generate_timestamp()
+    print("[%s] SCRIPT: The Lustre File System name is: %s" % (time_stamp, lustre_msg_name))
     
     # We get the access token from the managed identity of the VM, and build the header for the REST call
     managed_identity = get_vm_managed_identity()
@@ -723,16 +725,18 @@ def wait_for_lustre_msg(lustre_msg_name, subscription_id, resource_group):
     
     #We loop until the Lustre File System is ready
     while True:
-        time_stamp = generate_timestamp()
         response = urlopen(request, timeout=5)
         json_response = json.load(response)
         lustre_msg_status = json_response["properties"]["health"]["state"]
         if lustre_msg_status != "Available":
-            print("(%s)SCRIPT: The Lustre File system is not ready. Status is: %s" % time_stamp, lustre_msg_status) 
-            print("(%s)SCRIPT: Waiting 10 seconds and trying again..." % time_stamp)
+            time_stamp = generate_timestamp()
+            print("[%s] SCRIPT: The Lustre File system is not ready. Status is: %s" % (time_stamp, lustre_msg_status))
+            time_stamp = generate_timestamp()
+            print("[%s] SCRIPT: Waiting 10 seconds and trying again..." % time_stamp)
             sleep(10)
         elif lustre_msg_status == "Available":
-            print("SCRIPT: The Lustre File system is ready.")
+            time_stamp = generate_timestamp()
+            print("[%s] SCRIPT: The Lustre File system is ready." % time_stamp)
             return json_response["properties"]["mgsAddress"]
         # try:
         #     response = urlopen(request, timeout=5)
