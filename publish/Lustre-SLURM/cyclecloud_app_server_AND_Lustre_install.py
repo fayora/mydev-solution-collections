@@ -40,7 +40,6 @@ def _catch_sys_error(cmd_list):
     except subprocess.CalledProcessError as e:
         print("Error with cmd: %s" % e.cmd)
         print("Output: %s" % e.output)
-        time.ctime()
         raise
 
 def create_shared_key_signature(storage_account_key, verb, canonicalized_headers, canonicalised_resource, content_length="", content_type=""):
@@ -171,7 +170,7 @@ def create_blob_container(storage_account_key, storage_account_name, container_n
             return container_response.status
         except ValueError as e:
             print("Failed to create blob container %s" % e)
-            print("    Retrying")try
+            print("    Retrying")
             sleep(2)
             continue
         except:
