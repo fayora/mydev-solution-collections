@@ -572,7 +572,6 @@ def install_cc_cli():
             chdir(cli_install_dir)
             _catch_sys_error(["./install.sh", "--system"])
 
-
 def already_installed():
     print("Checking for existing Azure CycleCloud install")
     return os.path.exists("/opt/cycle_server/cycle_server")
@@ -699,6 +698,57 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     # We import the cluster, passing the subnet name as a parameter override
     _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", location_param , "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param])
 
+def wait_for_lustre_msg(lustre_msg_name):
+    print("SCRIPT: Checking if the Lustre File System is ready...")
+    managed_identity = get_vm_managed_identity()
+    access_token = managed_identity["access_token"]
+    access_headers = {
+        "Authorization": f"Bearer {access_token}"
+        }
+    subscriptionId = managed_identity["subscriptionId"]
+    resourceGroup = managed_identity["resourceGroup"]
+    url = "https://management.azure.com/{}?api-version=2021-11-01-preview".format(amlfsId)
+    url = "https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageCache/amlFilesystems/{}?api-version=2021-11-01-preview".format(subscriptionId, resourceGroup, lustre_msg_name)
+    request = Request(url, method="GET", headers=access_headers)
+    while True:
+        try:
+            # User REST to get the Lustre MSG status
+            response = urlopen(request, timeout=5)
+            json_response = json.load(response)
+            lustre_msg_status = json_response["properties"]["health"]["state"]
+            if lustre_msg_status == "Available":
+                print("SCRIPT: The Lustre File system is ready.")
+                return json_response["properties"]["mgsAddress"]
+        except:
+            print("Lustre MSG is not ready yet, waiting...")
+            print("Retrying after 10 seconds...")
+            sleep(10)
+            continue
+
+def wait_for_lustre_msg(lustre_msg_name, subscription_id, resource_group):
+    print("SCRIPT: Checking if the Lustre File System is ready...")
+    managed_identity = get_vm_managed_identity()
+    access_token = managed_identity["access_token"]
+    access_headers = {
+        "Authorization": f"Bearer {access_token}"
+        }
+    url = "https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageCache/amlFilesystems/{}?api-version=2021-11-01-preview".format(subscription_id, resource_group, lustre_msg_name)
+    request = Request(url, method="GET", headers=access_headers)
+    while True:
+        try:
+            # User a REST call to get the Lustre MSG status
+            response = urlopen(request, timeout=5)
+            json_response = json.load(response)
+            lustre_msg_status = json_response["properties"]["health"]["state"]
+            if lustre_msg_status == "Available":
+                # When the Lustre MSG is available, return the IP address
+                print("SCRIPT: The Lustre File system is ready.")
+                return json_response["properties"]["mgsAddress"]
+        except:
+            print("Lustre MSG is not ready yet, waiting...")
+            print("Retrying after 10 seconds...")
+            sleep(10)
+            continue
 
 def start_cluster():
     _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "SLURM-Cluster"])
@@ -828,6 +878,10 @@ def main():
                         default="",
                         help="The IP address of the Lustre management service, if existing")
 
+    parser.add_argument("--lustreFSName",
+                        dest="lustreFSName",
+                        default="",
+                        help="The name of the Lustre file system, if existing")
 
     args = parser.parse_args()
 
@@ -858,6 +912,7 @@ def main():
 
     print("SCRIPT: Calling function to get the VM metadata...")
     vm_metadata = get_vm_metadata()
+    subscription_id = vm_metadata["compute"]["subscriptionId"]
 
     # We decode the password back to an ASCII string because they are passed as Base64 to avoid issues with special characters
     decoded_password = base64.b64decode(args.password).decode('ascii')
@@ -903,9 +958,13 @@ def main():
 
     #clean_up()
 
+    # Wait until the Lustre management service is available and then get the IP address of the Lustre MSG
+    print("SCRIPT: Calling function to wait for the Lustre management service to be available...")
+    lustre_msg_ip_address = wait_for_lustre_msg(args.lustreFSName, args.resourceGroup, subscription_id)
+
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
     print("SCRIPT: Calling function to import the cluster...")
-    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, args.lustreMSGIpAddress)
+    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, lustre_msg_ip_address)
 
     print("SCRIPT: Calling function to start the cluster...")
     start_cluster()
