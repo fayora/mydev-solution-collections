@@ -28,6 +28,9 @@ cs_cmd = cycle_root + "/cycle_server"
 def generate_timestamp():
     return datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
 
+def print_timestamp():
+    print("[" + generate_timestamp() + "]",end=" ")
+
 def clean_up():
     rmtree(tmpdir)
 
@@ -702,10 +705,10 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", location_param , "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param])
 
 def wait_for_lustre_msg(lustre_msg_name, subscription_id, resource_group):
-    time_stamp = generate_timestamp()
-    print("[%s] SCRIPT: Checking if the Lustre File System is ready..." % time_stamp)
-    time_stamp = generate_timestamp()
-    print("[%s] SCRIPT: The Lustre File System name is: %s" % (time_stamp, lustre_msg_name))
+    print_timestamp()
+    print("SCRIPT: Checking if the Lustre File System is ready...")
+    print_timestamp()
+    print("SCRIPT: The Lustre File System name is: %s" % lustre_msg_name)
     
     # We get the access token from the managed identity of the VM, and build the header for the REST call
     managed_identity = get_vm_managed_identity()
@@ -729,14 +732,14 @@ def wait_for_lustre_msg(lustre_msg_name, subscription_id, resource_group):
         json_response = json.load(response)
         lustre_msg_status = json_response["properties"]["health"]["state"]
         if lustre_msg_status != "Available":
-            time_stamp = generate_timestamp()
-            print("[%s] SCRIPT: The Lustre File system is not ready. Status is: %s" % (time_stamp, lustre_msg_status))
-            time_stamp = generate_timestamp()
-            print("[%s] SCRIPT: Waiting 10 seconds and trying again..." % time_stamp)
+            print_timestamp()
+            print("SCRIPT: The Lustre File system is not ready. Status is: %s" % lustre_msg_status)
+            print_timestamp()
+            print("SCRIPT: Waiting 10 seconds and trying again...")
             sleep(10)
         elif lustre_msg_status == "Available":
-            time_stamp = generate_timestamp()
-            print("[%s] SCRIPT: The Lustre File system is ready." % time_stamp)
+            print_timestamp()
+            print("SCRIPT: The Lustre File system is ready.")
             return json_response["properties"]["mgsAddress"]
         # try:
         #     response = urlopen(request, timeout=5)
@@ -891,22 +894,22 @@ def main():
 
     args = parser.parse_args()
 
-    time_stamp = generate_timestamp()
-    print("[%s] SCRIPT: Starting the script now..." % time_stamp)
+    print_timestamp()
+    print("SCRIPT: Starting the script now...")
     print("---> Debugging arguments: %s" % args)
 
     if not already_installed():
-        time_stamp = generate_timestamp()
-        print("[%s] SCRIPT: Calling function to configure the MSFT APT repos..." % time_stamp)
+        print_timestamp()
+        print("SCRIPT: Calling function to configure the MSFT APT repos...")
         configure_msft_apt_repos()
-        time_stamp = generate_timestamp()
-        print("[%s] SCRIPT: Calling function to install pre-requisites..." % time_stamp)
+        print_timestamp()
+        print("SCRIPT: Calling function to install pre-requisites...")
         install_pre_req()
-        time_stamp = generate_timestamp()
-        print("[%s] SCRIPT: Calling function to download and install CycleCloud..." % time_stamp)
+        print_timestamp()
+        print("SCRIPT: Calling function to download and install CycleCloud...")
         download_install_cc()
-        time_stamp = generate_timestamp()
-        print("[%s] SCRIPT: Calling function to modify the cs_config file..." % time_stamp)
+        print_timestamp()
+        print("SCRIPT: Calling function to modify the cs_config file...")
         modify_cs_config(options = {'webServerMaxHeapSize': args.webServerMaxHeapSize,
                                     'webServerPort': args.webServerPort,
                                     'webServerSslPort': args.webServerSslPort,
@@ -914,52 +917,52 @@ def main():
                                     'webServerEnableHttps': True,
                                     'webServerHostname': args.webServerHostname})
 
-    time_stamp = generate_timestamp()
-    print("[%s] SCRIPT: Calling function to start CycleCloud..." % time_stamp)
+    print_timestamp()
+    print("SCRIPT: Calling function to start CycleCloud...")
     start_cc()
 
-    time_stamp = generate_timestamp()
-    print("[%s] SCRIPT: Calling function to install the CycleCloud CLI..." % time_stamp)
+    print_timestamp()
+    print("SCRIPT: Calling function to install the CycleCloud CLI...")
     install_cc_cli()
 
-    time_stamp = generate_timestamp()
-    print("[%s] SCRIPT: Calling function to get the VM metadata..." % time_stamp)
+    print_timestamp()
+    print("SCRIPT: Calling function to get the VM metadata...")
     vm_metadata = get_vm_metadata()
 
     subscription_id = vm_metadata["compute"]["subscriptionId"]
-    time_stamp = generate_timestamp()
-    print("[%s] SCRIPT: The subscription ID is:" % (time_stamp, subscription_id))
+    print_timestamp()
+    print("SCRIPT: The subscription ID is: %s" % subscription_id)
     
     # We decode the password back to an ASCII string because they are passed as Base64 to avoid issues with special characters
     decoded_password = base64.b64decode(args.password).decode('ascii')
 
-    # time_stamp = generate_timestamp()
-    # print("[%s] SCRIPT: The raw password is: %s" % (time_stamp, args.password))
-    # time_stamp = generate_timestamp()
-    # print("[%s] SCRIPT: The decoded password is: %s" % (time_stamp, decoded_password))
+    # print_timestamp()
+    # print("SCRIPT: The raw password is: %s" % args.password)
+    # print_timestamp()
+    # print("SCRIPT: The decoded password is: %s" % decoded_password)
 
     if args.resourceGroup:
-        time_stamp = generate_timestamp()
-        print("[%s] SCRIPT: CycleCloud created in resource group: %s" % (time_stamp, vm_metadata["compute"]["resourceGroupName"]))
-        time_stamp = generate_timestamp()
-        print("[%s] SCRIPT: Cluster resources will be created in resource group: %s" %  (time_stamp, args.resourceGroup))
+        print_timestamp()
+        print("SCRIPT: CycleCloud created in resource group: %s" % vm_metadata["compute"]["resourceGroupName"])
+        print_timestamp()
+        print("SCRIPT: Cluster resources will be created in resource group: %s" % args.resourceGroup)
         vm_metadata["compute"]["resourceGroupName"] = args.resourceGroup
 
-    time_stamp = generate_timestamp()
-    print("[%s] SCRIPT: Calling function to add the Azure account..." % time_stamp)
+    print_timestamp()
+    print("SCRIPT: Calling function to add the Azure account...")
     cyclecloud_account_setup(vm_metadata, args.useManagedIdentity, args.tenantId, args.applicationId,
                              args.applicationSecret, args.username, args.azureSovereignCloud,
                              args.acceptTerms, decoded_password, args.storageAccount, 
                              args.no_default_account, args.webServerSslPort)
 
     if args.useLetsEncrypt:
-        time_stamp = generate_timestamp()
-        print("[%s] SCRIPT: Calling function to get self-signed certificate from LetsEncrypt..." % time_stamp)
+        print_timestamp()
+        print("SCRIPT: Calling function to get self-signed certificate from LetsEncrypt...")
         letsEncrypt(args.hostname)
 
     # Create the ssh key file
-    time_stamp = generate_timestamp()
-    print("[%s] SCRIPT: Calling function to create the SSH key file for the cluster..." % time_stamp)
+    print_timestamp()
+    print("SCRIPT: Calling function to create the SSH key file for the cluster...")
     ssh_key = create_keypair(args.useManagedIdentity, vm_metadata, args.sshkey)
     public_key_raw = ssh_key["publicKey"]
     # Remove the carriage return characters from the JSON string for the public key
@@ -967,8 +970,8 @@ def main():
     private_key = ssh_key["privateKey"]
 
     # Store the private key in blob storage
-    time_stamp = generate_timestamp()
-    print("[%s] SCRIPT: Calling functions to store the private key in blob storage..." % time_stamp)
+    print_timestamp()
+    print("SCRIPT: Calling functions to store the private key in blob storage...")
     storage_account_keys = get_storage_account_keys(args.useManagedIdentity, vm_metadata, args.storageAccount)
     storage_account_key = storage_account_keys["keys"][0]["value"]
     container_name = "sshkeyholder"
@@ -977,32 +980,32 @@ def main():
     upload_key_file(storage_account_key, args.storageAccount, private_key, container_name)
     
     # Create user requires root privileges
-    time_stamp = generate_timestamp()
-    print("[%s] SCRIPT: Calling function to create the user with the provided name and public key..." % time_stamp)
+    print_timestamp()
+    print("SCRIPT: Calling function to create the user with the provided name and public key...")
     create_user_credential(args.username, public_key)
 
     #clean_up()
 
     # Wait until the Lustre management service is available and then get the IP address of the Lustre MSG
-    time_stamp = generate_timestamp()
-    print("[%s] CRIPT: Calling function to wait for the Lustre management service to be available..." % time_stamp)
+    print_timestamp()
+    print("CRIPT: Calling function to wait for the Lustre management service to be available...")
     lustre_msg_ip_address = wait_for_lustre_msg(args.lustreFSName, subscription_id, args.resourceGroup)
 
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
-    time_stamp = generate_timestamp()
-    print("[%s] CRIPT: Calling function to import the cluster..." % time_stamp)
+    print_timestamp()
+    print("CRIPT: Calling function to import the cluster...")
     import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, lustre_msg_ip_address)
 
-    time_stamp = generate_timestamp()
-    print("[%s] SCRIPT: Calling function to start the cluster..." % time_stamp)
+    print_timestamp()
+    print("SCRIPT: Calling function to start the cluster...")
     start_cluster()
 
-    time_stamp = generate_timestamp()
-    print("[%s] SCRIPT: Sleeping for 8 minutes, which is the typical start time-for the master node to boot up and be configured..." % time_stamp)
+    print_timestamp()
+    print("SCRIPT: Sleeping for 8 minutes, which is the typical start time-for the master node to boot up and be configured...")
     sleep(480)
 
-    time_stamp = generate_timestamp()
-    print("[%s] SCRIPT: Script completed!" % time_stamp)
+    print_timestamp()
+    print("SCRIPT: Script completed!")
 
 if __name__ == "__main__":
     try:
