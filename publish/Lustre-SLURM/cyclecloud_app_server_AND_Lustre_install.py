@@ -741,23 +741,35 @@ def wait_for_lustre_msg(lustre_msg_name, subscription_id, resource_group):
             print_timestamp()
             print("SCRIPT: The Lustre File system is ready.")
             return json_response["properties"]["mgsAddress"]
-        # try:
-        #     response = urlopen(request, timeout=5)
-        #     json_response = json.load(response)
-        #     lustre_msg_status = json_response["properties"]["health"]["state"]
-        #     print("SCRIPT: The current status is: %s" % lustre_msg_status)
-        #     if lustre_msg_status == "Available":
-        #         # When the Lustre MSG is available, return the IP address
-        #         print("SCRIPT: The Lustre File system is ready.")
-        #         return json_response["properties"]["mgsAddress"]
-        #     else:
-        #         print("SCRIPT: The Lustre File system is not ready. Waiting 30 seconds...")
-        #         sleep(30)
-        # except:
-        #     print("Lustre MSG is not ready yet, waiting...")
-        #     print("Retrying after 10 seconds...")
-        #     sleep(10)
-        #     continue
+
+def wait_for_master_node(_cluster_name):
+    print_timestamp()
+    print("SCRIPT: Checking if the master node is ready...")
+    print_timestamp()
+    print("SCRIPT: The cluster name is: %s" % _cluster_name)
+    
+    # We loop until the master node is ready
+    while True:
+        try:
+            master_node = _catch_sys_error(["/usr/local/bin/cyclecloud", "get_node", _cluster_name, "-m", "-o", "json"])
+            master_node_json = json.loads(master_node)
+            master_node_status = master_node_json["status"]
+            if master_node_status != "ready":
+                print_timestamp()
+                print("SCRIPT: The master node is not ready. Status is: %s" % master_node_status)
+                print_timestamp()
+                print("SCRIPT: Waiting 10 seconds and trying again...")
+                sleep(10)
+            elif master_node_status == "ready":
+                print_timestamp()
+                print("SCRIPT: The master node is ready.")
+                return master_node_json["hostname"]
+        except:
+            print_timestamp()
+            print("SCRIPT: The master node is not ready. Status is: %s" % master_node_status)
+            print_timestamp()
+            print("SCRIPT: Waiting 10 seconds and trying again...")
+            sleep(10)
 
 def start_cluster():
     _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "SLURM-Cluster"])
@@ -1000,9 +1012,12 @@ def main():
     print("SCRIPT: Calling function to start the cluster...")
     start_cluster()
 
-    print_timestamp()
-    print("SCRIPT: Sleeping for 8 minutes, which is the typical start time-for the master node to boot up and be configured...")
-    sleep(480)
+    # print_timestamp()
+    # print("SCRIPT: Sleeping for 8 minutes, which is the typical start time-for the master node to boot up and be configured...")
+    # sleep(480)
+
+    print("SCRIPT: checking if the master node is ready...")
+    wait_for_master_node()
 
     print_timestamp()
     print("SCRIPT: Script completed!")
