@@ -727,6 +727,7 @@ def wait_for_lustre_msg(lustre_msg_name):
 
 def wait_for_lustre_msg(lustre_msg_name, subscription_id, resource_group):
     print("SCRIPT: Checking if the Lustre File System is ready...")
+    print("SCRIPT: The Lustre File System name is: %s" % lustre_msg_name)
     managed_identity = get_vm_managed_identity()
     access_token = managed_identity["access_token"]
     access_headers = {
@@ -740,6 +741,7 @@ def wait_for_lustre_msg(lustre_msg_name, subscription_id, resource_group):
             response = urlopen(request, timeout=5)
             json_response = json.load(response)
             lustre_msg_status = json_response["properties"]["health"]["state"]
+            print("SCRIPT: The current status is: %s" % lustre_msg_status)
             if lustre_msg_status == "Available":
                 # When the Lustre MSG is available, return the IP address
                 print("SCRIPT: The Lustre File system is ready.")
@@ -960,7 +962,7 @@ def main():
 
     # Wait until the Lustre management service is available and then get the IP address of the Lustre MSG
     print("SCRIPT: Calling function to wait for the Lustre management service to be available...")
-    lustre_msg_ip_address = wait_for_lustre_msg(args.lustreFSName, args.resourceGroup, subscription_id)
+    lustre_msg_ip_address = wait_for_lustre_msg(args.lustreFSName, subscription_id, args.resourceGroup)
 
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
     print("SCRIPT: Calling function to import the cluster...")
