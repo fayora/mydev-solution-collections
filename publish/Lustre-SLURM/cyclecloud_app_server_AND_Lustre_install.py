@@ -893,7 +893,7 @@ def main():
 
     time_stamp = generate_timestamp()
     print("[%s] SCRIPT: Starting the script now..." % time_stamp)
-    print("---> Debugging arguments: %s" % (time_stamp, args))
+    print("---> Debugging arguments: %s" % args)
 
     if not already_installed():
         time_stamp = generate_timestamp()
