@@ -891,18 +891,22 @@ def main():
 
     args = parser.parse_args()
 
-    print("SCRIPT: Debugging arguments: %s" % args)
-
-    print("SCRIPT: Starting the script now...")
+    time_stamp = generate_timestamp()
+    print("[%s] SCRIPT: Starting the script now..." % time_stamp)
+    print("---> Debugging arguments: %s" % (time_stamp, args))
 
     if not already_installed():
-        print("SCRIPT: Calling function to configure the MSFT APT repos...")
+        time_stamp = generate_timestamp()
+        print("[%s] SCRIPT: Calling function to configure the MSFT APT repos..." % time_stamp)
         configure_msft_apt_repos()
-        print("SCRIPT: Calling function to install pre-requisites...")
+        time_stamp = generate_timestamp()
+        print("[%s] SCRIPT: Calling function to install pre-requisites..." % time_stamp)
         install_pre_req()
-        print("SCRIPT: Calling function to download and install CycleCloud...")
+        time_stamp = generate_timestamp()
+        print("[%s] SCRIPT: Calling function to download and install CycleCloud..." % time_stamp)
         download_install_cc()
-        print("SCRIPT: Calling function to modify the cs_config file...")
+        time_stamp = generate_timestamp()
+        print("[%s] SCRIPT: Calling function to modify the cs_config file..." % time_stamp)
         modify_cs_config(options = {'webServerMaxHeapSize': args.webServerMaxHeapSize,
                                     'webServerPort': args.webServerPort,
                                     'webServerSslPort': args.webServerSslPort,
@@ -910,39 +914,52 @@ def main():
                                     'webServerEnableHttps': True,
                                     'webServerHostname': args.webServerHostname})
 
-    print("SCRIPT: Calling function to start CycleCloud...")
+    time_stamp = generate_timestamp()
+    print("[%s] SCRIPT: Calling function to start CycleCloud..." % time_stamp)
     start_cc()
 
-    print("SCRIPT: Calling function to install the CycleCloud CLI...")
+    time_stamp = generate_timestamp()
+    print("[%s] SCRIPT: Calling function to install the CycleCloud CLI..." % time_stamp)
     install_cc_cli()
 
-    print("SCRIPT: Calling function to get the VM metadata...")
+    time_stamp = generate_timestamp()
+    print("[%s] SCRIPT: Calling function to get the VM metadata..." % time_stamp)
     vm_metadata = get_vm_metadata()
-    subscription_id = vm_metadata["compute"]["subscriptionId"]
 
+    subscription_id = vm_metadata["compute"]["subscriptionId"]
+    time_stamp = generate_timestamp()
+    print("[%s] SCRIPT: The subscription ID is:" % (time_stamp, subscription_id))
+    
     # We decode the password back to an ASCII string because they are passed as Base64 to avoid issues with special characters
     decoded_password = base64.b64decode(args.password).decode('ascii')
 
-    print("SCRIPT: The raw password is: %s" % args.password)
-    print("SCRIPT: The decoded password is: %s" % decoded_password)
+    # time_stamp = generate_timestamp()
+    # print("[%s] SCRIPT: The raw password is: %s" % (time_stamp, args.password))
+    # time_stamp = generate_timestamp()
+    # print("[%s] SCRIPT: The decoded password is: %s" % (time_stamp, decoded_password))
 
     if args.resourceGroup:
-        print("SCRIPT: CycleCloud created in resource group: %s" % vm_metadata["compute"]["resourceGroupName"])
-        print("SCRIPT: Cluster resources will be created in resource group: %s" %  args.resourceGroup)
+        time_stamp = generate_timestamp()
+        print("[%s] SCRIPT: CycleCloud created in resource group: %s" % (time_stamp, vm_metadata["compute"]["resourceGroupName"]))
+        time_stamp = generate_timestamp()
+        print("[%s] SCRIPT: Cluster resources will be created in resource group: %s" %  (time_stamp, args.resourceGroup))
         vm_metadata["compute"]["resourceGroupName"] = args.resourceGroup
 
-    print("SCRIPT: Calling function to add the Azure account...")
+    time_stamp = generate_timestamp()
+    print("[%s] SCRIPT: Calling function to add the Azure account..." % time_stamp)
     cyclecloud_account_setup(vm_metadata, args.useManagedIdentity, args.tenantId, args.applicationId,
                              args.applicationSecret, args.username, args.azureSovereignCloud,
                              args.acceptTerms, decoded_password, args.storageAccount, 
                              args.no_default_account, args.webServerSslPort)
 
     if args.useLetsEncrypt:
-        print("SCRIPT: Calling function to get self-signed certificate from LetsEncrypt...")
+        time_stamp = generate_timestamp()
+        print("[%s] SCRIPT: Calling function to get self-signed certificate from LetsEncrypt..." % time_stamp)
         letsEncrypt(args.hostname)
 
     # Create the ssh key file
-    print("SCRIPT: Calling function to create the SSH key file for the cluster...")
+    time_stamp = generate_timestamp()
+    print("[%s] SCRIPT: Calling function to create the SSH key file for the cluster..." % time_stamp)
     ssh_key = create_keypair(args.useManagedIdentity, vm_metadata, args.sshkey)
     public_key_raw = ssh_key["publicKey"]
     # Remove the carriage return characters from the JSON string for the public key
@@ -950,7 +967,8 @@ def main():
     private_key = ssh_key["privateKey"]
 
     # Store the private key in blob storage
-    print("SCRIPT: Calling functions to store the private key in blob storage...")
+    time_stamp = generate_timestamp()
+    print("[%s] SCRIPT: Calling functions to store the private key in blob storage..." % time_stamp)
     storage_account_keys = get_storage_account_keys(args.useManagedIdentity, vm_metadata, args.storageAccount)
     storage_account_key = storage_account_keys["keys"][0]["value"]
     container_name = "sshkeyholder"
@@ -959,26 +977,32 @@ def main():
     upload_key_file(storage_account_key, args.storageAccount, private_key, container_name)
     
     # Create user requires root privileges
-    print("SCRIPT: Calling function to create the user with the provided name and public key...")
+    time_stamp = generate_timestamp()
+    print("[%s] SCRIPT: Calling function to create the user with the provided name and public key..." % time_stamp)
     create_user_credential(args.username, public_key)
 
     #clean_up()
 
     # Wait until the Lustre management service is available and then get the IP address of the Lustre MSG
-    print("SCRIPT: Calling function to wait for the Lustre management service to be available...")
+    time_stamp = generate_timestamp()
+    print("[%s] CRIPT: Calling function to wait for the Lustre management service to be available..." % time_stamp)
     lustre_msg_ip_address = wait_for_lustre_msg(args.lustreFSName, subscription_id, args.resourceGroup)
 
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
-    print("SCRIPT: Calling function to import the cluster...")
+    time_stamp = generate_timestamp()
+    print("[%s] CRIPT: Calling function to import the cluster..." % time_stamp)
     import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, lustre_msg_ip_address)
 
-    print("SCRIPT: Calling function to start the cluster...")
+    time_stamp = generate_timestamp()
+    print("[%s] SCRIPT: Calling function to start the cluster..." % time_stamp)
     start_cluster()
 
-    print("SCRIPT: Sleeping for 8 minutes, which is the typical start time-for the master node to boot up and be configured...")
+    time_stamp = generate_timestamp()
+    print("[%s] SCRIPT: Sleeping for 8 minutes, which is the typical start time-for the master node to boot up and be configured..." % time_stamp)
     sleep(480)
 
-    print("SCRIPT: Script completed!")
+    time_stamp = generate_timestamp()
+    print("[%s] SCRIPT: Script completed!" % time_stamp)
 
 if __name__ == "__main__":
     try:
