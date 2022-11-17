@@ -728,7 +728,7 @@ def wait_for_lustre_msg(lustre_msg_name, subscription_id, resource_group):
     
     #We loop until the Lustre File System is ready
     while True:
-        response = urlopen(request, timeout=5)
+        response = urlopen(request, timeout=30)
         json_response = json.load(response)
         lustre_msg_status = json_response["properties"]["health"]["state"]
         if lustre_msg_status != "Available":
@@ -953,10 +953,7 @@ def main():
 
     print_timestamp()
     print("SCRIPT: Calling function to add the Azure account...")
-    cyclecloud_account_setup(vm_metadata, args.useManagedIdentity, args.tenantId, args.applicationId,
-                             args.applicationSecret, args.username, args.azureSovereignCloud,
-                             args.acceptTerms, decoded_password, args.storageAccount, 
-                             args.no_default_account, args.webServerSslPort)
+    cyclecloud_account_setup(vm_metadata, args.useManagedIdentity, args.tenantId, args.applicationId, args.applicationSecret, args.username, args.azureSovereignCloud, args.acceptTerms, decoded_password, args.storageAccount, args.no_default_account, args.webServerSslPort)
 
     if args.useLetsEncrypt:
         print_timestamp()
@@ -986,8 +983,6 @@ def main():
     print_timestamp()
     print("SCRIPT: Calling function to create the user with the provided name and public key...")
     create_user_credential(args.username, public_key)
-
-    #clean_up()
 
     # Wait until the Lustre management service is available and then get the IP address of the Lustre MSG
     print_timestamp()
