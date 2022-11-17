@@ -761,13 +761,7 @@ def wait_for_master_node():
             elif master_node_status == "ready":
                 print_timestamp()
                 print("SCRIPT: The master node is ready.")
-                return master_node_json["hostname"]
-        except:
-            print_timestamp()
-            print("SCRIPT: The master node is not ready. Status is: %s" % master_node_status)
-            print_timestamp()
-            print("SCRIPT: Waiting 10 seconds and trying again...")
-            sleep(10)
+                break
 
 def start_cluster():
     _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "SLURM-Cluster"])
