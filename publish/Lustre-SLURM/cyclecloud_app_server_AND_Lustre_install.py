@@ -748,19 +748,16 @@ def wait_for_master_node():
     
     # We loop until the master node is ready
     while True:
-        master_node = _catch_sys_error(["/usr/local/bin/cyclecloud", "get_node", "SLURM-Cluster", "-m", "-o", "json"])
-        master_node_json = json.loads(master_node)
-        master_node_status = master_node_json["status"]
-        if master_node_status != "ready":
-            print_timestamp()
-            print("SCRIPT: The master node is not ready. Status is: %s" % master_node_status)
-            print_timestamp()
-            print("SCRIPT: Waiting 10 seconds and trying again...")
-            sleep(10)
-        elif master_node_status == "ready":
+        # We get a shortened version of the cluster status and look for "Started"
+        master_node = _catch_sys_error(["/usr/local/bin/cyclecloud", "show_nodes", "scheduler", "-s"])
+        if 'Started' in str(master_node):
             print_timestamp()
             print("SCRIPT: The master node is ready.")
             break
+        else: 
+            print_timestamp()
+            print("SCRIPT: The master node is not ready. Waiting 10 seconds and trying again...")
+            sleep(10)
 
 def start_cluster():
     _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "SLURM-Cluster"])
