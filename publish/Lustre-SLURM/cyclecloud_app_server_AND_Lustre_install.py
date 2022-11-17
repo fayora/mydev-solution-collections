@@ -742,16 +742,14 @@ def wait_for_lustre_msg(lustre_msg_name, subscription_id, resource_group):
             print("SCRIPT: The Lustre File system is ready.")
             return json_response["properties"]["mgsAddress"]
 
-def wait_for_master_node(_cluster_name):
+def wait_for_master_node():
     print_timestamp()
     print("SCRIPT: Checking if the master node is ready...")
-    print_timestamp()
-    print("SCRIPT: The cluster name is: %s" % _cluster_name)
     
     # We loop until the master node is ready
     while True:
         try:
-            master_node = _catch_sys_error(["/usr/local/bin/cyclecloud", "get_node", _cluster_name, "-m", "-o", "json"])
+            master_node = _catch_sys_error(["/usr/local/bin/cyclecloud", "get_node", "SLURM-Cluster", "-m", "-o", "json"])
             master_node_json = json.loads(master_node)
             master_node_status = master_node_json["status"]
             if master_node_status != "ready":
@@ -1000,12 +998,12 @@ def main():
 
     # Wait until the Lustre management service is available and then get the IP address of the Lustre MSG
     print_timestamp()
-    print("CRIPT: Calling function to wait for the Lustre management service to be available...")
+    print("SCRIPT: Calling function to wait for the Lustre management service to be available...")
     lustre_msg_ip_address = wait_for_lustre_msg(args.lustreFSName, subscription_id, args.resourceGroup)
 
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
     print_timestamp()
-    print("CRIPT: Calling function to import the cluster...")
+    print("SCRIPT: Calling function to import the cluster...")
     import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, lustre_msg_ip_address)
 
     print_timestamp()
