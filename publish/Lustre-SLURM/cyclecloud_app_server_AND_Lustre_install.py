@@ -643,7 +643,7 @@ def install_pre_req():
     _catch_sys_error(["apt", "install", "-y", "azure-cli"])
 
 
-def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores, lustreMSGIpAddress):
+def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores, lustreMGSIpAddress):
     cluster_template_file_name = "slurm_template.ini"
     cluster_parameters_file_name = "slurm_params.json"
 
@@ -661,11 +661,21 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     _catch_sys_error(["sudo", "wget", "-q", "-O", cluster_template_file_download_path, cluster_template_file_url])
     _catch_sys_error(["sudo", "wget", "-q", "-O", cluster_parameters_file_download_path, cluster_parameters_file_url])
 
-    # Add the Lustre FS MSGIpAddress to the cluster template file
-    if lustreMSGIpAddress:
+    # If provided, add the Lustre FS management service (MGS) IP address to the cluster template file
+    if lustreMGSIpAddress:
+        print_timestamp()
+        print("SCRIPT: Adding Lustre MGS IP address to the cluster template file: %s" % lustreMGSIpAddress)
         with open(cluster_template_file_download_path, 'r') as file:
             filedata = file.read()
-        filedata = filedata.replace('LustreMSGIpAddressValue', lustreMSGIpAddress)
+        filedata = filedata.replace('LustreMGSIpAddressValue', lustreMGSIpAddress)
+        with open(cluster_template_file_download_path, 'w') as file:
+            file.write(filedata)
+    else:
+        print_timestamp()
+        print("SCRIPT: No Lustre MGS IP address specified, so marking the Lustre MGS IP address as 'None' in the cluster template file")
+        with open(cluster_template_file_download_path, 'r') as file:
+            filedata = file.read()
+        filedata = filedata.replace('LustreMGSIpAddressValue', 'None')
         with open(cluster_template_file_download_path, 'w') as file:
             file.write(filedata)
 
@@ -704,11 +714,11 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     # We import the cluster, passing the subnet name as a parameter override
     _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", location_param , "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param])
 
-def wait_for_lustre_msg(lustre_msg_name, subscription_id, resource_group):
+def wait_for_lustre_mgs(lustre_mgs_name, subscription_id, resource_group):
     print_timestamp()
     print("SCRIPT: Checking if the Lustre File System is ready...")
     print_timestamp()
-    print("SCRIPT: The Lustre File System name is: %s" % lustre_msg_name)
+    print("SCRIPT: The Lustre File System name is: %s" % lustre_mgs_name)
     
     # We get the access token from the managed identity of the VM, and build the header for the REST call
     managed_identity = get_vm_managed_identity()
@@ -721,23 +731,23 @@ def wait_for_lustre_msg(lustre_msg_name, subscription_id, resource_group):
     ############################# UPDATE WHEN THE AMLFS GOES TO PROD #############################
     amlfs_api_version = "2021-11-01-preview"
     ##############################################################################################
-    url = "https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageCache/amlFilesystems/{}?api-version={}".format(subscription_id, resource_group, lustre_msg_name, amlfs_api_version)
+    url = "https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageCache/amlFilesystems/{}?api-version={}".format(subscription_id, resource_group, lustre_mgs_name, amlfs_api_version)
     
     # We build the body of the REST call
     request = Request(url, method="GET", headers=access_headers)
     
-    #We loop until the Lustre File System is ready
+    # We loop until the Lustre File System is ready
     while True:
         response = urlopen(request, timeout=30)
         json_response = json.load(response)
-        lustre_msg_status = json_response["properties"]["health"]["state"]
-        if lustre_msg_status != "Available":
+        lustre_mgs_status = json_response["properties"]["health"]["state"]
+        if lustre_mgs_status != "Available":
             print_timestamp()
-            print("SCRIPT: The Lustre File system is not ready. Status is: %s" % lustre_msg_status)
+            print("SCRIPT: The Lustre File system is not ready. Status is: %s" % lustre_mgs_status)
             print_timestamp()
             print("SCRIPT: Waiting 10 seconds and trying again...")
             sleep(10)
-        elif lustre_msg_status == "Available":
+        elif lustre_mgs_status == "Available":
             print_timestamp()
             print("SCRIPT: The Lustre File system is ready.")
             return json_response["properties"]["mgsAddress"]
@@ -882,15 +892,11 @@ def main():
                         default=2,
                         help="The amount of cores for worker nodes")
 
-    parser.add_argument("--lustreMSGIpAddress",
-                        dest="lustreMSGIpAddress",
-                        default="",
-                        help="The IP address of the Lustre management service, if existing")
-
     parser.add_argument("--lustreFSName",
                         dest="lustreFSName",
                         default="",
                         help="The name of the Lustre file system, if existing")
+
 
     args = parser.parse_args()
 
@@ -981,23 +987,22 @@ def main():
     print("SCRIPT: Calling function to create the user with the provided name and public key...")
     create_user_credential(args.username, public_key)
 
-    # Wait until the Lustre management service is available and then get the IP address of the Lustre MSG
-    print_timestamp()
-    print("SCRIPT: Calling function to wait for the Lustre management service to be available...")
-    lustre_msg_ip_address = wait_for_lustre_msg(args.lustreFSName, subscription_id, args.resourceGroup)
+    if args.lustreFSName:
+        # If a Lustre File System name was provided, wait until the Lustre management service is available and then get the IP address of the Lustre MGS
+        print_timestamp()
+        print("SCRIPT: Calling function to wait for the Lustre management service to be available...")
+        lustre_mgs_ip_address = wait_for_lustre_mgs(args.lustreFSName, subscription_id, args.resourceGroup)
+    else:
+        lustre_mgs_ip_address = "no-lustre-fs-deployed"
 
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
     print_timestamp()
     print("SCRIPT: Calling function to import the cluster...")
-    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, lustre_msg_ip_address)
+    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, lustre_mgs_ip_address)
 
     print_timestamp()
     print("SCRIPT: Calling function to start the cluster...")
     start_cluster()
-
-    # print_timestamp()
-    # print("SCRIPT: Sleeping for 8 minutes, which is the typical start time-for the master node to boot up and be configured...")
-    # sleep(480)
 
     print("SCRIPT: checking if the master node is ready...")
     wait_for_master_node()
