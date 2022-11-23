@@ -909,7 +909,7 @@ def main():
 
     parser.add_argument("--installNextflow",
                         dest="installNextflow",
-                        default="",
+                        action="store_true",
                         help="Option to install Nextflow on all the cluster nodes")
 
     args = parser.parse_args()
