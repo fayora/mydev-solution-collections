@@ -643,7 +643,7 @@ def install_pre_req():
     _catch_sys_error(["apt", "install", "-y", "azure-cli"])
 
 
-def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores, lustreMGSIpAddress):
+def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores, lustreMGSIpAddress, installNextflow):
     cluster_template_file_name = "slurm_template.ini"
     cluster_parameters_file_name = "slurm_params.json"
 
@@ -676,6 +676,16 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
         with open(cluster_template_file_download_path, 'r') as file:
             filedata = file.read()
         filedata = filedata.replace('LustreMGSIpAddressValue', 'None')
+        with open(cluster_template_file_download_path, 'w') as file:
+            file.write(filedata)
+
+    # If provided, add the Nextflow installation flag to the cluster template file
+    if installNextflow:
+        print_timestamp()
+        print("SCRIPT: Adding the Nextflow installation flag to the cluster template file")
+        with open(cluster_template_file_download_path, 'r') as file:
+            filedata = file.read()
+        filedata = filedata.replace('InstallNextflowValue', "Yes")
         with open(cluster_template_file_download_path, 'w') as file:
             file.write(filedata)
 
@@ -897,6 +907,10 @@ def main():
                         default="",
                         help="The name of the Lustre file system, if existing")
 
+    parser.add_argument("--installNextflow",
+                        dest="installNextflow",
+                        default="",
+                        help="Option to install Nextflow on all the cluster nodes")
 
     args = parser.parse_args()
 
@@ -995,10 +1009,20 @@ def main():
     else:
         lustre_mgs_ip_address = "no-lustre-fs-deployed"
 
+    if args.installNextflow:
+        # If the user wants to install Nextflow on the cluster nodes, run a function to modify the cluster template
+        print_timestamp()
+        print("SCRIPT: Calling function to modify the cluster template to install Nextflow...")
+        install_nextflow = "Yes"
+    else:
+        print_timestamp()
+        print("SCRIPT: Not installing Nextflow on the cluster nodes")
+        install_nextflow = ""
+
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
     print_timestamp()
     print("SCRIPT: Calling function to import the cluster...")
-    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, lustre_mgs_ip_address)
+    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, lustre_mgs_ip_address, install_nextflow)
 
     print_timestamp()
     print("SCRIPT: Calling function to start the cluster...")
