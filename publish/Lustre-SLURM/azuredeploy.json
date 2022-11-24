@@ -109,7 +109,7 @@
         "contributor": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
         "amlfsAPIVerson" : "2021-11-01-preview",
         "amlfsName" : "[concat('amlfs', variables('cycleName'))]",
-        "amlfsSku" : "AMLFS-Durable-Premium-125",
+        "amlfsSku" : "AMLFS-Durable-Premium-250",
         "amlfsCycleSubnet" : "compute",
         "amlfsMaintenanceDayOfWeek" : "Saturday",
         "amlfsMaintenanceTimeOfDay" : "00:00",
