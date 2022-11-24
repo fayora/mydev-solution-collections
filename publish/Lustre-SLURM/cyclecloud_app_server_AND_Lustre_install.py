@@ -748,7 +748,7 @@ def wait_for_lustre_mgs(lustre_mgs_name, subscription_id, resource_group):
     
     # We loop until the Lustre File System is ready
     while True:
-        response = urlopen(request, timeout=30)
+        response = urlopen(request, timeout=60)
         json_response = json.load(response)
         lustre_mgs_status = json_response["properties"]["health"]["state"]
         if lustre_mgs_status != "Available":
