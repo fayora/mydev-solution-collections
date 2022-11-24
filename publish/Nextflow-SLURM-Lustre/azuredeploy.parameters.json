@@ -11,7 +11,7 @@
         "OSOfClusterNodes": {
             "value": "" 
         },
-        "lustreCapacity": {
+        "dataContainerToSync": {
             "value": ""
         }
     }
