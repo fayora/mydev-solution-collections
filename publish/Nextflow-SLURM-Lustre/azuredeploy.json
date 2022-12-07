@@ -39,14 +39,14 @@
         "lustreCapacity": {
             "type": "string",
             "allowedValues" : [
-                "16 GiB", 
-                "32 GiB", 
-                "48 GiB", 
-                "64 GiB",
-                "80 GiB",
-                "96 GiB",
-                "112 GiB",
-                "128 GiB" ],
+                "16 TiB", 
+                "32 TiB", 
+                "48 TiB", 
+                "64 TiB",
+                "80 TiB",
+                "96 TiB",
+                "112 TiB",
+                "128 TiB" ],
             "metadata": {
                 "description" : "Specify the storage capacity for the Lustre File System in Tebibytes. Use 16 TB increments."
             }
@@ -100,14 +100,14 @@
             "Ubuntu 20.04": "microsoft-dsvm:ubuntu-hpc:2004:latest"
         },
         "lustreCapacityVar" : {
-            "16 GiB" : 16,
-            "32 GiB" : 32,
-            "48 GiB" : 48,
-            "64 GiB" : 64,
-            "80 GiB" : 80,
-            "96 GiB" : 96,
-            "112 GiB" : 112,
-            "128 GiB" : 128
+            "16 TiB" : 16,
+            "32 TiB" : 32,
+            "48 TiB" : 48,
+            "64 TiB" : 64,
+            "80 TiB" : 80,
+            "96 TiB" : 96,
+            "112 TiB" : 112,
+            "128 TiB" : 128
         },
         "amlfsCapacity" : "[variables('lustreCapacityVar')[parameters('lustreCapacity')]]",
         "clusterOSImage": "[variables('clusterOS')[parameters('OSOfClusterNodes')]]",
