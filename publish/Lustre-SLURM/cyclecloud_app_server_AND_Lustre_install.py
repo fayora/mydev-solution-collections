@@ -643,7 +643,7 @@ def install_pre_req():
     _catch_sys_error(["apt", "install", "-y", "azure-cli"])
 
 
-def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores, lustreMGSIpAddress, installNextflow, installSingularity, installBpipe):
+def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores, lustreMGSIpAddress, installNextflow):
     cluster_template_file_name = "slurm_template.ini"
     cluster_parameters_file_name = "slurm_params.json"
 
@@ -662,7 +662,7 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     _catch_sys_error(["sudo", "wget", "-q", "-O", cluster_parameters_file_download_path, cluster_parameters_file_url])
 
     # If provided, add the Lustre FS management service (MGS) IP address to the cluster template file
-    if lustreMGSIpAddress != 'no-lustre-fs':
+    if lustreMGSIpAddress:
         print_timestamp()
         print("SCRIPT: Adding Lustre MGS IP address to the cluster template file: %s" % lustreMGSIpAddress)
         with open(cluster_template_file_download_path, 'r') as file:
@@ -680,7 +680,7 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
             file.write(filedata)
 
     # If provided, add the Nextflow installation flag to the cluster template file
-    if installNextflow != 'no-nextflow':
+    if installNextflow:
         print_timestamp()
         print("SCRIPT: Adding the Nextflow installation flag to the cluster template file")
         with open(cluster_template_file_download_path, 'r') as file:
@@ -688,28 +688,6 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
         filedata = filedata.replace('InstallNextflowValue', "Yes")
         with open(cluster_template_file_download_path, 'w') as file:
             file.write(filedata)
-    
-    # If provided, add the Singularity installation flag to the cluster template file
-    if installSingularity != 'no-singularity':
-        print_timestamp()
-        print("SCRIPT: Adding the Singularity installation flag to the cluster template file")
-        with open(cluster_template_file_download_path, 'r') as file:
-            filedata = file.read()
-        filedata = filedata.replace('InstallSingularityValue', "Yes")
-        with open(cluster_template_file_download_path, 'w') as file:
-            file.write(filedata)
-
-
-    # If provided, add the Bpipe installation flag to the cluster template file
-    if installBpipe != 'no-bpipe':
-        print_timestamp()
-        print("SCRIPT: Adding the Bpipe installation flag to the cluster template file")
-        with open(cluster_template_file_download_path, 'r') as file:
-            filedata = file.read()
-        filedata = filedata.replace('InstallBpipeValue', "Yes")
-        with open(cluster_template_file_download_path, 'w') as file:
-            file.write(filedata)
-
 
     _catch_sys_error(["chown", "-R", "cycle_server:cycle_server", cluster_template_file_download_path])
     _catch_sys_error(["chown", "-R", "cycle_server:cycle_server", cluster_parameters_file_download_path])
@@ -933,16 +911,6 @@ def main():
                         dest="installNextflow",
                         action="store_true",
                         help="Option to install Nextflow on all the cluster nodes")
-    
-    parser.add_argument("--installSingularity",
-                        dest="installSingularity",
-                        action="store_true",
-                        help="Option to install Singularity on all the cluster nodes")
-    
-    parser.add_argument("--installBpipe",
-                        dest="installBpipe",
-                        action="store_true",
-                        help="Option to install Bpipe on all the cluster nodes")
 
     args = parser.parse_args()
 
@@ -1039,7 +1007,7 @@ def main():
         print("SCRIPT: Calling function to wait for the Lustre management service to be available...")
         lustre_mgs_ip_address = wait_for_lustre_mgs(args.lustreFSName, subscription_id, args.resourceGroup)
     else:
-        lustre_mgs_ip_address = "no-lustre-fs"
+        lustre_mgs_ip_address = "no-lustre-fs-deployed"
 
     if args.installNextflow:
         # If the user wants to install Nextflow on the cluster nodes, run a function to modify the cluster template
@@ -1049,32 +1017,12 @@ def main():
     else:
         print_timestamp()
         print("SCRIPT: Not installing Nextflow on the cluster nodes")
-        install_nextflow = "no-nextflow"
-
-    if args.installSingularity:
-        # If the user wants to install Nextflow on the cluster nodes, run a function to modify the cluster template
-        print_timestamp()
-        print("SCRIPT: Calling function to modify the cluster template to install Singularity...")
-        install_singularity = "Yes"
-    else:
-        print_timestamp()
-        print("SCRIPT: Not installing Singularity on the cluster nodes")
-        install_singularity = "no-singularity"
-
-    if args.installBpipe:
-        # If the user wants to install Bpipe on the cluster nodes, run a function to modify the cluster template
-        print_timestamp()
-        print("SCRIPT: Calling function to modify the cluster template to install Bpipe...")
-        install_bpipe = "Yes"
-    else:
-        print_timestamp()
-        print("SCRIPT: Not installing Bpipe on the cluster nodes")
-        install_bpipe = "no-bpipe"
+        install_nextflow = ""
 
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
     print_timestamp()
     print("SCRIPT: Calling function to import the cluster...")
-    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, lustre_mgs_ip_address, install_nextflow, install_singularity, install_bpipe)
+    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, lustre_mgs_ip_address, install_nextflow)
 
     print_timestamp()
     print("SCRIPT: Calling function to start the cluster...")
