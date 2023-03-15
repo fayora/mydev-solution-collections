@@ -11,10 +11,7 @@
         "OSOfClusterNodes": {
             "value": "" 
         },
-        "lustreCapacity": {
-            "value": ""
-        },
-        "dataContainerToSync": {
+        "PipelineManager": {
             "value": ""
         }
     }
