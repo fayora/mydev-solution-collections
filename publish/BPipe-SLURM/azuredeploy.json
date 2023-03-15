@@ -90,7 +90,7 @@
             "Ubuntu 20.04": "microsoft-dsvm:ubuntu-hpc:2004:latest"
         },
         "clusterOSImage": "[variables('clusterOS')[parameters('OSOfClusterNodes')]]",
-        "installScriptURL": "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/Lustre-SLURM/cyclecloud_app_server_AND_Lustre_install.py",
+        "installScriptURL": "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/Bpipe-SLURM/cyclecloud_app_server_Nextflow_AND_Bpipe.py",
         "networkApiVersion": "2017-06-01",
         "contributor": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
         "pipelineManager": {
