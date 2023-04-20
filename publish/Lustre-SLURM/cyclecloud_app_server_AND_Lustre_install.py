@@ -13,7 +13,7 @@ import hashlib
 from string import ascii_uppercase, ascii_lowercase, digits
 from os import path, listdir, chdir, fdopen, remove
 from urllib.request import urlopen, Request
-from shutil import rmtree, copy2, move  
+from shutil import rmtree, copy2, move
 from tempfile import mkstemp, mkdtemp
 from time import sleep
 from datetime import datetime
@@ -62,7 +62,7 @@ def create_shared_key_signature(storage_account_key, verb, canonicalized_headers
         "CanonicalizedHeaders": canonicalized_headers,
         "CanonicalizedResource": canonicalised_resource
     }
-    
+
     string_to_sign = (string_params["VERB"] + "\n"
         + string_params["Content-Encoding"] + "\n"
         + string_params["Content-Language"] + "\n"
@@ -77,7 +77,7 @@ def create_shared_key_signature(storage_account_key, verb, canonicalized_headers
         + string_params["Range"] + "\n"
         + string_params["CanonicalizedHeaders"]
         + string_params["CanonicalizedResource"])
-    
+
     signed_string = base64.b64encode(hmac.new(base64.b64decode(storage_account_key), msg=string_to_sign.encode('utf-8'), digestmod=hashlib.sha256).digest()).decode()
     return signed_string
 
@@ -100,14 +100,14 @@ def create_keypair(use_managed_identity, vm_metadata, ssh_key_name):
 
     subscriptionId = vm_metadata["compute"]["subscriptionId"]
     resourceGroup = vm_metadata["compute"]["resourceGroupName"]
-    
+
     sshkey_url = "https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/sshPublicKeys/{}/generateKeyPair?api-version=2021-11-01".format(subscriptionId, resourceGroup, ssh_key_name)
     sshkey_req = Request(sshkey_url, method="POST", headers=access_headers)
 
     for _ in range(30):
         print("Generating SSH key")
         sshkey_response = urlopen(sshkey_req, timeout=2)
-        
+
         try:
             return json.load(sshkey_response)
         except ValueError as e:
@@ -129,14 +129,14 @@ def get_storage_account_keys(use_managed_identity, vm_metadata, storage_account_
 
     subscriptionId = vm_metadata["compute"]["subscriptionId"]
     resourceGroup = vm_metadata["compute"]["resourceGroupName"]
-    
+
     blob_url = "https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Storage/storageAccounts/{}/listKeys?api-version=2021-09-01&$expand=kerb".format(subscriptionId, resourceGroup, storage_account_name)
     blob_req = Request(blob_url, method="POST", headers=access_headers)
-    
+
     for _ in range(30):
         print("Fetching storage account access keys")
         blob_response = urlopen(blob_req, timeout=2)
-        
+
         try:
             return json.load(blob_response)
         except ValueError as e:
@@ -155,20 +155,20 @@ def create_blob_container(storage_account_key, storage_account_name, container_n
     canonicalized_resource = "/" + storage_account_name + "/" + container_name + "\nrestype:container"
 
     signed_string = create_shared_key_signature(storage_account_key, "PUT", canonicalized_headers, canonicalized_resource)
-    
+
     headers = {
         "x-ms-version": api_version,
         "x-ms-date": current_timestamp,
         "Authorization": f"SharedKey {storage_account_name}:{signed_string}"
     }
-    
+
     container_url = "https://{}.blob.core.windows.net/{}?restype=container".format(storage_account_name, container_name)
     container_req = Request(container_url, method="PUT", headers=headers)
-    
+
     for _ in range(30):
         print("Creating blob container for holding ssh key")
         container_response = urlopen(container_req, timeout=2)
-        
+
         try:
             return container_response.status
         except ValueError as e:
@@ -192,7 +192,7 @@ def upload_key_file(storage_account_key, storage_account_name, private_key, cont
     canonicalized_resource = "/" + storage_account_name + "/" + container_name + "/" + blob_name
 
     signed_string = create_shared_key_signature(storage_account_key, "PUT", canonicalized_headers, canonicalized_resource, content_length, content_type)
-    
+
     headers = {
         'x-ms-date' : current_timestamp,
         'x-ms-version' : api_version,
@@ -201,14 +201,14 @@ def upload_key_file(storage_account_key, storage_account_name, private_key, cont
         'x-ms-blob-type': blob_type,
         'Authorization' : f"SharedKey {storage_account_name}:{signed_string}"
     }
-    
-    upload_url = "https://{}.blob.core.windows.net/{}/{}".format(storage_account_name, container_name, blob_name)  
+
+    upload_url = "https://{}.blob.core.windows.net/{}/{}".format(storage_account_name, container_name, blob_name)
     upload_req = Request(upload_url, method="PUT", headers=headers, data=data)
 
     for _ in range(30):
         print("Uploading the ssh key file to the blob container")
         upload_response = urlopen(upload_req, timeout=2)
-        
+
         try:
             return upload_response.status
         except ValueError as e:
@@ -265,10 +265,10 @@ def reset_cyclecloud_pw(username):
     print("Disabling forced password reset for {}".format(username))
     update_cmd = 'update AuthenticatedUser set ForcePasswordReset = false where Name=="%s"' % (username)
     _catch_sys_error([cs_cmd, 'execute', update_cmd])
-    return pw 
+    return pw
 
 def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, application_id, application_secret,
-                             admin_user, azure_cloud, accept_terms, password, storageAccount, no_default_account, 
+                             admin_user, azure_cloud, accept_terms, password, storageAccount, no_default_account,
                              webserver_port):
     print("Setting up the Azure account in CycleCloud and initializing cyclecloud CLI")
 
@@ -290,7 +290,7 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
     else:
         print('Password not specified, using the user name as password')
         cyclecloud_admin_pw = admin_user
-        
+
     if storageAccount:
         print('Storage account specified, using it as the default locker')
         storage_account_name = storageAccount
@@ -374,7 +374,7 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
     initialize_cyclecloud_cli(admin_user, cyclecloud_admin_pw, webserver_port)
 
     if no_default_account:
-        print("Skipping default account creation (--noDefaultAccount).") 
+        print("Skipping default account creation (--noDefaultAccount).")
     else:
         output =  _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "show", "azure"])
         if 'Credentials: azure' in str(output):
@@ -392,7 +392,7 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
                 get_vm_managed_identity()
 
             # Create the cloud provider account
-            # Retry in case it takes much longer than expected 
+            # Retry in case it takes much longer than expected
             # (this is common with limited compute resources)
             max_tries = 60
             # created = False
@@ -448,11 +448,30 @@ def initialize_cyclecloud_cli(admin_user, cyclecloud_admin_pw, webserver_port):
 
 
 def letsEncrypt(fqdn):
-    sleep(60)
+    sleep(80)
+    #Add a retry loop here
+    for i in range(8):
+        try:
+            print("Getting SSL cert from Lets Encrypt, attempt number: " + str(i))
+            cmd_list = [cs_cmd, "keystore", "automatic", "--accept-terms", fqdn]
+            print("Command list:", cmd_list)
+            output = subprocess.run(cmd_list, capture_output=True, check=True, text=True).stdout
+            break
+        except subprocess.CalledProcessError as e:
+            print("Error getting SSL cert from Lets Encrypt")
+            print("Proceeding with self-signed cert")
+            print("Error with cmd: %s" % e.cmd)
+            print("Stdout: %s" % e.stdout)
+            print("")
+            print("Stderr: %s" % e.stderr)
+            print("")
+            print("Retrying in 15 seconds...")
+            sleep(20)
+            continue
     try:
         cmd_list = [cs_cmd, "keystore", "automatic", "--accept-terms", fqdn]
-        output = subprocess.run(cmd_list, capture_output=True, check=True, text=True).stdout
         print("Command list:", cmd_list)
+        output = subprocess.run(cmd_list, capture_output=True, check=True, text=True).stdout
         print("Command output:", output)
     except subprocess.CalledProcessError as e:
         print("Error getting SSL cert from Lets Encrypt")
@@ -520,7 +539,7 @@ def start_cc():
             print("Error with cmd: %s" % e.cmd)
             print("Output: %s" % e.output)
             raise
-    
+
     _catch_sys_error([cs_cmd, "start"])
 
     # We run await_startup to force the script to wait until CycleCloud is all up and running
@@ -578,6 +597,7 @@ def install_cc_cli():
             chdir(cli_install_dir)
             _catch_sys_error(["./install.sh", "--system"])
 
+
 def already_installed():
     print("Checking for existing Azure CycleCloud install")
     return os.path.exists("/opt/cycle_server/cycle_server")
@@ -614,33 +634,31 @@ def configure_msft_apt_repos():
         raise
     # Now we install HTTPS transport for APT
     _catch_sys_error(["apt-get", "install", "-y", "apt-transport-https"])
-    
+
     # Next we add the MSFT repos
     _catch_sys_error(
         ["wget", "-q", "-O", "/tmp/microsoft.asc", "https://packages.microsoft.com/keys/microsoft.asc"])
     _catch_sys_error(
         ["apt-key", "add", "/tmp/microsoft.asc"])
-    
+
     # Fix while Ubuntu 20 is not available -- we install the Ubuntu 18.04 version of CycleCloud
-    lsb_release = "bionic"
+    lsb_release = "bionic" #focal not available
 
     # Finally, we install CycleCloud CLI and application
-
-    with open('/etc/apt/sources.list.d/azure-cli.list', 'w') as f:
-        f.write("deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ {} main".format(lsb_release))
-
     with open('/etc/apt/sources.list.d/cyclecloud.list', 'w') as f:
         f.write("deb [arch=amd64] https://packages.microsoft.com/repos/cyclecloud {} main".format(lsb_release))
     _catch_sys_error(["apt-get", "update", "-y", "--allow-releaseinfo-change"])
-    
+
 def install_pre_req():
     print("Installing pre-requisites for CycleCloud server")
     _catch_sys_error(["apt-get", "update", "-y", "--allow-releaseinfo-change"])
-    _catch_sys_error(["apt", "install", "-y", "openjdk-8-jre-headless"])
-    _catch_sys_error(["apt", "install", "-y", "unzip"])
+    #TODO: check we need jdk8 -- not os default
+    #Java 8 is required. (Detected version Java 11.0 at /usr/lib/jvm/java-11-openjdk-amd64)
+    # _catch_sys_error(["apt", "install", "-y", "openjdk-8-jre-headless"])
+    # _catch_sys_error(["apt", "install", "-y", "unzip"])
     _catch_sys_error(["apt", "install", "-y", "python3-venv"])
     # Not strictly needed, but it's useful to have the Azure CLI
-    _catch_sys_error(["apt", "install", "-y", "azure-cli"])
+    # _catch_sys_error(["apt", "install", "-y", "azure-cli"])
 
 
 def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores, lustreMGSIpAddress, installNextflow):
@@ -707,10 +725,10 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     subnet_string_value = resource_group + "/vnet" + vm_name + "/" + subnet_name
     subnet_param = "SubnetId=" + subnet_string_value
     print("The subnet for the worker nodes is: %s" % subnet_param)
-    
+
     schedulerImage_param = "SchedulerImageName=" + cluster_image
     print("The os image for the scheduler nodes is: %s" % schedulerImage_param)
-    
+
     workerImage_param = "HPCImageName=" + cluster_image
     print("The os image for the worker nodes is: %s" % workerImage_param)
 
@@ -720,7 +738,7 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     max_core = int(node_size) * int(node_cores)
     maxCore_param = "MaxHPCExecuteCoreCount=" + str(max_core)
     print("The amount of execute core for the worker nodes is: %s" % maxCore_param)
-    
+
     # We import the cluster, passing the subnet name as a parameter override
     _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", location_param , "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param])
 
@@ -856,7 +874,7 @@ def main():
                         dest="no_default_account",
                         action="store_true",
                         help="Do not attempt to configure a default CycleCloud Account (useful for CycleClouds managing other subscriptions)")
-                    
+
     parser.add_argument("--webServerMaxHeapSize",
                         dest="webServerMaxHeapSize",
                         default='4096M',
@@ -881,7 +899,7 @@ def main():
                         dest="webServerHostname",
                         default="",
                         help="Over-ride CycleCloud hostname for cluster/back-end connections")
-    
+
     parser.add_argument("--sizeOfWorkerNodes",
                         dest="sizeOfWorkerNodes",
                         default="Standard_B2ms",
@@ -891,7 +909,7 @@ def main():
                         dest="numberOfWorkerNodes",
                         default=2,
                         help="The VM size for worker nodes")
-    
+
     parser.add_argument("--osOfClusterNodes",
                         dest="osOfClusterNodes",
                         default="Canonical:UbuntuServer:18.04-LTS:latest",
@@ -970,7 +988,10 @@ def main():
 
     print_timestamp()
     print("SCRIPT: Calling function to add the Azure account...")
-    cyclecloud_account_setup(vm_metadata, args.useManagedIdentity, args.tenantId, args.applicationId, args.applicationSecret, args.username, args.azureSovereignCloud, args.acceptTerms, decoded_password, args.storageAccount, args.no_default_account, args.webServerSslPort)
+    cyclecloud_account_setup(vm_metadata, args.useManagedIdentity, args.tenantId, args.applicationId,
+                             args.applicationSecret, args.username, args.azureSovereignCloud,
+                             args.acceptTerms, decoded_password, args.storageAccount,
+                             args.no_default_account, args.webServerSslPort)
 
     if args.useLetsEncrypt:
         print_timestamp()
@@ -995,7 +1016,7 @@ def main():
 
     create_blob_container(storage_account_key, args.storageAccount, container_name)
     upload_key_file(storage_account_key, args.storageAccount, private_key, container_name)
-    
+
     # Create user requires root privileges
     print_timestamp()
     print("SCRIPT: Calling function to create the user with the provided name and public key...")
