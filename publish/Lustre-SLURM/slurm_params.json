@@ -6,7 +6,7 @@
     "SubnetId": "SubnetName",
     "Region" : "australiaeast",
     "configuration_slurm_shutdown_policy" : "Terminate",
-    "configuration_slurm_version" : "22.05.3-1",
+    "configuration_slurm_version" : "23.02.0-1",
     "configuration_slurm_accounting_enabled" : false,
     "configuration_slurm_accounting_url" : null,
     "configuration_slurm_accounting_user" : null,
