@@ -655,7 +655,7 @@ def install_pre_req():
     #TODO: check we need jdk8 -- not os default
     #Java 8 is required. (Detected version Java 11.0 at /usr/lib/jvm/java-11-openjdk-amd64)
     # _catch_sys_error(["apt", "install", "-y", "openjdk-8-jre-headless"])
-    # _catch_sys_error(["apt", "install", "-y", "unzip"])
+    _catch_sys_error(["apt", "install", "-y", "unzip"])
     _catch_sys_error(["apt", "install", "-y", "python3-venv"])
     # Not strictly needed, but it's useful to have the Azure CLI
     # _catch_sys_error(["apt", "install", "-y", "azure-cli"])
