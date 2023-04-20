@@ -577,9 +577,14 @@ def already_installed():
     print("Checking for existing Azure CycleCloud install")
     return os.path.exists("/opt/cycle_server/cycle_server")
 
-def download_install_cc():
-    print("Installing Azure CycleCloud server")
-    _catch_sys_error(["apt", "install", "-y", "cyclecloud8"])
+def download_install_cc(cyclecloud_version_requested):
+    print("Installing Azure CycleCloud server version %s" % cyclecloud_version_requested)
+    if cyclecloud_version_requested == "latest":
+        cyclecloud_version = ""
+    else:
+        cyclecloud_version = "=" + cyclecloud_version_requested
+    cycle_cloud_apt_package = "cyclecloud8" + cyclecloud_version
+    _catch_sys_error(["apt", "install", "-y", cycle_cloud_apt_package])
 
 def configure_msft_apt_repos():
     print("Configuring Microsoft apt repository for CycleCloud install")
@@ -635,10 +640,10 @@ def install_pre_req():
     _catch_sys_error(["apt", "install", "-y", "unzip"])
     _catch_sys_error(["apt", "install", "-y", "python3-venv"])
     # Not strictly needed, but it's useful to have the Azure CLI
-    _catch_sys_error(["apt", "install", "-y", "azure-cli"])
+    #_catch_sys_error(["apt", "install", "-y", "azure-cli"])
 
 
-def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores):
+def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores, slurm_version):
     cluster_template_file_name = "slurm_template.ini"
     cluster_parameters_file_name = "slurm_params.json"
 
@@ -687,9 +692,12 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     max_core = int(node_size) * int(node_cores)
     maxCore_param = "MaxHPCExecuteCoreCount=" + str(max_core)
     print("The amount of execute core for the worker nodes is: %s" % maxCore_param)
+
+    slurmVersion_param = "configuration_slurm_version=" + slurm_version
+    print("The version of SLURM to be installed is: %s" % slurmVersion_param)
     
     # We import the cluster, passing the subnet name as a parameter override
-    _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", location_param , "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param])
+    _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", location_param , "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param, "--parameter-override", slurmVersion_param])
 
 
 def start_cluster():
@@ -814,6 +822,16 @@ def main():
                         dest="countOfNodeCores",
                         default=2,
                         help="The amount of cores for worker nodes")
+    
+    parser.add_argument("--cycleCloudVersion",
+                        dest="cycleCloudVersion",
+                        default="latest",
+                        help="The version of CycleCloud to install")
+    
+    parser.add_argument("--slurmVersion",
+                        dest="slurmVersion",
+                        default="22.05.8-1",
+                        help="The version of SLURM to install")
 
 
     args = parser.parse_args()
@@ -828,7 +846,7 @@ def main():
         print("SCRIPT: Calling function to install pre-requisites...")
         install_pre_req()
         print("SCRIPT: Calling function to download and install CycleCloud...")
-        download_install_cc()
+        download_install_cc(args.cycleCloudVersion)
         print("SCRIPT: Calling function to modify the cs_config file...")
         modify_cs_config(options = {'webServerMaxHeapSize': args.webServerMaxHeapSize,
                                     'webServerPort': args.webServerPort,
@@ -892,7 +910,7 @@ def main():
 
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
     print("SCRIPT: Calling function to import the cluster...")
-    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores)
+    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, args.slurmVersion)
     print("SCRIPT: Calling function to start the cluster...")
     start_cluster()
     print("SCRIPT: Sleeping for 8 minutes, which is the typical start time-for the master node to boot up and be configured...")
