@@ -1,0 +1,9 @@
+[
+    
+    {
+        "name": "Go to Azure OpenAI Studio",
+        "icon": "fa fa-sign-in",
+        "fileName": "getopenaistudiourl.ps1",
+        "actionType": "Url"
+    }
+]

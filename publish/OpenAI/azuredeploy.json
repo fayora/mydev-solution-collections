@@ -1,0 +1,42 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "accountName": {
+        "type": "string",
+        "defaultValue": "",
+        "minLength": 4,
+        "metadata": {
+          "description": "The name you want to give your OpenAI deployment so that you can identify it later. The name must be unique across all Azure subscriptions."
+        }
+      }
+    },
+    "variables": {
+      "location": "southcentralus",
+      "curatedAccountName": "[replace (parameters('accountName'), ' ', '')]",
+      "curatedSubDomainName": "[take(concat(toLower(replace (parameters('accountName'), ' ', '')), uniqueString(parameters('accountName'))), 64)]"
+    },
+    "resources": [
+      {
+            "type": "Microsoft.CognitiveServices/accounts",
+            "apiVersion": "2022-12-01",
+            "name": "[variables('curatedAccountName')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "S0"
+            },
+            "kind": "OpenAI",
+            "properties": {
+                "customSubDomainName": "[variables('curatedSubDomainName')]",
+                "publicNetworkAccess": "Enabled"
+            }
+        }
+
+    ],
+    "outputs": {
+       "azureOpenAIStudio": {
+        "type": "string",
+        "value": "[concat('https://oai.azure.com/portal/', reference(resourceId('Microsoft.CognitiveServices/accounts', variables('curatedAccountName'))).internalId)]"
+       }
+    }
+}

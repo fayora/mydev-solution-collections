@@ -29,7 +29,6 @@
             "defaultValue": "Ubuntu 18.04",
             "allowedValues": [
                 "CentOS 7.9",
-                "Ubuntu 18.04",
                 "Ubuntu 20.04"
             ],
             "metadata": {
@@ -355,7 +354,7 @@
                         "typeHandlerVersion": "2.1",
                         "autoUpgradeMinorVersion": true,
                         "protectedSettings": {
-                            "commandToExecute": "[concat('sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get update && sudo apt-get install -y python3.9 && sudo python3.9 cyclecloud_app_server_AND_Lustre_install.py ', '--acceptTerms', ' --useManagedIdentity', ' --azureSovereignCloud ', '\"', variables('azureSovereignCloud'), '\"', ' --username ', '\"', variables('username'), '\"', ' --password ', '''', base64(variables('password')), '''', ' --hostname ', '\"', reference(variables('cycleIPName')).dnsSettings.fqdn, '\"', ' --storageAccount ', '\"', variables('storageAccountName'),'\"', ' --resourceGroup ', '\"', resourceGroup().name, '\"', ' --useLetsEncrypt', ' --webServerPort 80 --webServerSslPort 443 --webServerMaxHeapSize 4096M', ' --numberOfWorkerNodes ', '\"', parameters('NumberOfWorkerNodes'),'\"', ' --sizeOfWorkerNodes ', '\"', variables('workerVMSize'),'\"', ' --osOfClusterNodes ', '\"', variables('clusterOSImage'),'\"', ' --countOfNodeCores ', '\"', variables('workerVMCoreCount'),'\"', ' --sshkey ', '\"', variables('cycleSSHKeyName'), '\"', ' --lustreFSName ', '\"', variables('amlfsName'), '\"', ' --installNextflow')]",
+                            "commandToExecute": "[concat('sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get update && sudo apt-get install -y python3.10 && sudo python3.10 cyclecloud_app_server_AND_Lustre_install.py ', '--acceptTerms', ' --useManagedIdentity', ' --azureSovereignCloud ', '\"', variables('azureSovereignCloud'), '\"', ' --username ', '\"', variables('username'), '\"', ' --password ', '''', base64(variables('password')), '''', ' --hostname ', '\"', reference(variables('cycleIPName')).dnsSettings.fqdn, '\"', ' --storageAccount ', '\"', variables('storageAccountName'),'\"', ' --resourceGroup ', '\"', resourceGroup().name, '\"', ' --useLetsEncrypt', ' --webServerPort 80 --webServerSslPort 443 --webServerMaxHeapSize 4096M', ' --numberOfWorkerNodes ', '\"', parameters('NumberOfWorkerNodes'),'\"', ' --sizeOfWorkerNodes ', '\"', variables('workerVMSize'),'\"', ' --osOfClusterNodes ', '\"', variables('clusterOSImage'),'\"', ' --countOfNodeCores ', '\"', variables('workerVMCoreCount'),'\"', ' --sshkey ', '\"', variables('cycleSSHKeyName'), '\"', ' --lustreFSName ', '\"', variables('amlfsName'), '\"', ' --installNextflow')]",
                             "fileUris": ["[variables('installScriptURL')]"]
                         }
                     }
