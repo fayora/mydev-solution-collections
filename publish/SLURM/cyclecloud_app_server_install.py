@@ -262,8 +262,8 @@ def reset_cyclecloud_pw(username):
     return pw 
 
 def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, application_id, application_secret,
-                             admin_user, azure_cloud, accept_terms, password, storageAccount, no_default_account, 
-                             webserver_port):
+                            admin_user, azure_cloud, accept_terms, password, storageAccount, no_default_account, 
+                            webserver_port):
     print("Setting up the Azure account in CycleCloud and initializing cyclecloud CLI")
 
     if not accept_terms:
@@ -579,6 +579,7 @@ def already_installed():
 
 def download_install_cc(cyclecloud_version_requested):
     print("Installing Azure CycleCloud server version %s" % cyclecloud_version_requested)
+    # Versions listed here: https://packages.microsoft.com/repos/cyclecloud/pool/main/c/cyclecloud8/
     if cyclecloud_version_requested == "latest":
         cyclecloud_version = ""
     else:
@@ -877,9 +878,9 @@ def main():
 
     print("SCRIPT: Calling function to add the Azure account...")
     cyclecloud_account_setup(vm_metadata, args.useManagedIdentity, args.tenantId, args.applicationId,
-                             args.applicationSecret, args.username, args.azureSovereignCloud,
-                             args.acceptTerms, decoded_password, args.storageAccount, 
-                             args.no_default_account, args.webServerSslPort)
+                            args.applicationSecret, args.username, args.azureSovereignCloud,
+                            args.acceptTerms, decoded_password, args.storageAccount, 
+                            args.no_default_account, args.webServerSslPort)
 
     if args.useLetsEncrypt:
         print("SCRIPT: Calling function to get self-signed certificate from LetsEncrypt...")
