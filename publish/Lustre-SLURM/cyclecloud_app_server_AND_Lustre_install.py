@@ -667,6 +667,7 @@ def install_pre_req():
 def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores, lustreMGSIpAddress, installNextflow):
     cluster_template_file_name = "slurm_template.ini"
     cluster_parameters_file_name = "slurm_params.json"
+    slurm_version = "22.05.3-1"
 
     ###########################################################################################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ### NEEDS A FINAL LOCATION for PRODUCTION!!
@@ -742,8 +743,11 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     maxCore_param = "MaxHPCExecuteCoreCount=" + str(max_core)
     print("The amount of execute core for the worker nodes is: %s" % maxCore_param)
 
+    slurmVersion_param = "configuration_slurm_version=" + slurm_version
+    print("The version of SLURM is: %s" % slurmVersion_param)
+
     # We import the cluster, passing the subnet name as a parameter override
-    _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", location_param , "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param])
+    _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", location_param , "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param, "--parameter-override", slurmVersion_param])
 
 def wait_for_lustre_mgs(lustre_mgs_name, subscription_id, resource_group):
     print_timestamp()
