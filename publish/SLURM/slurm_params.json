@@ -20,7 +20,7 @@
     "AdditionalNFSMountPoint" : "/data",
     "AdditionalNFSExportPath" : "/data",
     "AdditionalNFSMountOptions" : null,
-    "SchedulerMachineType" : "Standard_B4ms",
+    "SchedulerMachineType" : "Standard_D8s_v3",
     "SchedulerImageName" : "Canonical:UbuntuServer:18.04-LTS:latest",
     "ReturnProxy" : true,
     "SchedulerClusterInitSpecs" : null,
