@@ -31,8 +31,8 @@
     "MaxHPCExecuteCoreCount" : 10,
     "HPCMaxScalesetSize" : 100,
     "HPCClusterInitSpecs" : null,
-    "HPCWorkerOSDiskSize" : 32,
-    "SharedDiskSize" : 32,
+    "HPCWorkerOSDiskSize" : 64,
+    "SharedDiskSize" : 64,
     "About shared" : null,
     "Additional NFS Mount Readme" : null,
     "slurm" : null
