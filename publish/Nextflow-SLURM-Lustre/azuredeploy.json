@@ -26,7 +26,7 @@
         },
         "OSOfClusterNodes": {
             "type": "string",
-            "defaultValue": "Ubuntu 18.04",
+            "defaultValue": "Ubuntu 20.04",
             "allowedValues": [
                 "CentOS 7.9",
                 "Ubuntu 20.04"
@@ -38,6 +38,7 @@
         "lustreCapacity": {
             "type": "string",
             "allowedValues" : [
+                "8 TiB",
                 "16 TiB", 
                 "32 TiB", 
                 "48 TiB", 
@@ -95,10 +96,10 @@
         "workerVMCoreCount": "[variables('CoreCount')[parameters('SizeOfWorkerNodes')]]",
         "clusterOS": {
             "CentOS 7.9": "OpenLogic:CentOS-HPC:7_9-gen2:latest",
-            "Ubuntu 18.04": "microsoft-dsvm:ubuntu-hpc:1804:latest",
             "Ubuntu 20.04": "microsoft-dsvm:ubuntu-hpc:2004:latest"
         },
         "lustreCapacityVar" : {
+            "8 TiB" : 8,
             "16 TiB" : 16,
             "32 TiB" : 32,
             "48 TiB" : 48,
@@ -120,8 +121,8 @@
         "amlfsMaintenanceDayOfWeek" : "Saturday",
         "amlfsMaintenanceTimeOfDay" : "00:00",
         "amlfsAvailabiltyZone" : [ "1" ],
-        "dataResourceGroup" : "rg-PilotDataManagement",
-        "dataStorageAccountName" : "sthgdpdata",
+        "dataResourceGroup" : "rg-LustreData",
+        "dataStorageAccountName" : "stlustredatasync",
         "amlfsDataContainer": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('dataResourceGroup'),'/providers/Microsoft.Storage/storageAccounts/', variables('dataStorageAccountName'), '/blobServices/default/containers/', parameters('dataContainerToSync'))]",
         "amlfsLoggingContainerName": "logging",
         "amlfsLoggingContainer": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('dataResourceGroup'),'/providers/Microsoft.Storage/storageAccounts/', variables('dataStorageAccountName'), '/blobServices/default/containers/', variables('amlfsLoggingContainerName'))]",
@@ -137,7 +138,9 @@
                 "name": "[variables('storageAccountType')]"
             },
             "kind": "StorageV2",
-            "properties": {}
+            "properties": {
+                "allowBlobPublicAccess": false
+            }
         },
         {
             "type": "Microsoft.Network/virtualNetworks",
@@ -325,8 +328,8 @@
                     ],
                     "imageReference": {
                         "publisher": "Canonical",
-                        "offer": "UbuntuServer",
-                        "sku": "18_04-lts-gen2",
+                        "offer": "0001-com-ubuntu-server-focal",
+                        "sku": "20_04-lts-gen2",
                         "version": "latest"
                     },
                     "osDisk": {
@@ -354,7 +357,7 @@
                         "typeHandlerVersion": "2.1",
                         "autoUpgradeMinorVersion": true,
                         "protectedSettings": {
-                            "commandToExecute": "[concat('sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get update && sudo apt-get install -y python3.10 && sudo python3.10 cyclecloud_app_server_AND_Lustre_install.py ', '--acceptTerms', ' --useManagedIdentity', ' --azureSovereignCloud ', '\"', variables('azureSovereignCloud'), '\"', ' --username ', '\"', variables('username'), '\"', ' --password ', '''', base64(variables('password')), '''', ' --hostname ', '\"', reference(variables('cycleIPName')).dnsSettings.fqdn, '\"', ' --storageAccount ', '\"', variables('storageAccountName'),'\"', ' --resourceGroup ', '\"', resourceGroup().name, '\"', ' --useLetsEncrypt', ' --webServerPort 80 --webServerSslPort 443 --webServerMaxHeapSize 4096M', ' --numberOfWorkerNodes ', '\"', parameters('NumberOfWorkerNodes'),'\"', ' --sizeOfWorkerNodes ', '\"', variables('workerVMSize'),'\"', ' --osOfClusterNodes ', '\"', variables('clusterOSImage'),'\"', ' --countOfNodeCores ', '\"', variables('workerVMCoreCount'),'\"', ' --sshkey ', '\"', variables('cycleSSHKeyName'), '\"', ' --lustreFSName ', '\"', variables('amlfsName'), '\"', ' --installNextflow')]",
+                            "commandToExecute": "[concat('sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get update && sudo apt-get install -y python3.9 && sudo python3.9 cyclecloud_app_server_AND_Lustre_install.py ', '--acceptTerms', ' --useManagedIdentity', ' --azureSovereignCloud ', '\"', variables('azureSovereignCloud'), '\"', ' --username ', '\"', variables('username'), '\"', ' --password ', '''', base64(variables('password')), '''', ' --hostname ', '\"', reference(variables('cycleIPName')).dnsSettings.fqdn, '\"', ' --storageAccount ', '\"', variables('storageAccountName'),'\"', ' --resourceGroup ', '\"', resourceGroup().name, '\"', ' --useLetsEncrypt', ' --webServerPort 80 --webServerSslPort 443 --webServerMaxHeapSize 4096M', ' --numberOfWorkerNodes ', '\"', parameters('NumberOfWorkerNodes'),'\"', ' --sizeOfWorkerNodes ', '\"', variables('workerVMSize'),'\"', ' --osOfClusterNodes ', '\"', variables('clusterOSImage'),'\"', ' --countOfNodeCores ', '\"', variables('workerVMCoreCount'),'\"', ' --sshkey ', '\"', variables('cycleSSHKeyName'), '\"', ' --lustreFSName ', '\"', variables('amlfsName'), '\"', ' --installNextflow')]",
                             "fileUris": ["[variables('installScriptURL')]"]
                         }
                     }
