@@ -39,8 +39,8 @@
         }
     },
     "variables": {
-        "cycleCloudVersion": "latest",
-        "slurmVersion": "22.05.8-1",
+        "cycleCloudVersion": "8.4.0-3122",
+        "slurmVersion": "23.02.0-1",
         "computeApiVersion": "2019-03-01",
         "username": "hpcadmin",
         "password": "LoomeRockS12",
@@ -92,14 +92,16 @@
     "resources": [
         {
             "type": "Microsoft.Storage/storageAccounts",
-            "apiVersion": "2019-04-01",
+            "apiVersion": "2022-09-01",
             "name": "[variables('storageAccountName')]",
             "location": "[variables('resourceLocation')]",
             "sku": {
                 "name": "[variables('storageAccountType')]"
             },
             "kind": "StorageV2",
-            "properties": {}
+            "properties": {
+                "allowBlobPublicAccess": false
+            }
         },
         {
             "type": "Microsoft.Network/virtualNetworks",
