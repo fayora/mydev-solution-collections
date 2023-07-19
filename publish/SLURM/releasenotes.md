@@ -1,3 +1,3 @@
-# SLURM on CentOS 7.1 HPC 
-2021.16.07
+# SLURM on Azure HPC 
+2023.06.20
 * Deploy a SLURM cluster with a head node and your selection of a number of worker nodes.
