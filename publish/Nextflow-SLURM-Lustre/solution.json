@@ -1,7 +1,7 @@
 {
     "name": "Nextflow HPC",
-    "description": "Deploys Nextflow and nf-core on an HPC cluster with your specified number of worker nodes and node sizes, connected to a fully-managed Lustre File System.",
-    "version": "2022.28.11.1",
+    "description": "Deploys the Nextflow pipeline manager on an HPC cluster with your specified number of worker nodes and node sizes, connected to a fully-managed Lustre File System.",
+    "version": "2023.06.20.1",
     "icon": "fa fa-random",
     "deploymentMode": "User",
     "upgradeAllowed": true
