@@ -53,12 +53,13 @@
         }
     },
     "variables": {
+        "installScriptURL": "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/Lustre-SLURM/cyclecloud_app_server_AND_Lustre_install.py",
         "computeApiVersion": "2019-03-01",
-        "username": "hpcadmin",
-        "password": "LoomeRockS12",
         "resourceLocation": "[resourceGroup().location]",
         "uniqueHash": "[uniqueString(deployment().properties.templateHash, deployment().name)]",
         "cycleName": "[concat('cycleapp', take(variables('uniqueHash'),5), toLower(take(uniqueString(subscription().subscriptionId, deployment().name), 5)))]",
+        "username": "hpcadmin",
+        "password": "[concat(variables('uniqueHash'),'C12!')]",
         "cycleNic": "[concat('nic', variables('cycleName'))]",
         "cycleNsgName": "[concat('nsg', variables('cycleName'))]",
         "cycleIPName": "[concat('ip', variables('cycleName'))]",
@@ -104,7 +105,6 @@
         },
         "amlfsCapacity" : "[variables('lustreCapacityVar')[parameters('lustreCapacity')]]",
         "clusterOSImage": "[variables('clusterOS')[parameters('OSOfClusterNodes')]]",
-        "installScriptURL": "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/Lustre-SLURM/cyclecloud_app_server_AND_Lustre_install.py",
         "networkApiVersion": "2017-06-01",
         "contributor": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
         "amlfsAPIVerson" : "2021-11-01-preview",
@@ -397,6 +397,14 @@
         "AMLFSMountCommand": {
             "type": "string",
             "value": "[reference(variables('amlfsName')).mountCommand]"
+        },
+        "SystemID1": {
+            "type": "string",
+            "value": "[variables('password')]"
+        },
+        "SystemID2": {
+            "type": "string",
+            "value": "[variables('cycleName')]"
         }
     }
 }
