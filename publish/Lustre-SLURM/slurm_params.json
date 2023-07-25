@@ -32,6 +32,7 @@
     "HPCMaxScalesetSize" : 100,
     "HPCClusterInitSpecs" : null,
     "HPCWorkerOSDiskSize" : 64,
+    "SchedulerOSDiskSize" : 64,
     "SharedDiskSize" : 256,
     "About shared" : null,
     "Additional NFS Mount Readme" : null,
