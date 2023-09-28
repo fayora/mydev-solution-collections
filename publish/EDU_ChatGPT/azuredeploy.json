@@ -1,0 +1,284 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "ChatContext": {
+            "type": "string",
+            "defaultValue": "You are an AI assistant that helps people find information.",
+            "metadata": {
+                "description": "The OpenAI System Message that specifies how the AI assistant will behave."
+            }
+        }
+    },
+    "variables": {
+        "AzureOpenAIResource" : "**************ENTER YOUR RESOURCE NAME HERE**************",
+        "AzureOpenAIModel": "ChatGPT-4_32k_v0314",
+        "AzureOpenAIModelName": "gpt-4-32k",
+        "AzureOpenAIKey": "**************ENTER YOUR KEY HERE*********************",
+        "enterpriseAcpplicationId": "321bc218-8c67-47ff-8311-69a71f4b3f95",
+        "AzureOpenAITemperature": 0.5,
+        "AzureOpenAITopP": 0.5,
+        "AzureOpenAISystemMessage": "[parameters('ChatContext')]",
+        "AzureOpenAIMaxTokens": 1000,
+        "AzureOpenAIStopSequence": "\n",
+        "AzureOpenAIApiVersion": "2023-06-01-preview",
+        "AzureOpenAIStream": true,
+        "AzureOpenAIEmbeddingEndpoint": "",
+        "AzureOpenAIEmbeddingKey": "",
+
+        "EnableAuthentication": false,
+
+        "HostingPlanSku": "B1",
+        "HostingPlanName": "[guid(resourceGroup().id)]",
+        "WebsiteName": "[guid(resourceGroup().id)]",
+
+        "AzureSearchService": "",
+        "AzureSearchIndex": "",
+        "AzureSearchKey": "",
+        "AzureSearchUseSemanticSearch": false,
+        "AzureSearchSemanticSearchConfig": "default",
+        "AzureSearchIndexIsPrechunked": false,
+        "AzureSearchTopK": 5,
+        "AzureSearchEnableInDomain": false,
+        "AzureSearchContentColumns": "content",
+        "AzureSearchFilenameColumn": "filename",
+        "AzureSearchTitleColumn": "title",
+        "AzureSearchUrlColumn": "url",
+        "AzureSearchQueryType": "simple",
+        "AzureSearchVectorFields": "",
+        "AzureSearchPermittedGroupsField": "",
+        "AzureSearchStrictness": "3",
+        
+        "WebAppImageName": "DOCKER|fruoccopublic.azurecr.io/sample-app-aoai-chatgpt:latest"
+    },
+    "resources": [
+        {
+            "apiVersion": "2020-06-01",
+            "name": "[variables('HostingPlanName')]",
+            "type": "Microsoft.Web/serverfarms",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[variables('HostingPlanSku')]"
+            },
+            "properties": {
+                "name": "[variables('HostingPlanName')]",
+                "reserved": true
+            },
+            "kind": "linux"
+        },
+        {
+            "apiVersion": "2020-06-01",
+            "name": "[variables('WebsiteName')]",
+            "type": "Microsoft.Web/sites",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('HostingPlanName'))]"
+            ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "serverFarmId": "[variables('HostingPlanName')]",
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "AZURE_SEARCH_SERVICE",
+                            "value": "[variables('AzureSearchService')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_INDEX",
+                            "value": "[variables('AzureSearchIndex')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_KEY",
+                            "value": "[variables('AzureSearchKey')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_USE_SEMANTIC_SEARCH",
+                            "value": "[variables('AzureSearchUseSemanticSearch')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_SEMANTIC_SEARCH_CONFIG",
+                            "value": "[variables('AzureSearchSemanticSearchConfig')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_INDEX_IS_PRECHUNKED",
+                            "value": "[variables('AzureSearchIndexIsPrechunked')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_TOP_K",
+                            "value": "[variables('AzureSearchTopK')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_ENABLE_IN_DOMAIN",
+                            "value": "[variables('AzureSearchEnableInDomain')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_CONTENT_COLUMNS",
+                            "value": "[variables('AzureSearchContentColumns')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_FILENAME_COLUMN",
+                            "value": "[variables('AzureSearchFilenameColumn')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_TITLE_COLUMN",
+                            "value": "[variables('AzureSearchTitleColumn')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_URL_COLUMN",
+                            "value": "[variables('AzureSearchUrlColumn')]"
+                        },
+                        {
+                            "name": "AZURE_OPENAI_RESOURCE",
+                            "value": "[variables('AzureOpenAIResource')]"
+                        },
+                        {
+                            "name": "AZURE_OPENAI_MODEL",
+                            "value": "[variables('AzureOpenAIModel')]"
+                        },
+                        {
+                            "name": "AZURE_OPENAI_KEY",
+                            "value": "[variables('AzureOpenAIKey')]"
+                        },
+                        {
+                            "name": "AZURE_OPENAI_MODEL_NAME",
+                            "value": "[variables('AzureOpenAIModelName')]"
+                        },
+                        {
+                            "name": "AZURE_OPENAI_TEMPERATURE",
+                            "value": "[variables('AzureOpenAITemperature')]"
+                        },
+                        {
+                            "name": "AZURE_OPENAI_TOP_P",
+                            "value": "[variables('AzureOpenAITopP')]"
+                        },
+                        {
+                            "name": "AZURE_OPENAI_MAX_TOKENS",
+                            "value": "[variables('AzureOpenAIMaxTokens')]"
+                        },
+                        {
+                            "name": "AZURE_OPENAI_STOP_SEQUENCE",
+                            "value": "[variables('AzureOpenAIStopSequence')]"
+                        },
+                        {
+                            "name": "AZURE_OPENAI_SYSTEM_MESSAGE",
+                            "value": "[variables('AzureOpenAISystemMessage')]"
+                        },
+                        {
+                            "name": "AZURE_OPENAI_PREVIEW_API_VERSION",
+                            "value": "[variables('AzureOpenAIApiVersion')]"
+                        },
+                        {
+                            "name": "AZURE_OPENAI_STREAM",
+                            "value": "[variables('AzureOpenAIStream')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_QUERY_TYPE",
+                            "value": "[variables('AzureSearchQueryType')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_VECTOR_COLUMNS",
+                            "value": "[variables('AzureSearchVectorFields')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_PERMITTED_GROUPS_COLUMN",
+                            "value": "[variables('AzureSearchPermittedGroupsField')]"
+                        },
+                        {
+                            "name": "AZURE_SEARCH_STRICTNESS",
+                            "value": "[variables('AzureSearchStrictness')]"
+                        },
+                        {
+                            "name": "AZURE_OPENAI_EMBEDDING_ENDPOINT",
+                            "value": "[variables('AzureOpenAIEmbeddingEndpoint')]"
+                        },
+                        {
+                            "name": "AZURE_OPENAI_EMBEDDING_KEY",
+                            "value": "[variables('AzureOpenAIEmbeddingKey')]"
+                        },
+                        {
+                            "name": "SCM_DO_BUILD_DURING_DEPLOYMENT",
+                            "value": "true"
+                        }
+                    ],
+                    "linuxFxVersion": "[variables('WebAppImageName')]"
+                }
+            }
+        },
+        {
+            "name": "[concat(variables('WebsiteName'), '/authsettingsV2')]",
+            "condition": "[variables('EnableAuthentication')]",
+            "type": "Microsoft.Web/sites/config",
+            "apiVersion": "2021-02-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('WebsiteName'))]"
+            ],
+            "properties": {
+                "platform": {
+                    "enabled": true,
+                    "runtimeVersion": "~1"
+                },
+                "globalValidation": {
+                    "requireAuthentication": true,
+                    "unauthenticatedClientAction": "RedirectToLoginPage",
+                    "redirectToProvider": "azureactivedirectory"
+                },
+                "identityProviders": {
+                    "azureActiveDirectory": {
+                        "enabled": true,
+                        "registration": {
+                        "openIdIssuer": "[concat('https://sts.windows.net/',tenant().tenantId,'/v2.0')]",
+                        "clientId": "[variables('enterpriseAcpplicationId')]",
+                        "clientSecretSettingName": "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
+                        },
+                        "login": {
+                            "disableWWWAuthenticate": false
+                        },
+                        "validation": {
+                            "jwtClaimChecks": {},
+                            "allowedAudiences": [],
+                            "defaultAuthorizationPolicy": {
+                                "allowedPrincipals": {}
+                            }
+                        }
+                    }
+                },
+                "login": {
+                "routes": {},
+                "tokenStore": {
+                    "enabled": true,
+                    "tokenRefreshExtensionHours": 72,
+                    "fileSystem": {},
+                    "azureBlobStorage": {}
+                },
+                "preserveUrlFragmentsForLogins": false,
+                "cookieExpiration": {
+                    "convention": "FixedTime",
+                    "timeToExpiration": "08:00:00"
+                },
+                "nonce": {
+                    "validateNonce": true,
+                    "nonceExpirationInterval": "00:05:00"
+                }
+                },
+                "httpSettings": {
+                "requireHttps": true,
+                "routes": {
+                    "apiPrefix": "/.auth"
+                },
+                "forwardProxy": {
+                    "convention": "NoProxy"
+                }
+            }
+            }
+        }
+    ],
+    "outputs": {
+        "ChatGPTAppURL": {
+            "type": "string",
+            "value": "[concat('https://', variables('WebsiteName'), '.azurewebsites.net')]"
+        }
+    }
+}

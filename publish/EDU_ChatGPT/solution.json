@@ -1,0 +1,8 @@
+{
+    "name": "ChatGPT Web App",
+    "description": "Deploys a web application with your specified parameters for ChatGPT.",
+    "version": "2023.09.20.1",
+    "icon": "fa fa-rocket",
+    "deploymentMode": "User",
+    "upgradeAllowed": true
+}

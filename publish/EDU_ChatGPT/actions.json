@@ -1,0 +1,9 @@
+[
+    
+    {
+        "name": "Go to ChatGPT web app",
+        "icon": "fa fa-sign-in",
+        "fileName": "getchatgptwebapp.ps1",
+        "actionType": "Url"
+    }
+]
