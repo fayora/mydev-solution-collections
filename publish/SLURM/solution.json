@@ -1,6 +1,6 @@
 {
     "name": "SLURM cluster for HPC",
-    "description": "Deploys a SLURM cluster your specified number of worker nodes and node sizes.",
+    "description": "Deploys a SLURM cluster with your specified number of worker nodes and node sizes.",
     "version": "2023.06.20.1",
     "icon": "fa fa-cubes",
     "deploymentMode": "User",
