@@ -61,10 +61,10 @@
         "storageAccountType": "Standard_LRS",
         "FQDN": "[concat(variables('cycleName'))]",
         "WorkerSize": {
-            "2-CPUs,8GB-RAM": "Standard_D2as_v5",
-            "4-CPUs,16GB-RAM": "Standard_D4as_v5",
-            "8-CPUs,32GB-RAM": "Standard_D8as_v5",
-            "16-CPUs,64GB-RAM": "Standard_D16as_v5",
+            "2-CPUs,8GB-RAM": "Standard_B2ms",
+            "4-CPUs,16GB-RAM": "Standard_B4ms",
+            "8-CPUs,32GB-RAM": "Standard_B8ms",
+            "16-CPUs,64GB-RAM": "Standard_B16ms",
             "AI-V100-GPU,6-CPUs,112GB-RAM": "Standard_NC6s_v3",
             "HPC-100Gbps-InfiniBand,44-CPUs,352GB-RAM": "Standard_HC44rs",
             "HPC-200Gbps-InfiniBand,120-CPUs,456GB-RAM": "Standard_HB120rs_v2"
