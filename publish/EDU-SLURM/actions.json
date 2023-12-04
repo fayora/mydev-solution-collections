@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Get SSH command",
+        "icon": "fa fa-arrow-down",
+        "fileName": "getsshcommand.ps1",
+        "actionType": "String"
+    },
+    {
+        "name": "Download SSH certificate",
+        "icon": "fa fa-download",
+        "fileName": "downloadpemfile.ps1",
+        "actionType": "File"
+    }
+]

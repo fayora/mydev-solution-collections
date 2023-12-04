@@ -8,6 +8,18 @@
             "metadata": {
                 "description": "The OpenAI System Message that specifies how the AI assistant will behave."
             }
+        },
+        "ConversationStyle": {
+            "type": "string",
+            "defaultValue": "Balanced",
+            "allowedValues": [
+                "Creative",
+                "Balanced",
+                "Precise"
+            ],
+            "metadata": {
+                "description": "The style of the conversation."
+            }
         }
     },
     "variables": {
@@ -15,9 +27,18 @@
         "AzureOpenAIModel": "ChatGPT-4_32k_v0314",
         "AzureOpenAIModelName": "gpt-4-32k",
         "AzureOpenAIKey": "**************ENTER YOUR KEY HERE*********************",
-        "enterpriseAcpplicationId": "321bc218-8c67-47ff-8311-69a71f4b3f95",
-        "AzureOpenAITemperature": 0.5,
-        "AzureOpenAITopP": 0.5,
+        "temperatureSelected": {
+            "Creative": 0.7,
+            "Balanced": 0.5,
+            "Precise": 0.2
+        },
+        "topPSelected": {
+            "Creative": 0.8,
+            "Balanced": 0.5,
+            "Precise": 0.1
+        },
+        "AzureOpenAITemperature": "[variables('temperatureSelected')[parameters('ConversationStyle')]]",
+        "AzureOpenAITopP": "[variables('topPSelected')[parameters('ConversationStyle')]]",
         "AzureOpenAISystemMessage": "[parameters('ChatContext')]",
         "AzureOpenAIMaxTokens": 1000,
         "AzureOpenAIStopSequence": "\n",
@@ -49,7 +70,17 @@
         "AzureSearchPermittedGroupsField": "",
         "AzureSearchStrictness": "3",
         
-        "WebAppImageName": "DOCKER|fruoccopublic.azurecr.io/sample-app-aoai-chatgpt:latest"
+        "WebAppImageName": "DOCKER|fruoccopublic.azurecr.io/sample-app-aoai-chatgpt:latest",
+
+        "userAssignedIdentityName": "configDeployer",
+        "roleAssignmentName": "[guid(concat(resourceGroup().id, 'contributor'))]",
+        "contributorRoleDefinitionId": "[resourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+        "cliResourceName": "AzCLIAppRegDeploymentScript",
+
+        "aadAppUri": "[concat('https://', variables('WebsiteName'), 'azurewebsites.net')]",
+        "aadAppRedirectUri": "[concat('https://', variables('WebsiteName'), 'azurewebsites.net/signin-oidc')]",
+        "cliArg": "[concat(variables('WebsiteName'), ' ', variables('aadAppUri'), ' ', variables('aadAppRedirectUri'))]"
+
     },
     "resources": [
         {
@@ -67,12 +98,54 @@
             "kind": "linux"
         },
         {
+            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+            "apiVersion": "2018-11-30",
+            "name": "[variables('userAssignedIdentityName')]",
+            "location": "[resourceGroup().location]"
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2020-04-01-preview",
+            "name": "[variables('roleAssignmentName')]",
+            "dependsOn": [ "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userAssignedIdentityName'))]" ],
+            "properties": {
+                "roleDefinitionId": "[variables('contributorRoleDefinitionId')]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('userAssignedIdentityName')), '2015-08-31-preview').principalId]",
+                "scope": "[resourceGroup().id]",
+                "principalType": "ServicePrincipal"
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deploymentScripts",
+            "apiVersion": "2020-10-01",
+            "name": "[variables('cliResourceName')]",
+            "dependsOn": ["[resourceId('Microsoft.Authorization/roleAssignments',variables('roleAssignmentName'))]"],
+            "location": "[resourceGroup().location]",
+            "kind": "AzureCLI",
+            "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                    "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities',variables('userAssignedIdentityName'))]": {}
+                }
+            },
+            "properties": {
+                "forceUpdateTag": "1",
+                "AzCliVersion": "2.0.80",
+                "timeout": "PT30M",
+                "arguments": "[variables('cliArg')]",
+                "scriptContent": "appInfo=$(az ad app create --display-name $1 --identifier-uris \"$2\" --reply-urls \"$3\")",
+                "cleanupPreference": "OnSuccess",
+                "retentionInterval": "P1D"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
             "apiVersion": "2020-06-01",
             "name": "[variables('WebsiteName')]",
-            "type": "Microsoft.Web/sites",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Web/serverfarms', variables('HostingPlanName'))]"
+                "[resourceId('Microsoft.Web/serverfarms', variables('HostingPlanName'))]",
+                "[resourceId('Microsoft.Resources/deploymentScripts', variables('cliResourceName'))]"
             ],
             "identity": {
                 "type": "SystemAssigned"
@@ -230,7 +303,7 @@
                         "enabled": true,
                         "registration": {
                         "openIdIssuer": "[concat('https://sts.windows.net/',tenant().tenantId,'/v2.0')]",
-                        "clientId": "[variables('enterpriseAcpplicationId')]",
+                        "clientId": "[reference(variables('cliResourceName')).outputs.appId]",
                         "clientSecretSettingName": "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
                         },
                         "login": {
