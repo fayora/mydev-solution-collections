@@ -25,6 +25,12 @@ print("Creating temp directory {} for installing CycleCloud".format(tmpdir))
 cycle_root = "/opt/cycle_server"
 cs_cmd = cycle_root + "/cycle_server"
 
+def generate_timestamp():
+    return datetime.now().strftime("%Y-%m-%d, %H:%M:%S")
+
+def print_timestamp():
+    print("[" + generate_timestamp() + "]",end=" ")
+
 def clean_up():
     rmtree(tmpdir)
 
@@ -263,8 +269,15 @@ def reset_cyclecloud_pw(username):
 
 def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, application_id, application_secret,
                             admin_user, azure_cloud, accept_terms, password, storageAccount, no_default_account, 
-                            webserver_port):
+                            webserver_port,cyclecloud_version_requested):
     print("Setting up the Azure account in CycleCloud and initializing cyclecloud CLI")
+    print("Using Azure CycleCloud server version %s" % cyclecloud_version_requested)
+    # Versions listed here: https://packages.microsoft.com/repos/cyclecloud/pool/main/c/cyclecloud8/
+    if cyclecloud_version_requested == "latest":
+        cyclecloud_version = ""
+    else:
+        cyclecloud_version = "=" + cyclecloud_version_requested
+    cycle_cloud_apt_package = "cyclecloud8" + cyclecloud_version
 
     if not accept_terms:
         print("Accept terms was false. Overriding for now...")
@@ -413,8 +426,8 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
                     _catch_sys_error(["apt", "remove", "-y", "cyclecloud8"])
                     print("Waiting 10 seconds before reinstalling it...")
                     sleep(10)
-                    print("Now re-installing it:")
-                    _catch_sys_error(["apt", "install", "-y", "cyclecloud8"])
+                    print("Now re-installing %s..." % cyclecloud_version_requested)
+                    _catch_sys_error(["apt", "install", "-y", cycle_cloud_apt_package])
                     continue
                 check_account = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "show", "azure"])
                 if 'Credentials: azure' in str(check_account):
@@ -426,8 +439,8 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
                     _catch_sys_error(["apt", "remove", "-y", "cyclecloud8"])
                     print("Waiting 10 seconds before reinstalling it...")
                     sleep(10)
-                    print("Now re-installing it:")
-                    _catch_sys_error(["apt", "install", "-y", "cyclecloud8"])
+                    print("Now re-installing %s..." % cyclecloud_version_requested)
+                    _catch_sys_error(["apt", "install", "-y", cycle_cloud_apt_package])
                     print("Retrying after 10 seconds...")
                     sleep(10)
 
@@ -442,11 +455,30 @@ def initialize_cyclecloud_cli(admin_user, cyclecloud_admin_pw, webserver_port):
 
 
 def letsEncrypt(fqdn):
-    sleep(60)
+    sleep(80)
+    #Add a retry loop here
+    for i in range(8):
+        try:
+            print("Getting SSL cert from Lets Encrypt, attempt number: " + str(i))
+            cmd_list = [cs_cmd, "keystore", "automatic", "--accept-terms", fqdn]
+            print("Command list:", cmd_list)
+            output = subprocess.run(cmd_list, capture_output=True, check=True, text=True).stdout
+            break
+        except subprocess.CalledProcessError as e:
+            print("Error getting SSL cert from Lets Encrypt")
+            print("Proceeding with self-signed cert")
+            print("Error with cmd: %s" % e.cmd)
+            print("Stdout: %s" % e.stdout)
+            print("")
+            print("Stderr: %s" % e.stderr)
+            print("")
+            print("Retrying in 15 seconds...")
+            sleep(20)
+            continue
     try:
         cmd_list = [cs_cmd, "keystore", "automatic", "--accept-terms", fqdn]
-        output = subprocess.run(cmd_list, capture_output=True, check=True, text=True).stdout
         print("Command list:", cmd_list)
+        output = subprocess.run(cmd_list, capture_output=True, check=True, text=True).stdout
         print("Command output:", output)
     except subprocess.CalledProcessError as e:
         print("Error getting SSL cert from Lets Encrypt")
@@ -598,13 +630,13 @@ def configure_msft_apt_repos():
     print('Running apt-get update for the first time')
     cmd_list = 'apt-get update -y'
     output = os.system(cmd_list)
-    if output == 100: # Catching error 100 because it is a transient, recoverable error, but runnnig again to ensure successful completion
+    if output == 100: # Catching error 100 because it is a transient, recoverable error, but running again to ensure successful completion
         print('Command apt-get update returned error 100. Running again...')
         output = os.system(cmd_list)
         if output != 0: # It failed again! Raising the error this time
             sys.stderr.write("APT ERROR: The following command failed with error code {:d}: {:s}\n".format(output, cmd_list))
             raise
-    elif output == 25600: # Catching error 25600 because it is a transient,  recoverable error, but runnnig again to ensure successful completion
+    elif output == 25600: # Catching error 25600 because it is a transient,  recoverable error, but running again to ensure successful completion
         print('Command apt-get update returned error 25600. Running again...')
         output = os.system(cmd_list)
         if output != 0: # It failed again! Raising the error this time
@@ -623,7 +655,7 @@ def configure_msft_apt_repos():
         ["apt-key", "add", "/tmp/microsoft.asc"])
     
     # Fix while Ubuntu 20 is not available -- we install the Ubuntu 18.04 version of CycleCloud
-    lsb_release = "bionic"
+    lsb_release = "bionic" #focal not available
 
     # Finally, we install CycleCloud CLI and application
 
@@ -637,14 +669,16 @@ def configure_msft_apt_repos():
 def install_pre_req():
     print("Installing pre-requisites for CycleCloud server")
     _catch_sys_error(["apt-get", "update", "-y", "--allow-releaseinfo-change"])
-    _catch_sys_error(["apt", "install", "-y", "openjdk-8-jre-headless"])
+    #TODO: check we need jdk8 -- not os default
+    #Java 8 is required. (Detected version Java 11.0 at /usr/lib/jvm/java-11-openjdk-amd64)
+    # _catch_sys_error(["apt", "install", "-y", "openjdk-8-jre-headless"])
     _catch_sys_error(["apt", "install", "-y", "unzip"])
     _catch_sys_error(["apt", "install", "-y", "python3-venv"])
     # Not strictly needed, but it's useful to have the Azure CLI
-    #_catch_sys_error(["apt", "install", "-y", "azure-cli"])
+    # _catch_sys_error(["apt", "install", "-y", "azure-cli"])
 
 
-def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores, slurm_version):
+def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cores, slurm_version, lustreMGSIpAddress, installNextflow):
     cluster_template_file_name = "slurm_template.ini"
     cluster_parameters_file_name = "slurm_params.json"
 
@@ -661,6 +695,34 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     cluster_parameters_file_url = cluster_files_download_url + cluster_parameters_file_name
     _catch_sys_error(["sudo", "wget", "-q", "-O", cluster_template_file_download_path, cluster_template_file_url])
     _catch_sys_error(["sudo", "wget", "-q", "-O", cluster_parameters_file_download_path, cluster_parameters_file_url])
+
+    # If provided, add the Lustre FS management service (MGS) IP address to the cluster template file
+    if lustreMGSIpAddress:
+        print_timestamp()
+        print("SCRIPT: Adding Lustre MGS IP address to the cluster template file: %s" % lustreMGSIpAddress)
+        with open(cluster_template_file_download_path, 'r') as file:
+            filedata = file.read()
+        filedata = filedata.replace('LustreMGSIpAddressValue', lustreMGSIpAddress)
+        with open(cluster_template_file_download_path, 'w') as file:
+            file.write(filedata)
+    else:
+        print_timestamp()
+        print("SCRIPT: No Lustre MGS IP address specified, so marking the Lustre MGS IP address as 'None' in the cluster template file")
+        with open(cluster_template_file_download_path, 'r') as file:
+            filedata = file.read()
+        filedata = filedata.replace('LustreMGSIpAddressValue', 'None')
+        with open(cluster_template_file_download_path, 'w') as file:
+            file.write(filedata)
+
+    # If provided, add the Nextflow installation flag to the cluster template file
+    if installNextflow:
+        print_timestamp()
+        print("SCRIPT: Adding the Nextflow installation flag to the cluster template file")
+        with open(cluster_template_file_download_path, 'r') as file:
+            filedata = file.read()
+        filedata = filedata.replace('InstallNextflowValue', "Yes")
+        with open(cluster_template_file_download_path, 'w') as file:
+            file.write(filedata)
 
     _catch_sys_error(["chown", "-R", "cycle_server:cycle_server", cluster_template_file_download_path])
     _catch_sys_error(["chown", "-R", "cycle_server:cycle_server", cluster_parameters_file_download_path])
@@ -700,6 +762,66 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     # We import the cluster, passing the subnet name as a parameter override
     _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", location_param , "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param, "--parameter-override", slurmVersion_param])
 
+def wait_for_lustre_mgs(lustre_mgs_name, subscription_id, resource_group):
+    print_timestamp()
+    print("SCRIPT: Checking if the Lustre File System is ready...")
+    print_timestamp()
+    print("SCRIPT: The Lustre File System name is: %s" % lustre_mgs_name)
+    
+    # We get the access token from the managed identity of the VM, and build the header for the REST call
+    managed_identity = get_vm_managed_identity()
+    access_token = managed_identity["access_token"]
+    access_headers = {
+        "Authorization": f"Bearer {access_token}"
+        }
+
+    # We build the URL for the REST call using the Lustre File System name, the subscription ID and the resource group name
+    ############################# UPDATE WHEN THE AMLFS GOES TO PROD #############################
+    amlfs_api_version = "2021-11-01-preview"
+    ##############################################################################################
+    url = "https://management.azure.com/subscriptions/{}/resourceGroups/{}/providers/Microsoft.StorageCache/amlFilesystems/{}?api-version={}".format(subscription_id, resource_group, lustre_mgs_name, amlfs_api_version)
+    
+    # We build the body of the REST call
+    request = Request(url, method="GET", headers=access_headers)
+    
+    # We loop until the Lustre File System is ready
+    while True:
+        response = urlopen(request, timeout=90)
+        json_response = json.load(response)
+        lustre_mgs_status = json_response["properties"]["health"]["state"]
+        if lustre_mgs_status != "Available":
+            print_timestamp()
+            print("SCRIPT: The Lustre File system is not ready. Status is: %s" % lustre_mgs_status)
+            print_timestamp()
+            print("SCRIPT: Waiting 30 seconds and trying again...")
+            sleep(30)
+        elif lustre_mgs_status == "Available":
+            print_timestamp()
+            print("SCRIPT: The Lustre File system is ready.")
+            return json_response["properties"]["mgsAddress"]
+
+def wait_for_master_node():
+    print_timestamp()
+    print("SCRIPT: Checking if the master node is ready...")
+    
+    # We loop until the master node is ready
+    # We stop after a given number of retries
+    max_tries = 48
+    for i in range(max_tries):
+        attempts = i+1
+        print("Waiting for head node to start. Attempt number:", attempts)
+        while True:
+            # We get a shortened version of the cluster status and look for "Started"
+            master_node = _catch_sys_error(["/usr/local/bin/cyclecloud", "show_nodes", "scheduler", "-s"])
+            if 'Started' in str(master_node):
+                print_timestamp()
+                print("SCRIPT: The master node is ready.")
+                return
+            else: 
+                print_timestamp()
+                print("SCRIPT: The master node is not ready. Waiting 10 seconds and trying again...")
+                sleep(10)
+                continue
 
 def start_cluster():
     _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "SLURM-Cluster"])
@@ -833,21 +955,34 @@ def main():
                         dest="slurmVersion",
                         default="22.05.8-1",
                         help="The version of SLURM to install")
+    
+    parser.add_argument("--lustreFSName",
+                        dest="lustreFSName",
+                        default="",
+                        help="The name of the Lustre file system, if existing")
 
+    parser.add_argument("--installNextflow",
+                        dest="installNextflow",
+                        action="store_true",
+                        help="Option to install Nextflow on all the cluster nodes")
 
     args = parser.parse_args()
 
-    print("SCRIPT: Debugging arguments: %s" % args)
-
+    print_timestamp()
     print("SCRIPT: Starting the script now...")
+    print("---> Debugging arguments: %s" % args)
 
     if not already_installed():
+        print_timestamp()
         print("SCRIPT: Calling function to configure the MSFT APT repos...")
         configure_msft_apt_repos()
+        print_timestamp()
         print("SCRIPT: Calling function to install pre-requisites...")
         install_pre_req()
+        print_timestamp()
         print("SCRIPT: Calling function to download and install CycleCloud...")
         download_install_cc(args.cycleCloudVersion)
+        print_timestamp()
         print("SCRIPT: Calling function to modify the cs_config file...")
         modify_cs_config(options = {'webServerMaxHeapSize': args.webServerMaxHeapSize,
                                     'webServerPort': args.webServerPort,
@@ -856,37 +991,51 @@ def main():
                                     'webServerEnableHttps': True,
                                     'webServerHostname': args.webServerHostname})
 
+    print_timestamp()
     print("SCRIPT: Calling function to start CycleCloud...")
     start_cc()
 
+    print_timestamp()
     print("SCRIPT: Calling function to install the CycleCloud CLI...")
     install_cc_cli()
 
+    print_timestamp()
     print("SCRIPT: Calling function to get the VM metadata...")
     vm_metadata = get_vm_metadata()
 
+    subscription_id = vm_metadata["compute"]["subscriptionId"]
+    print_timestamp()
+    print("SCRIPT: The subscription ID is: %s" % subscription_id)
+    
     # We decode the password back to an ASCII string because they are passed as Base64 to avoid issues with special characters
     decoded_password = base64.b64decode(args.password).decode('ascii')
 
-    print("SCRIPT: The raw password is: %s" % args.password)
-    print("SCRIPT: The decoded password is: %s" % decoded_password)
+    # print_timestamp()
+    # print("SCRIPT: The raw password is: %s" % args.password)
+    # print_timestamp()
+    # print("SCRIPT: The decoded password is: %s" % decoded_password)
 
     if args.resourceGroup:
+        print_timestamp()
         print("SCRIPT: CycleCloud created in resource group: %s" % vm_metadata["compute"]["resourceGroupName"])
-        print("SCRIPT: Cluster resources will be created in resource group: %s" %  args.resourceGroup)
+        print_timestamp()
+        print("SCRIPT: Cluster resources will be created in resource group: %s" % args.resourceGroup)
         vm_metadata["compute"]["resourceGroupName"] = args.resourceGroup
 
+    print_timestamp()
     print("SCRIPT: Calling function to add the Azure account...")
     cyclecloud_account_setup(vm_metadata, args.useManagedIdentity, args.tenantId, args.applicationId,
                             args.applicationSecret, args.username, args.azureSovereignCloud,
                             args.acceptTerms, decoded_password, args.storageAccount, 
-                            args.no_default_account, args.webServerSslPort)
+                            args.no_default_account, args.webServerSslPort, args.cycleCloudVersion)
 
     if args.useLetsEncrypt:
+        print_timestamp()
         print("SCRIPT: Calling function to get self-signed certificate from LetsEncrypt...")
         letsEncrypt(args.hostname)
 
     # Create the ssh key file
+    print_timestamp()
     print("SCRIPT: Calling function to create the SSH key file for the cluster...")
     ssh_key = create_keypair(args.useManagedIdentity, vm_metadata, args.sshkey)
     public_key_raw = ssh_key["publicKey"]
@@ -895,6 +1044,7 @@ def main():
     private_key = ssh_key["privateKey"]
 
     # Store the private key in blob storage
+    print_timestamp()
     print("SCRIPT: Calling functions to store the private key in blob storage...")
     storage_account_keys = get_storage_account_keys(args.useManagedIdentity, vm_metadata, args.storageAccount)
     storage_account_key = storage_account_keys["keys"][0]["value"]
@@ -904,19 +1054,41 @@ def main():
     upload_key_file(storage_account_key, args.storageAccount, private_key, container_name)
     
     # Create user requires root privileges
+    print_timestamp()
     print("SCRIPT: Calling function to create the user with the provided name and public key...")
     create_user_credential(args.username, public_key)
 
-    #clean_up()
+    if args.lustreFSName:
+        # If a Lustre File System name was provided, wait until the Lustre management service is available and then get the IP address of the Lustre MGS
+        print_timestamp()
+        print("SCRIPT: Calling function to wait for the Lustre management service to be available...")
+        lustre_mgs_ip_address = wait_for_lustre_mgs(args.lustreFSName, subscription_id, args.resourceGroup)
+    else:
+        lustre_mgs_ip_address = "no-lustre-fs-deployed"
+
+    if args.installNextflow:
+        # If the user wants to install Nextflow on the cluster nodes, run a function to modify the cluster template
+        print_timestamp()
+        print("SCRIPT: Calling function to modify the cluster template to install Nextflow...")
+        install_nextflow = "Yes"
+    else:
+        print_timestamp()
+        print("SCRIPT: Not installing Nextflow on the cluster nodes")
+        install_nextflow = ""
 
     # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
+    print_timestamp()
     print("SCRIPT: Calling function to import the cluster...")
-    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, args.slurmVersion)
+    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, args.slurmVersion, lustre_mgs_ip_address, install_nextflow)
+
+    print_timestamp()
     print("SCRIPT: Calling function to start the cluster...")
     start_cluster()
-    print("SCRIPT: Sleeping for 8 minutes, which is the typical start time-for the master node to boot up and be configured...")
-    sleep(480)
 
+    print("SCRIPT: checking if the master node is ready...")
+    wait_for_master_node()
+
+    print_timestamp()
     print("SCRIPT: Script completed!")
 
 if __name__ == "__main__":
