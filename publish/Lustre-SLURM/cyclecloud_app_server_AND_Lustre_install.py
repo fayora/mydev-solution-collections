@@ -658,6 +658,10 @@ def configure_msft_apt_repos():
     lsb_release = "bionic" #focal not available
 
     # Finally, we install CycleCloud CLI and application
+
+    with open('/etc/apt/sources.list.d/azure-cli.list', 'w') as f:
+        f.write("deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ {} main".format(lsb_release))
+
     with open('/etc/apt/sources.list.d/cyclecloud.list', 'w') as f:
         f.write("deb [arch=amd64] https://packages.microsoft.com/repos/cyclecloud {} main".format(lsb_release))
     _catch_sys_error(["apt-get", "update", "-y", "--allow-releaseinfo-change"])
@@ -801,17 +805,23 @@ def wait_for_master_node():
     print("SCRIPT: Checking if the master node is ready...")
     
     # We loop until the master node is ready
-    while True:
-        # We get a shortened version of the cluster status and look for "Started"
-        master_node = _catch_sys_error(["/usr/local/bin/cyclecloud", "show_nodes", "scheduler", "-s"])
-        if 'Started' in str(master_node):
-            print_timestamp()
-            print("SCRIPT: The master node is ready.")
-            break
-        else: 
-            print_timestamp()
-            print("SCRIPT: The master node is not ready. Waiting 10 seconds and trying again...")
-            sleep(10)
+    # We stop after a given number of retries
+    max_tries = 48
+    for i in range(max_tries):
+        attempts = i+1
+        print("Waiting for head node to start. Attempt number:", attempts)
+        while True:
+            # We get a shortened version of the cluster status and look for "Started"
+            master_node = _catch_sys_error(["/usr/local/bin/cyclecloud", "show_nodes", "scheduler", "-s"])
+            if 'Started' in str(master_node):
+                print_timestamp()
+                print("SCRIPT: The master node is ready.")
+                return
+            else: 
+                print_timestamp()
+                print("SCRIPT: The master node is not ready. Waiting 10 seconds and trying again...")
+                sleep(10)
+                continue
 
 def start_cluster():
     _catch_sys_error(["/usr/local/bin/cyclecloud", "start_cluster", "SLURM-Cluster"])
