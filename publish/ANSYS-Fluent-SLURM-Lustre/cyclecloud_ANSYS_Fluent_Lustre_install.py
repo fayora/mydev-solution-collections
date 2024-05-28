@@ -13,11 +13,10 @@ import hashlib
 from string import ascii_uppercase, ascii_lowercase, digits
 from os import path, listdir, chdir, fdopen, remove
 from urllib.request import urlopen, Request
-from shutil import rmtree, copy2, move  
+from shutil import rmtree, move  
 from tempfile import mkstemp, mkdtemp
 from time import sleep
 from datetime import datetime
-from functools import wraps
 from urllib.error import URLError
 
 tmpdir = mkdtemp()
@@ -683,10 +682,9 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     cluster_parameters_file_name = "slurm_params.json"
 
     ###########################################################################################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ### NEEDS A FINAL LOCATION for PRODUCTION!!
-    cluster_files_download_url = "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/Lustre-SLURM/"
 
-    ### *****Can these 2 files be loaded locally? Are they copied into the CycleApp VM?*****
+    cluster_files_download_url = "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/ANSYS-Fluent-SLURM-Lustre/"
+
     ###########################################################################################!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     cluster_template_file_download_path = "/tmp/" + cluster_template_file_name

@@ -55,7 +55,7 @@
         }
     },
     "variables": {
-        "installScriptURL": "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/Lustre-SLURM/cyclecloud_app_server_AND_Lustre_install.py",
+        "installScriptURL": "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/ANSYS-Fluent-SLURM-Lustre/cyclecloud_ANSYS_Fluent_Lustre_install.py",
         "computeApiVersion": "2019-03-01",
         "resourceLocation": "[resourceGroup().location]",
         "uniqueHash": "[uniqueString(deployment().properties.templateHash, deployment().name)]",
