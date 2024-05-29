@@ -55,7 +55,8 @@
         }
     },
     "variables": {
-        "installScriptURL": "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/ANSYS-Fluent-SLURM-Lustre/cyclecloud_ANSYS_Fluent_Lustre_install.py",
+        "installScriptFileName": "cyclecloud_ANSYS_Fluent_Lustre_install.py",
+        "installScriptURL": "[concat('https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/ANSYS-Fluent-SLURM-Lustre/', variables('installScriptFileName'))]",
         "computeApiVersion": "2019-03-01",
         "resourceLocation": "[resourceGroup().location]",
         "uniqueHash": "[uniqueString(deployment().properties.templateHash, deployment().name)]",
@@ -340,7 +341,7 @@
                         "typeHandlerVersion": "2.1",
                         "autoUpgradeMinorVersion": true,
                         "protectedSettings": {
-                            "commandToExecute": "[concat('sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get update && sudo apt-get install -y python3.9 && sudo python3.9 cyclecloud_app_server_AND_Lustre_install.py ', '--acceptTerms', ' --useManagedIdentity', ' --azureSovereignCloud ', '\"', variables('azureSovereignCloud'), '\"', ' --username ', '\"', variables('username'), '\"', ' --password ', '''', base64(variables('password')), '''', ' --hostname ', '\"', reference(variables('cycleIPName')).dnsSettings.fqdn, '\"', ' --storageAccount ', '\"', variables('storageAccountName'),'\"', ' --resourceGroup ', '\"', resourceGroup().name, '\"', ' --useLetsEncrypt', ' --webServerPort 80 --webServerSslPort 443 --webServerMaxHeapSize 4096M', ' --numberOfWorkerNodes ', '\"', parameters('NumberOfWorkerNodes'),'\"', ' --sizeOfWorkerNodes ', '\"', variables('workerVMSize'),'\"', ' --osOfClusterNodes ', '\"', variables('clusterOSImage'),'\"', ' --countOfNodeCores ', '\"', variables('workerVMCoreCount'),'\"', ' --sshkey ', '\"', variables('cycleSSHKeyName'), '\"', ' --cycleCloudVersion ', '\"', variables('cycleCloudAppVersion'), '\"', ' --slurmVersion ', '\"', variables('SLURMVersion'), '\"', ' --lustreFSName ', '\"', variables('amlfsName'), '\"', ' --installNextflow')]",
+                            "commandToExecute": "[concat('sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get update && sudo apt-get install -y python3.9 && sudo python3.9 ', variables('installScriptFileName'), ' --acceptTerms', ' --useManagedIdentity', ' --azureSovereignCloud ', '\"', variables('azureSovereignCloud'), '\"', ' --username ', '\"', variables('username'), '\"', ' --password ', '''', base64(variables('password')), '''', ' --hostname ', '\"', reference(variables('cycleIPName')).dnsSettings.fqdn, '\"', ' --storageAccount ', '\"', variables('storageAccountName'),'\"', ' --resourceGroup ', '\"', resourceGroup().name, '\"', ' --useLetsEncrypt', ' --webServerPort 80 --webServerSslPort 443 --webServerMaxHeapSize 4096M', ' --numberOfWorkerNodes ', '\"', parameters('NumberOfWorkerNodes'),'\"', ' --sizeOfWorkerNodes ', '\"', variables('workerVMSize'),'\"', ' --osOfClusterNodes ', '\"', variables('clusterOSImage'),'\"', ' --countOfNodeCores ', '\"', variables('workerVMCoreCount'),'\"', ' --sshkey ', '\"', variables('cycleSSHKeyName'), '\"', ' --cycleCloudVersion ', '\"', variables('cycleCloudAppVersion'), '\"', ' --slurmVersion ', '\"', variables('SLURMVersion'), '\"', ' --lustreFSName ', '\"', variables('amlfsName'), '\"', ' --installNextflow')]",
                             "fileUris": ["[variables('installScriptURL')]"]
                         }
                     }
@@ -387,6 +388,39 @@
             "apiVersion": "2021-11-01",
             "name": "[variables('cycleSSHKeyName')]",
             "location": "[variables('resourceLocation')]"
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2022-09-01",
+            "name": "nestedTemplate",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('cycleName'))]"
+            ],
+            "resourceGroup": "rg-RMITDev-RMITRACETrialAccount",
+            "properties": {
+                "mode": "Incremental",
+                "expressionEvaluationOptions": {
+                    "scope": "Outer"
+                    },
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.Authorization/roleAssignments",
+                            "apiVersion": "2022-04-01",
+                            "name": "[guid(resourceId('Microsoft.Compute/virtualMachines', variables('cycleName')))]",
+                            "properties": {
+                                "roleDefinitionId": "[variables('contributor')]",
+                                "principalId": "[reference(variables('cycleName'), '2019-12-01', 'Full').identity.principalId]",
+                                "principalType": "ServicePrincipal"
+                            }
+                        }
+                    ]
+                }
+            }
         }
     ],
     "outputs": {
