@@ -207,7 +207,7 @@ def upload_key_file(storage_account_key, storage_account_name, private_key, cont
 
     for _ in range(30):
         print("Uploading the ssh key file to the blob container")
-        upload_response = urlopen(upload_req, timeout=2)
+        upload_response = urlopen(upload_req, timeout=30)
         
         try:
             return upload_response.status
