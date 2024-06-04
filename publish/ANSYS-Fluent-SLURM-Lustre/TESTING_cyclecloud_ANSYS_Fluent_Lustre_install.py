@@ -733,12 +733,13 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
     # *IMPORTANT: this string value has a dependency on the name specified to the subnet in the ARM template that deploys the CycleCloud App 
     vnet_name = "ansys-license-server-vnet"
     subnet_name = "compute"
+    vnet_resource_group = "ansys-license-server-rg"
     # *********************************************************
 
     location_param = "Region=" + vm_location
     print("The region for the cluster is: %s" % vm_location)
 
-    subnet_string_value = resource_group + "/" + vnet_name + "/" + subnet_name
+    subnet_string_value = vnet_resource_group + "/" + vnet_name + "/" + subnet_name
     subnet_param = "SubnetId=" + subnet_string_value
     print("The subnet for the worker nodes is: %s" % subnet_param)
     
