@@ -21,7 +21,7 @@
     "AdditionalNFSMountPoint" : "/data",
     "AdditionalNFSExportPath" : "/data",
     "AdditionalNFSMountOptions" : null,
-    "SchedulerMachineType" : "Standard_D8as_v5",
+    "SchedulerMachineType" : "Standard_B8ms",
     "SchedulerImageName" : "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest",
     "ReturnProxy" : true,
     "SchedulerClusterInitSpecs" : null,
