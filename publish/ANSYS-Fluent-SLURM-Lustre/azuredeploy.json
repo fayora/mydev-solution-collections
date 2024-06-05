@@ -72,7 +72,7 @@
         "username": "hpcadmin",
         "password": "LoomeRockS12",
         "cycleCloudAppVersion": "8.5.0-3196",
-        "SLURMVersion": "23.02.6-1",
+        "SLURMVersion": "22.05.10-1",
         "cycleNic": "[concat('nic', variables('cycleName'))]",
         "cycleNsgName": "[concat('nsg', variables('cycleName'))]",
         "cycleIPName": "[concat('ip', variables('cycleName'))]",
@@ -336,7 +336,7 @@
             "properties": {
                 "storageCapacityTiB": "[variables('amlfsCapacity')]",
                 "zones": "[variables('amlfsAvailabiltyZone')]",
-                "filesystemSubnet": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('amlfsCycleSubnet'))]",
+                "filesystemSubnet": "[variables('cycleSubnetId')]",
                 "maintenanceWindow": {
                     "dayOfWeek": "[variables('amlfsMaintenanceDayOfWeek')]",
                     "timeOfDay": "[variables('amlfsMaintenanceTimeOfDay')]"
@@ -386,6 +386,39 @@
                             "type": "Microsoft.Authorization/roleAssignments",
                             "apiVersion": "2022-04-01",
                             "name": "[guid(resourceId('Microsoft.Compute/virtualMachines', variables('cycleName')))]",
+                            "properties": {
+                                "roleDefinitionId": "[variables('contributor')]",
+                                "principalId": "[reference(variables('cycleName'), '2019-12-01', 'Full').identity.principalId]",
+                                "principalType": "ServicePrincipal"
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2022-09-01",
+            "name": "nestedTemplate2",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('cycleName'))]"
+            ],
+            "resourceGroup": "[variables('vnetResourceGroup')]",
+            "properties": {
+                "mode": "Incremental",
+                "expressionEvaluationOptions": {
+                    "scope": "Outer"
+                    },
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.Authorization/roleAssignments",
+                            "apiVersion": "2022-04-01",
+                            "name": "[guid(concat(2, variables('uniqueHash')))]",
                             "properties": {
                                 "roleDefinitionId": "[variables('contributor')]",
                                 "principalId": "[reference(variables('cycleName'), '2019-12-01', 'Full').identity.principalId]",
