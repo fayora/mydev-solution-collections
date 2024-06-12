@@ -2,6 +2,17 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "VNetToUse": {
+            "type": "string",
+            "defaultValue": "ansys-license-server-vnet",
+            "allowedValues": [
+                "ansys-license-server-vnet",
+                "eastus-ansys-license-server-vnet"
+            ],
+            "metadata": {
+                "description": "Select the VNet to use for the deployment."
+            }
+        },
 
         "NumberOfWorkerNodes":{
             "metadata": {
@@ -56,13 +67,16 @@
         }
     },
     "variables": {
-
-        "vnetName": "ansys-license-server-vnet",
+        "vnetName": "[parameters('VNetToUse')]",
         "vnetResourceGroup": "rg-assist-rmit-lab-agent",
         "cycleSubnetName": "cycle",
         "cycleSubnetId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('vnetResourceGroup'), '/providers/Microsoft.Network/virtualNetworks/', variables('vnetName'), '/subnets/', variables('cycleSubnetName'))]",
 
-        "installScriptFileName": "cyclecloud_ANSYS_Fluent_Lustre_install.py",
+        "installScriptFileOptions": {
+            "ansys-license-server-vnet": "cyclecloud_ANSYS_Fluent_Lustre_install.py",
+            "eastus-ansys-license-server-vnet": "EastUS_cyclecloud_ANSYS_Fluent_Lustre_install.py"
+        },
+        "installScriptFileName": "[variables('installScriptFileOptions')[parameters('VNetToUse')]]",
 
         "installScriptURL": "[concat('https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/ANSYS-Fluent-SLURM-Lustre/', variables('installScriptFileName'))]",
         "computeApiVersion": "2019-03-01",
