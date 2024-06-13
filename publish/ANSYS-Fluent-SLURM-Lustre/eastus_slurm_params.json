@@ -1,6 +1,6 @@
 
 {
-    "AnsysFluidsBinariesSnapshot": "/subscriptions/baa559f5-6c56-4f0a-ae61-6b9309521f28/resourceGroups/rg-RMITDev-RMITRACETrialAccount/providers/Microsoft.Compute/snapshots/eastusapps-fluent2024-snapshot",
+    "AnsysFluidsBinariesSnapshot": "/subscriptions/baa559f5-6c56-4f0a-ae61-6b9309521f28/resourceGroups/rg-RMITDev-RMITRACETrialAccount/providers/Microsoft.Compute/snapshots/eastus-apps-fluent2024-snapshot",
     "Autoscale" : true,
     "UsePublicNetwork" : true,
     "Credentials" : "azure",
