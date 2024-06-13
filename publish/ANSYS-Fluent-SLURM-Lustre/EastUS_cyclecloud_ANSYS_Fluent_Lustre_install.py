@@ -758,9 +758,11 @@ def import_cluster(vm_metadata, cluster_image, machine_type, node_size, node_cor
 
     slurmVersion_param = "configuration_slurm_version=" + slurm_version
     print("The version of SLURM to be installed is: %s" % slurmVersion_param)
+
+    snapshot_param = "AnsysFluidsBinariesSnapshot=/subscriptions/baa559f5-6c56-4f0a-ae61-6b9309521f28/resourceGroups/rg-RMITDev-RMITRACETrialAccount/providers/Microsoft.Compute/snapshots/eastus-apps-fluent2024-snapshot",
     
     # We import the cluster, passing the subnet name as a parameter override
-    _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", location_param , "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param, "--parameter-override", slurmVersion_param])
+    _catch_sys_error(["/usr/local/bin/cyclecloud","import_cluster","-f", cluster_template_file_download_path, "-p", cluster_parameters_file_download_path, "--parameter-override", location_param , "--parameter-override", subnet_param, "--parameter-override", schedulerImage_param, "--parameter-override", workerImage_param, "--parameter-override", machineType_param, "--parameter-override", maxCore_param, "--parameter-override", slurmVersion_param, "--parameter-override", snapshot_param])
 
 def wait_for_lustre_mgs(lustre_mgs_name, subscription_id, resource_group):
     print_timestamp()
