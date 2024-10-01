@@ -1,0 +1,44 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "accountName": {
+        "type": "string",
+        "defaultValue": "",
+        "minLength": 4,
+        "metadata": {
+          "description": "The name you want to give your AI deployment so that you can identify it later."
+        }
+      }
+    },
+    "variables": {
+      "location": "[resourceGroup().location]",
+      "curatedAccountName": "[replace (parameters('accountName'), ' ', '')]",
+      "curatedSubDomainName": "[take(concat(toLower(replace (parameters('accountName'), ' ', '')), uniqueString(parameters('accountName'))), 64)]",
+      "serviceSKU": "S0",
+      "serviceKind": "AIServices"
+    },
+    "resources": [
+      {
+            "type": "Microsoft.CognitiveServices/accounts",
+            "apiVersion": "2023-05-01",
+            "name": "[variables('curatedAccountName')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "[variables('serviceSKU')]"
+            },
+            "kind": "[variables('serviceKind')]",
+            "properties": {
+                "customSubDomainName": "[variables('curatedSubDomainName')]",
+                "publicNetworkAccess": "Enabled"
+            }
+        }
+
+    ],
+    "outputs": {
+       "azureAIStudio": {
+        "type": "string",
+        "value": "[concat('https://ai.azure.com/resource/overview?wsid=', resourceId('Microsoft.CognitiveServices/accounts', variables('curatedAccountName')), '&tid=', subscription().tenantId)]"
+       }
+    }
+}

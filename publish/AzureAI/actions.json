@@ -1,0 +1,9 @@
+[
+    
+    {
+        "name": "Go to Azure AI Studio",
+        "icon": "fa fa-sign-in",
+        "fileName": "getaistudiourl.ps1",
+        "actionType": "Url"
+    }
+]
