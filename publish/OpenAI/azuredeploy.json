@@ -12,20 +12,22 @@
       }
     },
     "variables": {
-      "location": "southcentralus",
+      "location": "[resourceGroup().location]",
       "curatedAccountName": "[replace (parameters('accountName'), ' ', '')]",
-      "curatedSubDomainName": "[take(concat(toLower(replace (parameters('accountName'), ' ', '')), uniqueString(parameters('accountName'))), 64)]"
+      "curatedSubDomainName": "[take(concat(toLower(replace (parameters('accountName'), ' ', '')), uniqueString(parameters('accountName'))), 64)]",
+      "serviceSKU": "S0",
+      "serviceKind": "OpenAI"
     },
     "resources": [
       {
             "type": "Microsoft.CognitiveServices/accounts",
-            "apiVersion": "2022-12-01",
+            "apiVersion": "2023-05-01",
             "name": "[variables('curatedAccountName')]",
             "location": "[variables('location')]",
             "sku": {
-                "name": "S0"
+                "name": "[variables('serviceSKU')]"
             },
-            "kind": "OpenAI",
+            "kind": "[variables('serviceKind')]",
             "properties": {
                 "customSubDomainName": "[variables('curatedSubDomainName')]",
                 "publicNetworkAccess": "Enabled"
@@ -36,7 +38,7 @@
     "outputs": {
        "azureOpenAIStudio": {
         "type": "string",
-        "value": "[concat('https://oai.azure.com/portal/', reference(resourceId('Microsoft.CognitiveServices/accounts', variables('curatedAccountName'))).internalId)]"
+        "value": "[concat('https://oai.azure.com/resource/overview?wsid=', resourceId('Microsoft.CognitiveServices/accounts', variables('curatedAccountName')), '&tid=', subscription().tenantId)]"
        }
     }
 }
