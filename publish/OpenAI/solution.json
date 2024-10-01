@@ -1,8 +1,8 @@
 {
     "name": "OpenAI on Azure",
-    "description": "Deploys and OpenAI environment for testing and development that includes ChatGPT and other OpenAI models like codex, davinci, etc. IMPORTANT: Please ensure that you have already requested and have been approved to access OpenAI services on Azure (https://aka.ms/oaiapply)",
-    "version": "2021.09.08.3",
-    "icon": "fa fa-rocket",
+    "description": "Deploys and OpenAI environment for research that includes GPT and other OpenAI models.",
+    "version": "2024.10.01.1",
+    "icon": "fa fa-cube",
     "upgradeAllowed": true,
     "deploymentMode": "User"
 }
