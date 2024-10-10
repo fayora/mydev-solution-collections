@@ -1,0 +1,22 @@
+[
+    {
+        "name": "Get remote connection file (RDP)",
+        "icon": "fa fa-arrow-down",
+        "fileName": "createRDPFile.ps1",
+        "actionType": "File"
+    },
+    {
+        "name": "Download MATLAB Parallel Cluster file",
+        "icon": "fa fa-server",
+        "fileName": "downloadClusterFile.ps1",
+        "confirmationMessage": "A URL will be provided, which you can click to download the MATLAB Parallel Cluster file. This file needs to be imported into the MATLAB workstation, under 'Parallel'. Do you want to continue?",
+        "actionType": "Url"
+    },
+    {
+        "name": "Start or stop the VM",
+        "icon": "fa fa-power-off",
+        "fileName": "turnVMOnOff.ps1",
+        "confirmationMessage": "Are you sure that you want to stop or start this VM? If you are stopping the VM, you can lose data that has not been downloaded or saved in persistent storage. If you are starting the VM, usage charges will start to apply until you stop it again.",
+        "actionType": "Notification"
+    }
+]

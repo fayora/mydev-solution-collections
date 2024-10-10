@@ -1,0 +1,9 @@
+{
+    "name": "MATLAB Parallel Compute cluster with Windows ",
+    "description": "Deploys a Windows workstation with MATLAB already pre-installed, and an HPC parallel cluster to run jobs by deploying compute nodes on demand.",
+    "version": "2024.10.06.4",
+    "icon": "fa fa-windows",
+    "upgradeAllowed": true,
+    "deploymentMode": "User",
+    "statusCheckFileName": "checkStatus.ps1"
+}

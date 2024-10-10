@@ -1,0 +1,9 @@
+{
+    "name": "MATLAB Client on Windows",
+    "description": "Deploys a very powerful workstation with MATLAB already pre-installed.",
+    "version": "2024.14.05.4",
+    "icon": "fa fa-windows",
+    "upgradeAllowed": true,
+    "deploymentMode": "User",
+    "statusCheckFileName": "checkStatus.ps1"
+}
