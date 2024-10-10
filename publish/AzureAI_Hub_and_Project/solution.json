@@ -1,0 +1,8 @@
+{
+    "name": "Azure AI",
+    "description": "Deploys and Azure AI environment for testing and development that includes models from OpenAI, Meta, Phi, and many others.",
+    "version": "2024.10.01.1",
+    "icon": "fa fa-cube",
+    "upgradeAllowed": true,
+    "deploymentMode": "User"
+}
