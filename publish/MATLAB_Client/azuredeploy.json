@@ -67,10 +67,10 @@
             }
         },
         "matlabLicenseServer": {
-            "defaultValue": "27000@10.212.12.98",
+            "defaultValue": "",
             "type": "string",
             "metadata": {
-                "description": "Optional License Manager for MATLAB, specified as a string in the form port@hostname. If not specified, online licensing is used. If specified, the license manager must be accessible from the specified virtual network and subnets. For more information, see https://github.com/mathworks-ref-arch/license-manager-for-matlab-on-azure."
+                "description": "Optional License Manager for MATLAB, specified as a string in the form port@hostname (e.g., 27000@10.0.0.11). If not specified, online licensing is used. If specified, the license manager must be accessible from the specified virtual network and subnets."
             }
         },
         "optionalUserCommand": {
