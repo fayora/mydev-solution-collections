@@ -98,8 +98,8 @@
         }
     },
     "variables": {
-        "vnetName": "PathWestVPN",
-        "vnetResourceGroup": "rg-PathWestVPNAccess",
+        "vnetName": "***REMOVED***",
+        "vnetResourceGroup": "***REMOVED***",
 
         "publisher": "mathworks-inc",
         "offer": "matlab-parallel-server-ref-arch-vm-win-offer",
@@ -246,9 +246,7 @@
                 "properties": {
                 "priority": 1000,
                 "sourceAddressPrefixes": [
-                    "194.80.48.0/20",
-                    "212.219.224.0/24",
-                    "212.219.220.0/22"
+                    "194.80.48.0/20"
                 ],
                 "protocol": "Tcp",
                 "destinationPortRange": "3389",
@@ -263,9 +261,7 @@
                 "properties": {
                 "priority": 1010,
                 "sourceAddressPrefixes": [
-                    "194.80.48.0/20",
-                    "212.219.224.0/24",
-                    "212.219.220.0/22"
+                    "194.80.48.0/20"
                 ],
                 "protocol": "Tcp",
                 "destinationPortRange": "[concat(variables('startPort'), '-', variables('finalPort'))]",
