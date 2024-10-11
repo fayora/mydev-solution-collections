@@ -70,10 +70,10 @@
             }
         },
         "licenseServer": {
-            "defaultValue": "27000@10.212.12.98",
+            "defaultValue": "",
             "type": "string",
             "metadata": {
-                "description": "The IP address and port for the license server. Follow this format: port@IP-address (e.g., 27000@10.0.0.11)."
+                "description": "Optional License Manager for MATLAB, specified as a string in the form port@hostname (e.g., 27000@10.0.0.11). If not specified, online licensing is used. If specified, the license manager must be accessible from the specified virtual network and subnets."
             }
         },
         "startingNumberOfComputeNodes": {
@@ -98,7 +98,14 @@
         }
     },
     "variables": {
-        "virtualNetworkResourceID": "/subscriptions/95df65f7-dad7-44cb-802f-80a1f79de657/resourceGroups/rg-hubnetwork-hpc-uks-01/providers/Microsoft.Network/virtualNetworks/vnet-hub-hpc-uks-01",
+        "vnetName": "PathWestVPN",
+        "vnetResourceGroup": "rg-PathWestVPNAccess",
+
+        "publisher": "mathworks-inc",
+        "offer": "matlab-parallel-server-ref-arch-vm-win-offer",
+        "sku": "matlab-parallel-server-ref-arch-r2023b-vm-win-sku",
+        "version": "1.0.0",
+
         "clusterName": "parallelCluster",
         "fixedPrefix": "mjs",
         "uniqueHash": "[uniqueString(deployment().properties.templateHash, deployment().name)]",
@@ -121,21 +128,13 @@
             "16-CPUs,64GB-RAM": "Standard_D16as_v5"
         },
         "workerVmSize": "[variables('computeNodeSKU')[parameters('computeNodeSize')]]",
-        "addressPrefix": "10.0.0.0/16",
-        "subnetPrefix": "10.0.0.0/24",
-        "newOrExistingVirtualNetwork": "Existing",
-        "virtualNetworkCreateName": "[concat(variables('namingPrefix'), '-vnet')]",
-        "subnetCreateName": "[concat(variables('namingPrefix'), '-subnet')]",
-        "virtualNetworkName": "[if(equals(variables('newOrExistingVirtualNetwork'),'Existing'),last(split(variables('virtualNetworkResourceID'),'/')),variables('virtualNetworkCreateName'))]",
-        "subnetName": "[if(equals(variables('newOrExistingVirtualNetwork'),'Existing'),parameters('subnetName'),variables('subnetCreateName'))]",
-        "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
-        "subnet": "[if(equals(variables('newOrExistingVirtualNetwork'),'New'),variables('subnetRef'),concat(variables('virtualNetworkResourceID'), '/subnets/', parameters('subnetName')))]",
+
+        
+        "subnetNameSpecified": "[parameters('subnetName')]",
+        "subnet": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('vnetResourceGroup'), '/providers/Microsoft.Network/virtualNetworks/', variables('vnetName'), '/subnets/', variables('subnetNameSpecified'))]",
         "headnodeMachineName": "[take(concat(variables('fixedPrefix'), variables('uniqueHash')), variables('windowsVMNameLengthLimit'))]",
         "vmssName": "[take(concat(variables('fixedPrefix'), variables('uniqueHash')), variables('windowsVMSSNameLengthLimit'))]",
-        "publisher": "mathworks-inc",
-        "offer": "matlab-parallel-server-ref-arch-vm-win-offer",
-        "sku": "matlab-parallel-server-ref-arch-r2023b-vm-win-sku",
-        "version": "1.0.0",
+
         "imageReference": {
         "publisher": "[variables('publisher')]",
         "offer": "[variables('offer')]",
@@ -222,28 +221,6 @@
     },
     "resources": [
         {
-        "condition": "[equals(variables('newOrExistingVirtualNetwork'),'New')]",
-        "type": "Microsoft.Network/virtualNetworks",
-        "apiVersion": "2022-01-01",
-        "name": "[variables('virtualNetworkName')]",
-        "location": "[resourceGroup().location]",
-        "properties": {
-            "addressSpace": {
-            "addressPrefixes": [
-                "[variables('addressPrefix')]"
-            ]
-            },
-            "subnets": [
-            {
-                "name": "[variables('subnetCreateName')]",
-                "properties": {
-                "addressPrefix": "[variables('subnetPrefix')]"
-                }
-            }
-            ]
-        }
-        },
-        {
         "type": "Microsoft.Storage/storageAccounts",
         "apiVersion": "2022-09-01",
         "name": "[variables('storageAccountName')]",
@@ -262,9 +239,6 @@
         "apiVersion": "2022-01-01",
         "name": "[variables('networkSecurityGroupName')]",
         "location": "[resourceGroup().location]",
-        "dependsOn": [
-            "[resourceId('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]"
-        ],
         "properties": {
             "securityRules": [
             {
