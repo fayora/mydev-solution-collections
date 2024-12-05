@@ -54,9 +54,21 @@ process {
              ###NEEDS CODE TO CHECK 200 vs. DIFF RETURN! <--LOOK AT LOOME API CODE
 
              $result = "The VM is currently starting."
+             
+        } elseif ($vmStatus -eq "VM stopped") {
+            # The VM was incorrectly shut down by the user from the operating system, so stopping it and showing a message
+            $statusChangeResponse = Invoke-WebRequest `
+            -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Compute/virtualMachines/$deployedVirtualMachineName/deallocate?api-version=2021-03-01" `
+            -Method POST `
+            -ContentType "application/json" `
+            -Headers @{ Authorization = "Bearer $access_token" }
+            
+            $result = "$deployedVirtualMachineName was incorrectly shut down from the operating system, which continues to accrue charges! Deallocating $deployedVirtualMachineName first. Please wait a couple of minutes and try starting it again."
+
         } else {
             $result = "The VM is currently in a transitioning state: $vmStatus. Wait a couple of minutes and try again."
         }
+        
         New-Object -Property @{ReturnText = "$result" } -TypeName psobject
     }
     catch {
