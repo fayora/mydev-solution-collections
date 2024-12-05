@@ -58,7 +58,7 @@ process {
         } elseif ($vmStatus -eq "VM stopped") {
             # The VM was incorrectly shut down by the user from the operating system, so stopping it and showing a message
             $statusChangeResponse = Invoke-WebRequest `
-            -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Compute/virtualMachines/$deployedVirtualMachineName/deallocate?api-version=2021-03-01" `
+            -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName1/providers/Microsoft.Compute/virtualMachines/$deployedVirtualMachineName/deallocate?api-version=2021-03-01" `
             -Method POST `
             -ContentType "application/json" `
             -Headers @{ Authorization = "Bearer $access_token" }
