@@ -47,10 +47,21 @@ process {
         } elseif ($vmStatus -eq "VM deallocated") {
              # The VM is currently stopped
              $result = "{""code"":""Failed"", ""message"":""Stopped"", ""isOngoing"": false}" 
+            
+        } elseif ($vmStatus -eq "VM stopped") {
+            # The VM was incorrectly shut down by the user from the operating system, so stopping it and showing a message
+            $statusChangeResponse = Invoke-WebRequest `
+            -Uri "https://management.azure.com/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName1/providers/Microsoft.Compute/virtualMachines/$deployedVirtualMachineName/deallocate?api-version=2021-03-01" `
+            -Method POST `
+            -ContentType "application/json" `
+            -Headers @{ Authorization = "Bearer $access_token" }
+            $result = "{""code"":""Information"", ""message"":""Deallocating"", ""isOngoing"": false}"
+
         } else {
             # The VM is currently transitioning
             $result = "{""code"":""Information"", ""message"":""Transitioning"", ""isOngoing"": true}" 
         }
+        
         New-Object -Property @{ReturnText = "$result" } -TypeName psobject
     }
     catch {
