@@ -276,17 +276,6 @@
                     "secrets": []
                 },
                 "storageProfile": {
-                    "dataDisks": [
-                        {
-                            "caching": "ReadOnly",
-                            "createOption": "Empty",
-                            "diskSizeGB": 128,
-                            "lun": 0,
-                            "managedDisk": {
-                                "storageAccountType": "[variables('cyclecloudVmStorage')]" 
-                            }
-                        }
-                    ],
                     "imageReference": {
                         "publisher": "Canonical",
                         "offer": "0001-com-ubuntu-server-focal",
