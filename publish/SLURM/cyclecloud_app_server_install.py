@@ -602,6 +602,20 @@ def install_cc_cli():
         if path.isdir(cli_install_dir) and re.match("cyclecloud-cli-installer", cli_install_dir):
             print("Found CLI install DIR %s" % cli_install_dir)
             chdir(cli_install_dir)
+            # ======================HOT PATCH====================
+            # open install.sh
+            with open("install.py") as f:
+                lines = f.readlines()
+                for line in lines:
+                    if "archive_file = os.path.join" in line:
+                        # replace line with new line -- SPACES ARE IMPORTANT PYTHON!!!
+                        lines[lines.index(line)] = "        archive_file = os.path.join(temp_dir,   'azcopydownload.tar.gz') \n"
+                    if "urllib.request.urlretrieve(_AZ_COPY_URL, archive_file)" in line:
+                        # replace line with new line -- SPACES ARE IMPORTANT PYTHON!!!
+                        lines[lines.index(line)] = "        urllib.request.urlretrieve( \"https://aka.ms/downloadazcopy-v10-linux\", archive_file) \n"
+            with open("install.py", "w") as f:
+                f.write("".join(lines))
+            # ======================END HOT PATCH====================
             _catch_sys_error(["./install.sh", "--system"])
 
 
