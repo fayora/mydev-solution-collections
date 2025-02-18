@@ -15,7 +15,8 @@ try {
 
     # Get the network interface detail of the scheduler node
     $networkInterfaces = Get-AzNetworkInterface -ResourceGroupName $resourceGroupName
-    $schedulerNetworkInterface = $networkInterfaces | Where-Object {($_.VirtualMachine.Id.Split("/"))[-1] -match "scheduler-*"}
+    # Find the network interface of the scheduler node by looking for "scheduler-" at the beginning of the name of the virtual machine it is attached to
+    $schedulerNetworkInterface = $networkInterfaces | Where-Object { $_.VirtualMachine.Id -like "*scheduler-*" }
 
     # Pick up its public IP address name
     $publicIpAddressName = ($schedulerNetworkInterface.IpConfigurations.PublicIpAddress.Id.Split("/"))[-1]
