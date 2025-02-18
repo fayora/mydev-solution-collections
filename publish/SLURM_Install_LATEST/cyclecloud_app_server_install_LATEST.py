@@ -106,7 +106,7 @@ def create_keypair(use_managed_identity, vm_metadata, ssh_key_name):
 
     for _ in range(30):
         print("Generating SSH key")
-        sshkey_response = urlopen(sshkey_req, timeout=2)
+        sshkey_response = urlopen(sshkey_req, timeout=30)
         
         try:
             return json.load(sshkey_response)
