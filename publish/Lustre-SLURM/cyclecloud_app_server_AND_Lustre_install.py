@@ -106,7 +106,7 @@ def create_keypair(use_managed_identity, vm_metadata, ssh_key_name):
 
     for _ in range(30):
         print("Generating SSH key")
-        sshkey_response = urlopen(sshkey_req, timeout=30)
+        sshkey_response = urlopen(sshkey_req, timeout=2)
         
         try:
             return json.load(sshkey_response)
@@ -207,7 +207,7 @@ def upload_key_file(storage_account_key, storage_account_name, private_key, cont
 
     for _ in range(30):
         print("Uploading the ssh key file to the blob container")
-        upload_response = urlopen(upload_req, timeout=30)
+        upload_response = urlopen(upload_req, timeout=2)
         
         try:
             return upload_response.status
@@ -602,6 +602,20 @@ def install_cc_cli():
         if path.isdir(cli_install_dir) and re.match("cyclecloud-cli-installer", cli_install_dir):
             print("Found CLI install DIR %s" % cli_install_dir)
             chdir(cli_install_dir)
+            # ======================HOT PATCH====================
+            # open install.sh
+            with open("install.py") as f:
+                lines = f.readlines()
+                for line in lines:
+                    if "archive_file = os.path.join" in line:
+                        # replace line with new line -- SPACES ARE IMPORTANT PYTHON!!!
+                        lines[lines.index(line)] = "        archive_file = os.path.join(temp_dir,   'azcopydownload.tar.gz') \n"
+                    if "urllib.request.urlretrieve(_AZ_COPY_URL, archive_file)" in line:
+                        # replace line with new line -- SPACES ARE IMPORTANT PYTHON!!!
+                        lines[lines.index(line)] = "        urllib.request.urlretrieve( \"https://aka.ms/downloadazcopy-v10-linux\", archive_file) \n"
+            with open("install.py", "w") as f:
+                f.write("".join(lines))
+            # ======================END HOT PATCH====================
             _catch_sys_error(["./install.sh", "--system"])
 
 
