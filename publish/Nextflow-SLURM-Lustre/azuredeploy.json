@@ -9,7 +9,7 @@
             "type": "int",
             "defaultValue": 2,
             "minValue": 1,
-            "maxValue": 100
+            "maxValue": 20
         },
         "SizeOfWorkerNodes": {
             "type": "string",
@@ -68,7 +68,7 @@
         "uniqueHash": "[uniqueString(deployment().properties.templateHash, deployment().name)]",
         "cycleName": "[concat('cycleapp', take(variables('uniqueHash'),5), toLower(take(uniqueString(subscription().subscriptionId, deployment().name), 5)))]",
         "username": "hpcadmin",
-        "password": "LoomeRockS12",
+        "password": "[concat(variables('uniqueHash'),'C12!')]",
         "cycleCloudAppVersion": "8.6.0-3223",
         "SLURMVersion": "23.02.7-1",
         "cycleNic": "[concat('nic', variables('cycleName'))]",
