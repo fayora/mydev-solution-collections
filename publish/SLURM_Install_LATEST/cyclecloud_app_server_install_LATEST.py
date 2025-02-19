@@ -380,69 +380,69 @@ def cyclecloud_account_setup(vm_metadata, use_managed_identity, tenant_id, appli
         cyclecloud_admin_pw = reset_cyclecloud_pw(admin_user)
     initialize_cyclecloud_cli(admin_user, cyclecloud_admin_pw, webserver_port)
 
-    if no_default_account:
-        print("Skipping default account creation (--noDefaultAccount).") 
-    else:
-        output =  _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "show", "azure"])
-        if 'Credentials: azure' in str(output):
-            print("Account \"azure\" already exists. Skipping account setup...")
-        else:
-            azure_data_file = tmpdir + "/azure_data.json"
-            with open(azure_data_file, 'w') as fp:
-                json.dump(azure_data, fp)
+    # if no_default_account:
+    #     print("Skipping default account creation (--noDefaultAccount).") 
+    # else:
+    #     output =  _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "show", "azure"])
+    #     if 'Credentials: azure' in str(output):
+    #         print("Account \"azure\" already exists. Skipping account setup...")
+    #     else:
+    #         azure_data_file = tmpdir + "/azure_data.json"
+    #         with open(azure_data_file, 'w') as fp:
+    #             json.dump(azure_data, fp)
 
-            print("CycleCloud account data:")
-            print(json.dumps(azure_data))
+    #         print("CycleCloud account data:")
+    #         print(json.dumps(azure_data))
 
-            # Wait until Managed Identity is ready for use before creating the Account
-            if use_managed_identity:
-                get_vm_managed_identity()
+    #         # Wait until Managed Identity is ready for use before creating the Account
+    #         if use_managed_identity:
+    #             get_vm_managed_identity()
 
-            # Create the cloud provider account
-            # Retry in case it takes much longer than expected 
-            # (this is common with limited compute resources)
-            max_tries = 60
-            # created = False
-            print("Registering the Azure subscription in CycleCloud")
-            # output = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file])
-            # print("Command output:", output)
-            cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
-            for i in range(max_tries):
-                attempts = i+1
-                print("Azure account creation attempt number:", attempts)
-                try:
-                    output = subprocess.run(cmd_list, capture_output=True, check=True, text=True).stdout
-                    print("Command list:", cmd_list)
-                    print("Command output:", output)
-                except subprocess.CalledProcessError as e:
-                    print("Account creation failed!")
-                    print("Error with cmd: %s" % e.cmd)
-                    print("Stdout: %s" % e.stdout)
-                    print("")
-                    print("Stderr: %s" % e.stderr)
-                    print("")
-                    print("Removing CycleCloud and re-installing it before retrying...")
-                    print("Removing first:")
-                    _catch_sys_error(["apt", "remove", "-y", "cyclecloud8"])
-                    print("Waiting 10 seconds before reinstalling it...")
-                    sleep(10)
-                    print("Now re-installing %s..." % cyclecloud_version_requested)
-                    _catch_sys_error(["apt", "install", "-y", cycle_cloud_apt_package])
-                    continue
-                check_account = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "show", "azure"])
-                if 'Credentials: azure' in str(check_account):
-                    print("Azure account created!")
-                    break
-                else:
-                    print("Account creation failed! Removing CycleCloud and re-installing it before retrying...")
-                    print("Removing first:")
-                    _catch_sys_error(["apt", "remove", "-y", "cyclecloud8"])
-                    print("Waiting 10 seconds before reinstalling it...")
-                    sleep(10)
-                    print("Now re-installing %s..." % cyclecloud_version_requested)
-                    _catch_sys_error(["apt", "install", "-y", cycle_cloud_apt_package])
-                    print("Retrying after 10 seconds...")
-                    sleep(10)
+    #         # Create the cloud provider account
+    #         # Retry in case it takes much longer than expected 
+    #         # (this is common with limited compute resources)
+    #         max_tries = 60
+    #         # created = False
+    #         print("Registering the Azure subscription in CycleCloud")
+    #         # output = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file])
+    #         # print("Command output:", output)
+    #         cmd_list = ["/usr/local/bin/cyclecloud", "account", "create", "-f", azure_data_file]
+    #         for i in range(max_tries):
+    #             attempts = i+1
+    #             print("Azure account creation attempt number:", attempts)
+    #             try:
+    #                 output = subprocess.run(cmd_list, capture_output=True, check=True, text=True).stdout
+    #                 print("Command list:", cmd_list)
+    #                 print("Command output:", output)
+    #             except subprocess.CalledProcessError as e:
+    #                 print("Account creation failed!")
+    #                 print("Error with cmd: %s" % e.cmd)
+    #                 print("Stdout: %s" % e.stdout)
+    #                 print("")
+    #                 print("Stderr: %s" % e.stderr)
+    #                 print("")
+    #                 print("Removing CycleCloud and re-installing it before retrying...")
+    #                 print("Removing first:")
+    #                 _catch_sys_error(["apt", "remove", "-y", "cyclecloud8"])
+    #                 print("Waiting 10 seconds before reinstalling it...")
+    #                 sleep(10)
+    #                 print("Now re-installing %s..." % cyclecloud_version_requested)
+    #                 _catch_sys_error(["apt", "install", "-y", cycle_cloud_apt_package])
+    #                 continue
+    #             check_account = _catch_sys_error(["/usr/local/bin/cyclecloud", "account", "show", "azure"])
+    #             if 'Credentials: azure' in str(check_account):
+    #                 print("Azure account created!")
+    #                 break
+    #             else:
+    #                 print("Account creation failed! Removing CycleCloud and re-installing it before retrying...")
+    #                 print("Removing first:")
+    #                 _catch_sys_error(["apt", "remove", "-y", "cyclecloud8"])
+    #                 print("Waiting 10 seconds before reinstalling it...")
+    #                 sleep(10)
+    #                 print("Now re-installing %s..." % cyclecloud_version_requested)
+    #                 _catch_sys_error(["apt", "install", "-y", cycle_cloud_apt_package])
+    #                 print("Retrying after 10 seconds...")
+    #                 sleep(10)
 
 def initialize_cyclecloud_cli(admin_user, cyclecloud_admin_pw, webserver_port):
     print("Setting up azure account in CycleCloud and initializing cyclecloud CLI")
@@ -1043,10 +1043,10 @@ def main():
                             args.acceptTerms, decoded_password, args.storageAccount, 
                             args.no_default_account, args.webServerSslPort, args.cycleCloudVersion)
 
-    if args.useLetsEncrypt:
-        print_timestamp()
-        print("SCRIPT: Calling function to get self-signed certificate from LetsEncrypt...")
-        letsEncrypt(args.hostname)
+    # if args.useLetsEncrypt:
+    #     print_timestamp()
+    #     print("SCRIPT: Calling function to get self-signed certificate from LetsEncrypt...")
+    #     letsEncrypt(args.hostname)
 
     # Create the ssh key file
     print_timestamp()
@@ -1090,20 +1090,20 @@ def main():
         print("SCRIPT: Not installing Nextflow on the cluster nodes")
         install_nextflow = ""
 
-    # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
-    print_timestamp()
-    print("SCRIPT: Calling function to import the cluster...")
-    import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, args.slurmVersion, lustre_mgs_ip_address, install_nextflow)
+    # # Import and start the SLURM cluster using template and parameter files downloaded from an online location 
+    # print_timestamp()
+    # print("SCRIPT: Calling function to import the cluster...")
+    # import_cluster(vm_metadata, args.osOfClusterNodes, args.sizeOfWorkerNodes, args.numberOfWorkerNodes, args.countOfNodeCores, args.slurmVersion, lustre_mgs_ip_address, install_nextflow)
 
-    print_timestamp()
-    print("SCRIPT: Calling function to start the cluster...")
-    start_cluster()
+    # print_timestamp()
+    # print("SCRIPT: Calling function to start the cluster...")
+    # start_cluster()
 
-    print("SCRIPT: checking if the master node is ready...")
-    wait_for_master_node()
+    # print("SCRIPT: checking if the master node is ready...")
+    # wait_for_master_node()
 
-    print_timestamp()
-    print("SCRIPT: Script completed!")
+    # print_timestamp()
+    # print("SCRIPT: Script completed!")
 
 if __name__ == "__main__":
     try:
