@@ -47,7 +47,7 @@
           "Regular"
         ],
         "metadata": {
-          "description": "Select SPOT to reduce costs"
+          "description": "Spot instances cost less but can be evicted anytime if Azure needs resources."
         }
       },
     },
