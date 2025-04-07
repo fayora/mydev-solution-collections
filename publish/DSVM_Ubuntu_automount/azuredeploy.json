@@ -96,7 +96,8 @@
         "[concat('printf ', variables('scriptParse'), '> /opt/projectrepos/parse.py')]",
         "[concat('printf ', variables('scriptMount'), '> /opt/projectrepos/mount_azure.py')]",
         "sudo python3 /opt/projectrepos/parse.py --input /opt/projectrepos/repositories.json --output /opt/projectrepos/processed.json",
-        "sudo python3 /opt/projectrepos/mount_azure.py --input /opt/projectrepos/processed.json"
+        "sudo python3 /opt/projectrepos/mount_azure.py --input /opt/projectrepos/processed.json",
+        "sleep 5 && sudo rm -r /opt/projectrepos"
       ]
     },
     "resources": [
