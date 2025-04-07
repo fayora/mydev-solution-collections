@@ -19,7 +19,8 @@ def run_mount_script(json_data):
 
         os.makedirs(cred_dir, exist_ok=True)
         with open(cred_file, "w") as f:
-            f.write(f"username={name}\npassword={key}\n")
+            print(f"username={name}", file=f)
+            print(f"password={key}", file=f)
 
         os.chmod(cred_file, 0o600)
 
