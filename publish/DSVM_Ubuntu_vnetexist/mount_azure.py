@@ -27,10 +27,8 @@ def run_mount_script(json_data):
         print(f"Creating mount point at {mount_point}...")
         os.makedirs(mount_point, exist_ok=True)
 
-        mount_cmd = [
-            "sudo", "mount", "-t", "cifs", remote_path, mount_point,
-            "-o", f"vers=3.1.1,credentials={cred_file},dir_mode=0777,file_mode=0777,serverino,nosharesock,actimeo=30,auto,mfsymlinks,_netdev"
-        ]
+        mount_opts = f"vers=3.1.1,credentials={cred_file},dir_mode=0777,file_mode=0777,serverino,nosharesock,actimeo=30,auto,mfsymlinks,_netdev"
+        mount_cmd = ["sudo", "mount", "-t", "cifs", remote_path, mount_point, "-o", mount_opts]
 
         print(f"Mounting {remote_path} to {mount_point}...")
         try:
@@ -38,6 +36,16 @@ def run_mount_script(json_data):
             print(f"Mounted {remote_path} successfully.")
         except subprocess.CalledProcessError as e:
             print(f"Error mounting {remote_path}: {e}")
+
+        # For a more persistent mounting
+        fstab_line = f"{remote_path} {mount_point} cifs {mount_opts} 0 0\n"
+        with open("/etc/fstab", "r") as fstab:
+            if fstab_line.strip() not in [line.strip() for line in fstab]:
+                print(f"Adding entry to /etc/fstab for {share}...")
+                with open("/etc/fstab", "a") as fstab_append:
+                    fstab_append.write(fstab_line)
+            else:
+                print(f"/etc/fstab entry for {share} already exists.")
 
 def main():
     parser = argparse.ArgumentParser(description="Mount Azure file shares using JSON input")
