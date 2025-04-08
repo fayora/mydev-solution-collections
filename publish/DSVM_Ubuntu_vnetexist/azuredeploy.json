@@ -1,0 +1,292 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "VirtualMachineName": {
+        "type": "string",
+        "defaultValue": "",
+        "minLength": 4,
+        "metadata": {
+          "description": "The name you want to give your Virtual Machine. Linux VM names may only contain letters, numbers, '.', and '-'."
+        }
+      },
+      "Size": {
+        "type": "string",
+        "defaultValue": "4-CPUs,16GB-RAM",
+        "allowedValues": [
+          "4-CPUs,16GB-RAM",
+          "8-CPUs,32GB-RAM",
+          "16-CPUs,64GB-RAM",
+          "V100-GPU,6-CPUs,112GB-RAM"
+        ],
+        "metadata": {
+          "description": "Choose a virtual machine size with or without a GPU."
+        }
+      },
+      "adminUsername": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "metadata": {
+          "description": "The username for the Administrator's account. A username must only contain letters, numbers, hyphens, and underscores and may not start with a hyphen or number."
+        }
+      },
+      "adminPassword": {
+          "type": "securestring",
+          "minLength": 12,
+          "maxLength": 72,
+          "metadata": {
+          "description": "Password for the Virtual Machine. It must be at least 12 characters long, and have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character."
+          }
+      },
+      "instanceType": {
+        "type": "string",
+        "defaultValue": "Spot",
+        "allowedValues": [
+          "Spot",
+          "Regular"
+        ],
+        "metadata": {
+          "description": "Spot instances cost less but can be evicted anytime if Azure needs resources."
+        }
+      },
+    },
+    "variables": {
+      "location": "[resourceGroup().location]",
+      "uniqueVMName": "[concat(replace(toLower(parameters('VirtualMachineName')), '.', ''), '-', uniqueString(parameters('VirtualMachineName')))]",
+      "virtualNetworkName": "[concat('VNet', uniqueString(resourceGroup().id))]",
+      "subnetName": "[concat('Subnet', uniqueString(resourceGroup().id))]",
+      "networkSecurityGroupName": "[concat('NSG', uniqueString(resourceGroup().id))]",
+      "networkInterfaceName": "[concat(parameters('VirtualMachineName'),'NetInt')]",
+      "publicIpAddressName": "[concat(parameters('VirtualMachineName'), 'PublicIP' )]",
+      "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
+      "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
+      "osDiskType": "Standard_LRS",
+      "storageAccountName": "[concat('storage', uniqueString(resourceGroup().id))]",
+      "storageAccountType": "Standard_LRS",
+      "storageAccountKind": "Storage",
+      "vmSize": {
+        "4-CPUs,16GB-RAM": "Standard_B4s_v2",
+        "8-CPUs,32GB-RAM": "Standard_B8as_v2",
+        "16-CPUs,64GB-RAM": "Standard_B16as_v2",
+        "V100-GPU,6-CPUs,112GB-RAM": "Standard_NC6s_v3"
+      },
+      "instancePriority": {
+        "Spot": "Spot",
+        "Regular": "Regular"
+      },
+      "instanceEvictionPolicy": {
+        "Spot": "Deallocate",
+        "Regular": null
+      },
+      "instanceMaxPrice": {
+        "Spot": -1,
+        "Regular": null
+      },
+      "scriptParse": "\"import argparse\\nimport re\\nimport json\\nimport os\\n\\ndef parse_file(input_path):\\n    with open(input_path, 'r') as f:\\n        data = f.read()\\n    entries = re.findall(r'\\\\[(.*?)\\\\]', data)\\n    only_name = []\\n    only_key = []\\n    only_file = []\\n    for entry in entries:\\n        pairs = re.findall(r'\\\\\\\"(.*?)\\\\\\\":\\\\\\\"(.*?)\\\\\\\"', entry)\\n        keys = [k for k, _ in pairs]\\n        unique_keys = set(keys)\\n        if len(unique_keys) == 1:\\n            key = keys[0]\\n            values = [v for _, v in pairs]\\n            if key == \\\"StorageAccountName\\\":\\n                only_name.append(values)\\n            elif key == \\\"StorageAccountKey\\\":\\n                only_key.append(values)\\n            elif key == \\\"FileshareName\\\":\\n                only_file.append(values)\\n    return {\\n        \\\"StorageAccountName\\\": only_name,\\n        \\\"StorageAccountKey\\\": only_key,\\n        \\\"FileshareName\\\": only_file\\n    }\\n\\ndef main():\\n    parser = argparse.ArgumentParser(description=\\\"Filter entries by single key type\\\")\\n    parser.add_argument('--input', required=True, help='Path to input file')\\n    parser.add_argument('--output', required=True, help='Path to output JSON file')\\n    args = parser.parse_args()\\n    if not os.path.isfile(args.input):\\n        print(f\\\"Error: File '{args.input}' does not exist.\\\")\\n        return\\n    result = parse_file(args.input)\\n    with open(args.output, 'w') as f:\\n        json.dump(result, f, indent=2)\\n    print(f\\\"Filtered output written to {args.output}\\\")\\n\\nif __name__ == \\\"__main__\\\":\\n    main()\"",
+      
+      "scriptMount": "\"import json\\nimport argparse\\nimport os\\nimport subprocess\\n\\ndef run_mount_script(json_data):\\n    account_names = json_data.get(\\\"StorageAccountName\\\", [])[0]\\n    account_keys = json_data.get(\\\"StorageAccountKey\\\", [])[0]\\n    fileshares = json_data.get(\\\"FileshareName\\\", [])[0]\\n\\n    for name, key, share in zip(account_names, account_keys, fileshares):\\n        cred_dir = \\\"/etc/smbcredentials\\\"\\n        cred_file = f\\\"{cred_dir}/{name}.cred\\\"\\n        mount_point = f\\\"/projectrepos/{share}\\\"\\n        remote_path = f\\\"//{name}.file.core.windows.net/{share}\\\"\\n\\n        print(f\\\"Creating credential file for {name}...\\\")\\n\\n        os.makedirs(cred_dir, exist_ok=True)\\n        with open(cred_file, \\\"w\\\") as f:\\n            print(f\\\"username={name}\\\", file=f)\\n            print(f\\\"password={key}\\\", file=f)\\n        os.chmod(cred_file, 0o600)\\n\\n        print(f\\\"Creating mount point at {mount_point}...\\\")\\n        os.makedirs(mount_point, exist_ok=True)\\n\\n        mount_cmd = [\\n            \\\"sudo\\\", \\\"mount\\\", \\\"-t\\\", \\\"cifs\\\", remote_path, mount_point,\\n            \\\"-o\\\", f\\\"vers=3.1.1,credentials={cred_file},dir_mode=0777,file_mode=0777,serverino,nosharesock,actimeo=30,auto,mfsymlinks,_netdev\\\"\\n        ]\\n\\n        print(f\\\"Mounting {remote_path} to {mount_point}...\\\")\\n        try:\\n            subprocess.run(mount_cmd, check=True)\\n            print(f\\\"Mounted {remote_path} successfully.\\\")\\n        except subprocess.CalledProcessError as e:\\n            print(f\\\"Error mounting {remote_path}: {e}\\\")\\n\\ndef main():\\n    parser = argparse.ArgumentParser(description=\\\"Mount Azure file shares using JSON input\\\")\\n    parser.add_argument('--input', required=True, help='Path to processed JSON file')\\n    args = parser.parse_args()\\n\\n    with open(args.input, \\\"r\\\") as f:\\n        data = json.load(f)\\n\\n    run_mount_script(data)\\n\\nif __name__ == \\\"__main__\\\":\\n    main()\"",
+      "repositoriesRaw": "[string(variables('loome').ProjectResources.DataRepositories)]",
+      "repositoriesEscaped": "[replace(variables('repositoriesRaw'), '\"', '\\\"')]",
+      "userDataScript": [
+        "#!/bin/bash",
+        "mkdir -p /opt/projectrepos",
+        "[concat('echo ', variables('repositoriesEscaped'), '> /opt/projectrepos/repositories.json')]",
+        "chmod 644 /opt/projectrepos/repositories.json",
+        "[concat('printf ', variables('scriptParse'), '> /opt/projectrepos/parse.py')]",
+        "[concat('printf ', variables('scriptMount'), '> /opt/projectrepos/mount_azure.py')]",
+        "sudo python3 /opt/projectrepos/parse.py --input /opt/projectrepos/repositories.json --output /opt/projectrepos/processed.json",
+        "sudo python3 /opt/projectrepos/mount_azure.py --input /opt/projectrepos/processed.json",
+        "sleep 5 && sudo rm -r /opt/projectrepos"
+      ]
+    },
+    "resources": [
+      {
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2020-05-01",
+        "name": "[variables('networkInterfaceName')]",
+        "location": "[variables('location')]",
+        "dependsOn": [
+          "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]",
+          "[resourceId('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
+          "[resourceId('Microsoft.Network/publicIpAddresses/', variables('publicIpAddressName'))]"
+        ],
+        "properties": {
+          "ipConfigurations": [
+            {
+              "name": "ipconfig1",
+              "properties": {
+                "subnet": {
+                  "id": "[variables('subnetRef')]"
+                },
+                "privateIPAllocationMethod": "Dynamic",
+                "publicIpAddress": {
+                  "id": "[resourceId('Microsoft.Network/publicIpAddresses', variables('publicIpAddressName'))]"
+                }
+              }
+            }
+          ],
+          "networkSecurityGroup": {
+            "id": "[variables('nsgId')]"
+          }
+        }
+      },
+      {
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "apiVersion": "2020-05-01",
+        "name": "[variables('networkSecurityGroupName')]",
+        "location": "[variables('location')]",
+        "properties": {
+          "securityRules": [
+            {
+              "name": "JupyterHub",
+              "properties": {
+                "priority": 1010,
+                "protocol": "TCP",
+                "access": "Allow",
+                "direction": "Inbound",
+                "sourceAddressPrefix": "*",
+                "sourcePortRange": "*",
+                "destinationAddressPrefix": "*",
+                "destinationPortRange": "8000"
+              }
+            },
+            {
+              "name": "SSH",
+              "properties": {
+                "priority": 1030,
+                "protocol": "TCP",
+                "access": "Allow",
+                "direction": "Inbound",
+                "sourceAddressPrefix": "*",
+                "sourcePortRange": "*",
+                "destinationAddressPrefix": "*",
+                "destinationPortRange": "22"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "Microsoft.Network/virtualNetworks",
+        "apiVersion": "2020-05-01",
+        "name": "[variables('virtualNetworkName')]",
+        "location": "[variables('location')]",
+        "properties": {
+          "addressSpace": {
+            "addressPrefixes": [
+              "10.0.0.0/24"
+            ]
+          },
+          "subnets": [
+            {
+              "name": "[variables('subnetName')]",
+              "properties": {
+                "addressPrefix": "10.0.0.0/24",
+                "privateEndpointNetworkPolicies": "Enabled",
+                "privateLinkServiceNetworkPolicies": "Enabled"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "Microsoft.Network/publicIpAddresses",
+        "apiVersion": "2020-05-01",
+        "name": "[variables('publicIpAddressName')]",
+        "location": "[variables('location')]",
+        "sku": {
+          "name": "Basic",
+          "tier": "Regional"
+        },
+        "properties": {
+          "publicIpAllocationMethod": "Dynamic","dnsSettings": {
+            "domainNameLabel": "[variables('uniqueVMName')]"
+            }
+        }
+      },
+      {
+        "type": "Microsoft.Storage/storageAccounts",
+        "apiVersion": "2019-06-01",
+        "name": "[variables('storageAccountName')]",
+        "location": "[variables('location')]",
+        "sku": {
+          "name": "[variables('storageAccountType')]"
+        },
+        "kind": "[variables('storageAccountKind')]"
+      },
+      {
+        "type": "Microsoft.Compute/virtualMachines",
+        "apiVersion": "2019-07-01",
+        "name": "[variables('uniqueVMName')]",
+        "location": "[variables('location')]",
+        "dependsOn": [
+          "[resourceId('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]",
+          "[resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
+        ],
+        "properties": {
+          "hardwareProfile": {
+            "vmSize": "[variables('vmSize')[parameters('Size')]]",
+          },
+          "storageProfile": {
+            "osDisk": {
+              "createOption": "fromImage",
+              "managedDisk": {
+                "storageAccountType": "[variables('osDiskType')]"
+              }
+            },
+            "imageReference": {
+              "publisher": "microsoft-dsvm",
+              "offer": "ubuntu-2204",
+              "sku": "2204-gen2",
+              "version": "latest"
+            }
+          },
+          "networkProfile": {
+            "networkInterfaces": [
+              {
+                "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+              }
+            ]
+          },
+          "osProfile": {
+            "computerName": "[variables('uniqueVMName')]",
+            "adminUsername": "[parameters('adminUsername')]",
+            "adminPassword": "[parameters('adminPassword')]",
+            "customData": "[base64(join(variables('userDataScript'), '\n'))]"
+          },
+          "priority": "[variables('instancePriority')[parameters('instanceType')]]",
+          "evictionPolicy": "[variables('instanceEvictionPolicy')[parameters('instanceType')]]",
+          "billingProfile": {
+            "maxPrice": "[variables('instanceMaxPrice')[parameters('instanceType')]]"
+          }
+        }
+      }
+    ],
+    "outputs": {
+      "publicIpAddressName": {
+        "type": "string",
+        "value": "[variables('publicIpAddressName')]"
+      },
+      "subscriptionId": {
+        "type": "string",
+        "value": "[subscription().subscriptionId]"
+       },
+       "resourceGroupName1": {
+        "type": "string",
+        "value": "[resourceGroup().name]"
+       },
+       "fullyQualifiedDomainName": {
+        "type": "string",
+        "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).dnsSettings.fqdn]"
+       },
+       "loginUsername": {
+        "type": "string",
+        "value": "[parameters('adminUsername')]"
+       },
+       "deployedVirtualMachineName": {
+        "type": "string",
+        "value": "[variables('uniqueVMName')]"
+       }
+    }
+}
