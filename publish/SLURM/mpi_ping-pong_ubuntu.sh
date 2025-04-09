@@ -4,7 +4,7 @@
 
 # !NOTE: it is a good idea to check what version of Intel MPI 2021 is available on the nodes before running this script
 #        To check the version, run: module avail mpi/impi
-IMPI_VERSION="2021.6.0"
+IMPI_VERSION="2021"
 
 echo ""
 echo "********************************************************************************"
@@ -19,7 +19,7 @@ export FI_PROVIDER=mlx
 export I_MPI_ROOT=/opt/intel/oneapi/mpi/latest
 # The Intel MPI module needs to be loaded, as explained here: https://techcommunity.microsoft.com/t5/azure-compute-blog/azure-hpc-vm-images/ba-p/977094
 module load mpi/impi_$IMPI_VERSION
-source /opt/intel/oneapi/mpi/$IMPI_VERSION/etc/conda/activate.d/mpivars.activate.sh
+source /opt/intel/oneapi/mpi/latest/etc/conda/activate.d/mpivars.activate.sh
 mpirun IMB-MPI1 pingpong
 
 echo ""
@@ -28,6 +28,7 @@ echo "****************** Intel MPI 2021 -- Ping-pong test over TCP *************
 echo "********************************************************************************"
 echo ""
 export FI_PROVIDER=tcp
+export I_MPI_OFI_PROVIDER=tcp
 export FI_TCP_IFACE=eth0
 mpirun IMB-MPI1 pingpong
 
