@@ -18,7 +18,9 @@
                 "8-CPUs, 32GB-RAM",
                 "16-CPUs, 64GB-RAM",
                 "AI, A100-GPU, 24-CPUs, 220GB-RAM",
-                "HPC, 200Gbps InfiniBand, 120-CPUs, 448GB-RAM"
+                "HPC, 200Gbps InfiniBand, 120-CPUs, 456GB-RAM",
+                "HPC, 200Gbps InfiniBand, 120-CPUs, 448GB-RAM",
+                "HPC, 200Gbps InfiniBand, 176-CPUs, 768GB-RAM"
 
             ],
             "metadata": {
@@ -27,10 +29,10 @@
         },
         "OSOfClusterNodes": {
             "type": "string",
-            "defaultValue": "Ubuntu 20.04",
+            "defaultValue": "Ubuntu 22.04",
             "allowedValues": [
                 "AlmaLinux 8.7",
-                "Ubuntu 20.04"
+                "Ubuntu 22.04"
             ],
             "metadata": {
                 "description": "Select the OS for all nodes in the cluster (includes both scheduler & worker nodes)."
@@ -39,20 +41,20 @@
     },
     "variables": {
         "installScriptURL": "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/SLURM/cyclecloud_app_server_install.py",
-        "cycleCloudVersion": "8.4.0-3122",
-        "slurmVersion": "23.02.0-1",
+        "cycleCloudAppVersion": "8.6.0-3223",
+        "SLURMVersion": "23.02.7-1",
         "computeApiVersion": "2019-03-01",
         "resourceLocation": "[resourceGroup().location]",
         "uniqueHash": "[uniqueString(deployment().properties.templateHash, deployment().name)]",
         "cycleName": "[concat('cycleapp', take(variables('uniqueHash'),5), toLower(take(uniqueString(subscription().subscriptionId, deployment().name), 5)))]",
         "username": "hpcadmin",
-        "password": "[concat(variables('uniqueHash'),'C12!')]",
+        "password": "LoomeRockS12",
         "cycleNic": "[concat('nic', variables('cycleName'))]",
         "cycleNsgName": "[concat('nsg', variables('cycleName'))]",
         "cycleIPName": "[concat('ip', variables('cycleName'))]",
         "cycleSSHKeyName": "[concat('sshkey', variables('cycleName'))]",
         "cycleSubnet": "cycle",
-        "cyclecloudVmSize": "Standard_B8ms",
+        "cyclecloudVmSize": "Standard_B8als_v2",
         "cyclecloudVmStorage": "Premium_LRS",
         "azureSovereignCloud": "public",
         "vnetName": "[concat('vnet', variables('cycleName'))]",
@@ -63,18 +65,22 @@
             "8-CPUs, 32GB-RAM": "Standard_D8as_v5",
             "16-CPUs, 64GB-RAM": "Standard_D16as_v5",
             "AI, A100-GPU, 24-CPUs, 220GB-RAM": "Standard_NC24ads_A100_v4",
-            "HPC, 200Gbps InfiniBand, 120-CPUs, 448GB-RAM": "Standard_HB120rs_v3"
+            "HPC, 200Gbps InfiniBand, 120-CPUs, 456GB-RAM": "Standard_HB120rs_v2",
+            "HPC, 200Gbps InfiniBand, 120-CPUs, 448GB-RAM": "Standard_HB120rs_v3",
+            "HPC, 200Gbps InfiniBand, 176-CPUs, 768GB-RAM": "Standard_HB176rs_v4"
         },
         "workerVMSize": "[variables('WorkerSize')[parameters('SizeOfWorkerNodes')]]",
         "CoreCount": {
             "8-CPUs, 32GB-RAM": 8,
             "16-CPUs, 64GB-RAM": 16,
             "AI, A100-GPU, 24-CPUs, 220GB-RAM": 24,
-            "HPC, 200Gbps InfiniBand, 120-CPUs, 448GB-RAM": 120
+            "HPC, 200Gbps InfiniBand, 120-CPUs, 456GB-RAM": 120,
+            "HPC, 200Gbps InfiniBand, 120-CPUs, 448GB-RAM": 120,
+            "HPC, 200Gbps InfiniBand, 176-CPUs, 768GB-RAM": 176
         },
         "workerVMCoreCount": "[variables('CoreCount')[parameters('SizeOfWorkerNodes')]]",
         "clusterOS": {
-            "Ubuntu 20.04": "microsoft-dsvm:ubuntu-hpc:2004:latest",
+            "Ubuntu 22.04": "microsoft-dsvm:ubuntu-hpc:2204:latest",
             "AlmaLinux 8.7": "almalinux:almalinux-hpc:8_7-hpc-gen2:latest"
         },
         "clusterOSImage": "[variables('clusterOS')[parameters('OSOfClusterNodes')]]",
@@ -299,7 +305,7 @@
                         "typeHandlerVersion": "2.1",
                         "autoUpgradeMinorVersion": true,
                         "protectedSettings": {
-                            "commandToExecute": "[concat('sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get update && sudo apt-get install -y python3.9 && sudo python3.9 cyclecloud_app_server_install.py ', '--acceptTerms', ' --useManagedIdentity', ' --azureSovereignCloud ', '\"', variables('azureSovereignCloud'), '\"', ' --username ', '\"', variables('username'), '\"', ' --password ', '''', base64(variables('password')), '''', ' --hostname ', '\"', reference(variables('cycleIPName')).dnsSettings.fqdn, '\"', ' --storageAccount ', '\"', variables('storageAccountName'),'\"', ' --resourceGroup ', '\"', resourceGroup().name, '\"', ' --webServerPort 80 --webServerSslPort 443 --webServerMaxHeapSize 4096M', ' --numberOfWorkerNodes ', '\"', parameters('NumberOfWorkerNodes'),'\"', ' --sizeOfWorkerNodes ', '\"', variables('workerVMSize'),'\"', ' --osOfClusterNodes ', '\"', variables('clusterOSImage'),'\"', ' --countOfNodeCores ', '\"', variables('workerVMCoreCount'),'\"', ' --sshkey ', '\"', variables('cycleSSHKeyName'), '\"', ' --cycleCloudVersion ', '\"', variables('cycleCloudVersion'), '\"', ' --slurmVersion ', '\"', variables('slurmVersion'), '\"' )]",
+                            "commandToExecute": "[concat('sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get update && sudo apt-get install -y python3.9 && sudo python3.9 cyclecloud_app_server_install.py ', '--acceptTerms', ' --useManagedIdentity', ' --azureSovereignCloud ', '\"', variables('azureSovereignCloud'), '\"', ' --username ', '\"', variables('username'), '\"', ' --password ', '''', base64(variables('password')), '''', ' --hostname ', '\"', reference(variables('cycleIPName')).dnsSettings.fqdn, '\"', ' --storageAccount ', '\"', variables('storageAccountName'),'\"', ' --resourceGroup ', '\"', resourceGroup().name, '\"', ' --webServerPort 80 --webServerSslPort 443 --webServerMaxHeapSize 4096M', ' --numberOfWorkerNodes ', '\"', parameters('NumberOfWorkerNodes'),'\"', ' --sizeOfWorkerNodes ', '\"', variables('workerVMSize'),'\"', ' --osOfClusterNodes ', '\"', variables('clusterOSImage'),'\"', ' --countOfNodeCores ', '\"', variables('workerVMCoreCount'),'\"', ' --sshkey ', '\"', variables('cycleSSHKeyName'), '\"', ' --cycleCloudVersion ', '\"', variables('cycleCloudAppVersion'), '\"', ' --slurmVersion ', '\"', variables('SLURMVersion'), '\"' )]",
                             "fileUris": ["[variables('installScriptURL')]"]
                         }
                     }
