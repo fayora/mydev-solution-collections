@@ -53,14 +53,26 @@
     },
     "variables": {
       "location": "[resourceGroup().location]",
+
       "uniqueVMName": "[concat(replace(toLower(parameters('VirtualMachineName')), '.', ''), '-', uniqueString(parameters('VirtualMachineName')))]",
-      "virtualNetworkName": "[concat('VNet', uniqueString(resourceGroup().id))]",
-      "subnetName": "[concat('Subnet', uniqueString(resourceGroup().id))]",
+
+      // Only the VNet name
+      "virtualNetworkName": "[variables('loome').Account.SecureVnet.VnetName]",
+
+      // Only the subnet name
+      "subnetName": "[variables('loome').ProjectResources.SecureVnet.SubnetName]",
+
+      // Full VNet ID (across subscription and resource group)
+      "vnetId": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', variables('loome').Account.SecureVnet.SubscriptionId, variables('loome').Account.SecureVnet.ResourceGroupName), 'Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
+
+      // Full subnet reference (VNet ID + subnet name)
+      "subnetRef": "[concat(variables('vnetId'), '/subnets/', variables('subnetName'))]",
+
+      // NSG and NIC
       "networkSecurityGroupName": "[concat('NSG', uniqueString(resourceGroup().id))]",
-      "networkInterfaceName": "[concat(parameters('VirtualMachineName'),'NetInt')]",
-      "publicIpAddressName": "[concat(parameters('VirtualMachineName'), 'PublicIP' )]",
-      "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
       "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
+      "networkInterfaceName": "[concat(parameters('VirtualMachineName'), 'NetInt')]",
+
       "osDiskType": "Standard_LRS",
       "storageAccountName": "[concat('storage', uniqueString(resourceGroup().id))]",
       "storageAccountType": "Standard_LRS",
@@ -107,9 +119,7 @@
         "name": "[variables('networkInterfaceName')]",
         "location": "[variables('location')]",
         "dependsOn": [
-          "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]",
-          "[resourceId('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
-          "[resourceId('Microsoft.Network/publicIpAddresses/', variables('publicIpAddressName'))]"
+          "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]"
         ],
         "properties": {
           "ipConfigurations": [
@@ -119,10 +129,7 @@
                 "subnet": {
                   "id": "[variables('subnetRef')]"
                 },
-                "privateIPAllocationMethod": "Dynamic",
-                "publicIpAddress": {
-                  "id": "[resourceId('Microsoft.Network/publicIpAddresses', variables('publicIpAddressName'))]"
-                }
+                "privateIPAllocationMethod": "Dynamic"
               }
             }
           ],
@@ -165,44 +172,6 @@
               }
             }
           ]
-        }
-      },
-      {
-        "type": "Microsoft.Network/virtualNetworks",
-        "apiVersion": "2020-05-01",
-        "name": "[variables('virtualNetworkName')]",
-        "location": "[variables('location')]",
-        "properties": {
-          "addressSpace": {
-            "addressPrefixes": [
-              "10.0.0.0/24"
-            ]
-          },
-          "subnets": [
-            {
-              "name": "[variables('subnetName')]",
-              "properties": {
-                "addressPrefix": "10.0.0.0/24",
-                "privateEndpointNetworkPolicies": "Enabled",
-                "privateLinkServiceNetworkPolicies": "Enabled"
-              }
-            }
-          ]
-        }
-      },
-      {
-        "type": "Microsoft.Network/publicIpAddresses",
-        "apiVersion": "2020-05-01",
-        "name": "[variables('publicIpAddressName')]",
-        "location": "[variables('location')]",
-        "sku": {
-          "name": "Basic",
-          "tier": "Regional"
-        },
-        "properties": {
-          "publicIpAllocationMethod": "Dynamic","dnsSettings": {
-            "domainNameLabel": "[variables('uniqueVMName')]"
-            }
         }
       },
       {
@@ -264,9 +233,13 @@
       }
     ],
     "outputs": {
-      "publicIpAddressName": {
+      "privateIpAddress": {
         "type": "string",
-        "value": "[variables('publicIpAddressName')]"
+        "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))).ipConfigurations[0].properties.privateIpAddress]"
+      },
+      "networkInterfaceName": {
+        "type": "string",
+        "value": "[variables('networkInterfaceName')]"
       },
       "subscriptionId": {
         "type": "string",
@@ -275,10 +248,6 @@
        "resourceGroupName1": {
         "type": "string",
         "value": "[resourceGroup().name]"
-       },
-       "fullyQualifiedDomainName": {
-        "type": "string",
-        "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).dnsSettings.fqdn]"
        },
        "loginUsername": {
         "type": "string",

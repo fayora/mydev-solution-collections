@@ -1,10 +1,10 @@
 [CmdletBinding()]
 [OutputType([psobject])]
 param (
-    [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
-    [string]$fullyQualifiedDomainName
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+    [string]$privateIpAddress
 )
 process {
-    $JupyterHubURL = "https://" + $fullyQualifiedDomainName + ":8000"
+    $JupyterHubURL = "https://" + $privateIpAddress + ":8000"
     New-Object -Property @{ReturnText = "$JupyterHubURL"} -TypeName psobject
 }
