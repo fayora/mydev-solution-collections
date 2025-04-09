@@ -135,7 +135,7 @@ def get_storage_account_keys(use_managed_identity, vm_metadata, storage_account_
     
     for _ in range(30):
         print("Fetching storage account access keys")
-        blob_response = urlopen(blob_req, timeout=2)
+        blob_response = urlopen(blob_req, timeout=30)
         
         try:
             return json.load(blob_response)
