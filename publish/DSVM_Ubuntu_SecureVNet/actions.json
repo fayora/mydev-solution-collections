@@ -6,6 +6,12 @@
         "actionType": "String"
     },
     {
+        "name": "Connect to Jupyter Hub",
+        "icon": "fa fa-play-circle-o",
+        "fileName": "getjupyterhub.ps1",
+        "actionType": "Url"
+    },
+    {
         "name": "Connect with X2Go Client",
         "icon": "fa fa-plug",
         "fileName": "X2GoFile.ps1",

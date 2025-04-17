@@ -3,6 +3,5 @@ try {
     $result = "ssh $loginUsername@$privateIPAddress"
 }
 catch {
-    Write-Host "Unable to get IP address." $_.Exception.Message
+    Write-Host "Unable to retrieve the SSH command." $_.Exception.Message
 }
-

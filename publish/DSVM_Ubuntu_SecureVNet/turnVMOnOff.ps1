@@ -42,7 +42,6 @@ try {
             ###NEEDS CODE TO CHECK 200 vs. DIFF RETURN! <--LOOK AT LOOME API CODE
 
             $result = "The VM is currently starting."
-
     } elseif ($vmStatus -eq "VM stopped") {
         # The VM was incorrectly shut down by the user from the operating system, so stopping it and showing a message
         $statusChangeResponse = Invoke-WebRequest `

@@ -12,12 +12,12 @@
       },
       "Size": {
         "type": "string",
-        "defaultValue": "4-CPUs,16GB-RAM",
+        "defaultValue": "4 CPU cores, 16GB of RAM",
         "allowedValues": [
-          "4-CPUs,16GB-RAM",
-          "8-CPUs,32GB-RAM",
-          "16-CPUs,64GB-RAM",
-          "V100-GPU,6-CPUs,112GB-RAM"
+          "4 CPU cores, 16GB of RAM",
+          "8 CPU cores, 32GB of RAM",
+          "16 CPU cores, 64GB of RAM",
+          "Single A100 GPU, 24 CPU cores, 220GB of RAM"
         ],
         "metadata": {
           "description": "Choose a virtual machine size with or without a GPU."
@@ -31,31 +31,112 @@
           "description": "The username for the Administrator's account. A username must only contain letters, numbers, hyphens, and underscores and may not start with a hyphen or number."
         }
       },
-        "adminPassword": {
-            "type": "securestring",
-            "minLength": 12,
-            "maxLength": 72,
-            "metadata": {
-            "description": "Password for the Virtual Machine. It must be at least 12 characters long, and have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character."
-            }
-      }
+      "adminPassword": {
+          "type": "securestring",
+          "minLength": 12,
+          "maxLength": 72,
+          "metadata": {
+          "description": "Password for the Virtual Machine. It must be at least 12 characters long, and have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character."
+          }
+      },
+      "instanceType": {
+        "type": "string",
+        "defaultValue": "Regular",
+        "allowedValues": [
+          "Spot",
+          "Regular"
+        ],
+        "metadata": {
+          "description": "Select between a regular or a spot instance. Spot instances cost significantly less but can be turned off unexpectedly."
+        }
+      },
     },
     "variables": {
-      "location": "[resourceGroup().location]",
-      "uniqueVMName": "[take(concat(replace(toLower(parameters('VirtualMachineName')), '.', ''), '-', uniqueString(parameters('VirtualMachineName'))), 63)]",
-      "networkSecurityGroupName": "[concat('nsg', uniqueString(resourceGroup().id))]",
-      "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
-      "networkInterfaceName": "[concat(parameters('VirtualMachineName'),'NetInt')]",
-      "osDiskType": "StandardSSD_LRS",
-      "osDiskSize": "256",
       "vmSize": {
-        "4-CPUs,16GB-RAM": "Standard_B4ms",
-        "8-CPUs,32GB-RAM": "Standard_B8ms",
-        "16-CPUs,64GB-RAM": "Standard_B16ms",
-        "V100-GPU,6-CPUs,112GB-RAM": "Standard_NC6s_v3"
-      }
+        "4 CPU cores, 16GB of RAM": "Standard_B4as_v2",
+        "8 CPU cores, 32GB of RAM": "Standard_B8as_v2",
+        "16 CPU cores, 64GB of RAM": "Standard_B16as_v2",
+        "Single A100 GPU, 24 CPU cores, 220GB of RAM": "Standard_NC24ads_A100_v4"
+      },
+      "location": "[resourceGroup().location]",
+
+      "uniqueVMName": "[concat(replace(toLower(parameters('VirtualMachineName')), '.', ''), '-', uniqueString(parameters('VirtualMachineName')))]",
+
+      // Only the VNet name
+      "virtualNetworkName": "[variables('loome').Account.SecureVnet.VnetName]",
+
+      // Only the subnet name
+      "subnetName": "[variables('loome').ProjectResources.SecureVnet.SubnetName]",
+
+      // Full VNet ID (across subscription and resource group)
+      "vnetId": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', variables('loome').Account.SecureVnet.SubscriptionId, variables('loome').Account.SecureVnet.ResourceGroupName), 'Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
+
+      // Full subnet reference (VNet ID + subnet name)
+      "subnetRef": "[concat(variables('vnetId'), '/subnets/', variables('subnetName'))]",
+
+      // NSG and NIC
+      "networkSecurityGroupName": "[concat('NSG', uniqueString(resourceGroup().id))]",
+      "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
+      "networkInterfaceName": "[concat(parameters('VirtualMachineName'), 'NetInt')]",
+
+      "osDiskType": "Premium_LRS",
+      "instancePriority": {
+        "Spot": "Spot",
+        "Regular": "Regular"
+      },
+      "instanceEvictionPolicy": {
+        "Spot": "Deallocate",
+        "Regular": null
+      },
+      "instanceMaxPrice": {
+        "Spot": -1,
+        "Regular": null
+      },
+      "scriptParse": "aW1wb3J0IGFyZ3BhcnNlCmltcG9ydCByZQppbXBvcnQganNvbgppbXBvcnQgb3MKCmRlZiBwYXJzZV9maWxlKGlucHV0X3BhdGgpOgogICAgd2l0aCBvcGVuKGlucHV0X3BhdGgsICdyJykgYXMgZjoKICAgICAgICBkYXRhID0gZi5yZWFkKCkKCiAgICBlbnRyaWVzID0gcmUuZmluZGFsbChyJ1xbKC4qPylcXScsIGRhdGEpCgogICAgb25seV9uYW1lID0gW10KICAgIG9ubHlfa2V5ID0gW10KICAgIG9ubHlfZmlsZSA9IFtdCgogICAgZm9yIGVudHJ5IGluIGVudHJpZXM6CiAgICAgICAgcGFpcnMgPSByZS5maW5kYWxsKHInIiguKj8pIjoiKC4qPykiJywgZW50cnkpCiAgICAgICAga2V5cyA9IFtrIGZvciBrLCBfIGluIHBhaXJzXQogICAgICAgIHVuaXF1ZV9rZXlzID0gc2V0KGtleXMpCgogICAgICAgIGlmIGxlbih1bmlxdWVfa2V5cykgPT0gMToKICAgICAgICAgICAga2V5ID0ga2V5c1swXQogICAgICAgICAgICB2YWx1ZXMgPSBbdiBmb3IgXywgdiBpbiBwYWlyc10KICAgICAgICAgICAgaWYga2V5ID09ICJTdG9yYWdlQWNjb3VudE5hbWUiOgogICAgICAgICAgICAgICAgb25seV9uYW1lLmFwcGVuZCh2YWx1ZXMpCiAgICAgICAgICAgIGVsaWYga2V5ID09ICJTdG9yYWdlQWNjb3VudEtleSI6CiAgICAgICAgICAgICAgICBvbmx5X2tleS5hcHBlbmQodmFsdWVzKQogICAgICAgICAgICBlbGlmIGtleSA9PSAiRmlsZXNoYXJlTmFtZSI6CiAgICAgICAgICAgICAgICBvbmx5X2ZpbGUuYXBwZW5kKHZhbHVlcykKCiAgICByZXR1cm4gewogICAgICAgICJTdG9yYWdlQWNjb3VudE5hbWUiOiBvbmx5X25hbWUsCiAgICAgICAgIlN0b3JhZ2VBY2NvdW50S2V5Ijogb25seV9rZXksCiAgICAgICAgIkZpbGVzaGFyZU5hbWUiOiBvbmx5X2ZpbGUKICAgIH0KCmRlZiBtYWluKCk6CiAgICBwYXJzZXIgPSBhcmdwYXJzZS5Bcmd1bWVudFBhcnNlcihkZXNjcmlwdGlvbj0iRmlsdGVyIGVudHJpZXMgYnkgc2luZ2xlIGtleSB0eXBlIikKICAgIHBhcnNlci5hZGRfYXJndW1lbnQoJy0taW5wdXQnLCByZXF1aXJlZD1UcnVlLCBoZWxwPSdQYXRoIHRvIGlucHV0IGZpbGUnKQogICAgcGFyc2VyLmFkZF9hcmd1bWVudCgnLS1vdXRwdXQnLCByZXF1aXJlZD1UcnVlLCBoZWxwPSdQYXRoIHRvIG91dHB1dCBKU09OIGZpbGUnKQoKICAgIGFyZ3MgPSBwYXJzZXIucGFyc2VfYXJncygpCgogICAgaWYgbm90IG9zLnBhdGguaXNmaWxlKGFyZ3MuaW5wdXQpOgogICAgICAgIHByaW50KGYiRXJyb3I6IEZpbGUgJ3thcmdzLmlucHV0fScgZG9lcyBub3QgZXhpc3QuIikKICAgICAgICByZXR1cm4KCiAgICByZXN1bHQgPSBwYXJzZV9maWxlKGFyZ3MuaW5wdXQpCgogICAgd2l0aCBvcGVuKGFyZ3Mub3V0cHV0LCAndycpIGFzIGY6CiAgICAgICAganNvbi5kdW1wKHJlc3VsdCwgZiwgaW5kZW50PTIpCgogICAgcHJpbnQoZiJGaWx0ZXJlZCBvdXRwdXQgd3JpdHRlbiB0byB7YXJncy5vdXRwdXR9IikKCmlmIF9fbmFtZV9fID09ICJfX21haW5fXyI6CiAgICBtYWluKCk=",
+      "scriptMount": "aW1wb3J0IGpzb24KaW1wb3J0IGFyZ3BhcnNlCmltcG9ydCBvcwppbXBvcnQgc3VicHJvY2VzcwoKZGVmIHJ1bl9tb3VudF9zY3JpcHQoanNvbl9kYXRhKToKICAgIGFjY291bnRfbmFtZXMgPSBqc29uX2RhdGEuZ2V0KCJTdG9yYWdlQWNjb3VudE5hbWUiLCBbXSlbMF0KICAgIGFjY291bnRfa2V5cyA9IGpzb25fZGF0YS5nZXQoIlN0b3JhZ2VBY2NvdW50S2V5IiwgW10pWzBdCiAgICBmaWxlc2hhcmVzID0ganNvbl9kYXRhLmdldCgiRmlsZXNoYXJlTmFtZSIsIFtdKVswXQoKICAgICMgTWF0Y2ggdGhlbSBieSBpbmRleAogICAgZm9yIG5hbWUsIGtleSwgc2hhcmUgaW4gemlwKGFjY291bnRfbmFtZXMsIGFjY291bnRfa2V5cywgZmlsZXNoYXJlcyk6CiAgICAgICAgY3JlZF9kaXIgPSAiL2V0Yy9zbWJjcmVkZW50aWFscyIKICAgICAgICBjcmVkX2ZpbGUgPSBmIntjcmVkX2Rpcn0ve25hbWV9LmNyZWQiCiAgICAgICAgbW91bnRfcG9pbnQgPSBmIi9wcm9qZWN0cmVwb3Mve3NoYXJlfSIKICAgICAgICByZW1vdGVfcGF0aCA9IGYiLy97bmFtZX0uZmlsZS5jb3JlLndpbmRvd3MubmV0L3tzaGFyZX0iCgogICAgICAgIHByaW50KGYiQ3JlYXRpbmcgY3JlZGVudGlhbCBmaWxlIGZvciB7bmFtZX0uLi4iKQoKICAgICAgICBvcy5tYWtlZGlycyhjcmVkX2RpciwgZXhpc3Rfb2s9VHJ1ZSkKICAgICAgICB3aXRoIG9wZW4oY3JlZF9maWxlLCAidyIpIGFzIGY6CiAgICAgICAgICAgIHByaW50KGYidXNlcm5hbWU9e25hbWV9IiwgZmlsZT1mKQogICAgICAgICAgICBwcmludChmInBhc3N3b3JkPXtrZXl9IiwgZmlsZT1mKQoKICAgICAgICBvcy5jaG1vZChjcmVkX2ZpbGUsIDBvNjAwKQoKICAgICAgICBwcmludChmIkNyZWF0aW5nIG1vdW50IHBvaW50IGF0IHttb3VudF9wb2ludH0uLi4iKQogICAgICAgIG9zLm1ha2VkaXJzKG1vdW50X3BvaW50LCBleGlzdF9vaz1UcnVlKQoKICAgICAgICBtb3VudF9vcHRzID0gZiJ2ZXJzPTMuMS4xLGNyZWRlbnRpYWxzPXtjcmVkX2ZpbGV9LGRpcl9tb2RlPTA3NzcsZmlsZV9tb2RlPTA3Nzcsc2VydmVyaW5vLG5vc2hhcmVzb2NrLGFjdGltZW89MzAsYXV0byxtZnN5bWxpbmtzLF9uZXRkZXYiCiAgICAgICAgbW91bnRfY21kID0gWyJzdWRvIiwgIm1vdW50IiwgIi10IiwgImNpZnMiLCByZW1vdGVfcGF0aCwgbW91bnRfcG9pbnQsICItbyIsIG1vdW50X29wdHNdCgogICAgICAgIHByaW50KGYiTW91bnRpbmcge3JlbW90ZV9wYXRofSB0byB7bW91bnRfcG9pbnR9Li4uIikKICAgICAgICB0cnk6CiAgICAgICAgICAgIHN1YnByb2Nlc3MucnVuKG1vdW50X2NtZCwgY2hlY2s9VHJ1ZSkKICAgICAgICAgICAgcHJpbnQoZiJNb3VudGVkIHtyZW1vdGVfcGF0aH0gc3VjY2Vzc2Z1bGx5LiIpCiAgICAgICAgZXhjZXB0IHN1YnByb2Nlc3MuQ2FsbGVkUHJvY2Vzc0Vycm9yIGFzIGU6CiAgICAgICAgICAgIHByaW50KGYiRXJyb3IgbW91bnRpbmcge3JlbW90ZV9wYXRofToge2V9IikKCiAgICAgICAgIyBGb3IgYSBtb3JlIHBlcnNpc3RlbnQgbW91bnRpbmcKICAgICAgICBmc3RhYl9saW5lID0gZiJ7cmVtb3RlX3BhdGh9IHttb3VudF9wb2ludH0gY2lmcyB7bW91bnRfb3B0c30gMCAwXG4iCiAgICAgICAgd2l0aCBvcGVuKCIvZXRjL2ZzdGFiIiwgInIiKSBhcyBmc3RhYjoKICAgICAgICAgICAgaWYgZnN0YWJfbGluZS5zdHJpcCgpIG5vdCBpbiBbbGluZS5zdHJpcCgpIGZvciBsaW5lIGluIGZzdGFiXToKICAgICAgICAgICAgICAgIHByaW50KGYiQWRkaW5nIGVudHJ5IHRvIC9ldGMvZnN0YWIgZm9yIHtzaGFyZX0uLi4iKQogICAgICAgICAgICAgICAgd2l0aCBvcGVuKCIvZXRjL2ZzdGFiIiwgImEiKSBhcyBmc3RhYl9hcHBlbmQ6CiAgICAgICAgICAgICAgICAgICAgZnN0YWJfYXBwZW5kLndyaXRlKGZzdGFiX2xpbmUpCiAgICAgICAgICAgIGVsc2U6CiAgICAgICAgICAgICAgICBwcmludChmIi9ldGMvZnN0YWIgZW50cnkgZm9yIHtzaGFyZX0gYWxyZWFkeSBleGlzdHMuIikKCmRlZiBtYWluKCk6CiAgICBwYXJzZXIgPSBhcmdwYXJzZS5Bcmd1bWVudFBhcnNlcihkZXNjcmlwdGlvbj0iTW91bnQgQXp1cmUgZmlsZSBzaGFyZXMgdXNpbmcgSlNPTiBpbnB1dCIpCiAgICBwYXJzZXIuYWRkX2FyZ3VtZW50KCctLWlucHV0JywgcmVxdWlyZWQ9VHJ1ZSwgaGVscD0nUGF0aCB0byBwcm9jZXNzZWQgSlNPTiBmaWxlJykKICAgIGFyZ3MgPSBwYXJzZXIucGFyc2VfYXJncygpCgogICAgd2l0aCBvcGVuKGFyZ3MuaW5wdXQsICJyIikgYXMgZjoKICAgICAgICBkYXRhID0ganNvbi5sb2FkKGYpCgogICAgcnVuX21vdW50X3NjcmlwdChkYXRhKQoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIG1haW4oKQ==",
+      "scriptConfigureDSVM": "IyEvYmluL2Jhc2gKIyBUaGlzIHNjcmlwdCBwcmVwYXJlcyBhbiBBenVyZSBNYXJrZXRwbGFjZSBVYnVudHUgMjIuMDQgRGF0YSBTY2llbmNlIFZpcnR1YWwgTWFjaGluZQoKIyBVcGRhdGUgdGhlIHBhY2thZ2UgbGlzdAplY2hvICJVcGRhdGluZyB0aGUgcGFja2FnZSBsaXN0IgpzdWRvIGFwdC1nZXQgdXBkYXRlCgojIEJlZm9yZSBjb250aW51aW5nIHdpdGggdGhlIGluc3RhbGxhdGlvbiwgY2hlY2sgaWYgZHBrZyBpcyBsb2NrZWQgYW5kIHdhaXQgZm9yIGl0IHRvIGJlIHVubG9ja2VkCndoaWxlIHN1ZG8gZnVzZXIgL3Zhci9saWIvZHBrZy9sb2NrID4vZGV2L251bGwgMj4mMSA7IGRvCiAgICBlY2hvICJXYWl0aW5nIDUgc2Vjb25kcyBmb3Igb3RoZXIgc29mdHdhcmUgbWFuYWdlcnMgdG8gZmluaXNoLi4uIgogICAgc2xlZXAgNQpkb25lCgojIFJlbW92ZSB0aGUgZGVmYXVsdCBYRkNFIHNjcmVlbnNhdmVyIHRvIHByZXZlbnQgc2NyZWVuIGxvY2sKZWNobyAiUmVtb3ZpbmcgdGhlIGRlZmF1bHQgWEZDRSBzY3JlZW5zYXZlciIKc3VkbyBhcHQtZ2V0IHJlbW92ZSB4ZmNlNC1zY3JlZW5zYXZlciAteQoKIyBEaXNhYmxlIENvbXBvc2l0aW5nIGluIFhGQ0UgPDw8PDw8PDw8PDw8PDw8LS08PDw8PDw8PDw8PDw8PDwtLSBNSUdIVCBOT1QgQkUgTkVFRFMgVEVTVElORyEhCiMgZWNobyAiRGlzYWJsaW5nIENvbXBvc2l0aW5nIGluIFhGQ0UiCiMgeGZjb25mLXF1ZXJ5IC1jIHhmd200IC1wIC9nZW5lcmFsL3VzZV9jb21wb3NpdGluZyAtcyBmYWxzZQojIHhmY29uZi1xdWVyeSAtLWNyZWF0ZSAtYyAneGZ3bTQnIC1wICcvZ2VuZXJhbC91c2VfY29tcG9zaXRpbmcnIC0tdHlwZSAnYm9vbCcgLS1zZXQgJ2ZhbHNlJwoKIyBSZW1vdmUgdGhlIGJyb2tlbiBGaXJlZm94IGluc3RhbGxhdGlvbiBpbiBVMjIuMDQgRFNWTQplY2hvICJSZW1vdmluZyB0aGUgYnJva2VuIEZpcmVmb3ggaW5zdGFsbGF0aW9uIgpzdWRvIHNuYXAgcmVtb3ZlIC0tcHVyZ2UgZmlyZWZveApzdWRvIGFwdCBwdXJnZSBmaXJlZm94IC15CiMjIElmIHRoZSBhYm92ZSBkb2VzIG5vdCByZW1vdmUgdGhlIGJyb2tlbiBXZWIgQnJvd3NlciBpY29uIGZyb20gdGhlIFhGQ0UgcGFuZWwsIHRyeSB0aGUgZm9sbG93aW5nCiMgIyMgSU1QT1JUQU5UOiBUaGUgcGx1Z2luIG51bWJlciBtYXkgY2hhbmdlLCBjaGVjayB0aGUgY3VycmVudCBudW1iZXIgbWFudWFsbHkgYnkgbG9va2luZyBhdCB0aGUgLmRlc2t0b3AgZmlsZXMgaW4gfi8uY29uZmlnL3hmY2U0L3BhbmVsL2xhdW5jaGVyLU5OICh3aGVyZSBOTiBpcyB0aGUgcGx1Z2luIG51bWJlcikKIyAjIyBUaGlzIGNvbW1hbmQgbWF5IGJlIG9mIGhlbHA6IHN1ZG8gZmluZCAvaG9tZS8qLy5jb25maWcgLXR5cGUgZiAtZXhlYyBncmVwIC1sICJtaWNyb3NvZnQtZWRnZS1kZXYuZGVza3RvcCIKZWNobyAiUmVtb3ZpbmcgdGhlIGJyb2tlbiBXZWIgQnJvd3NlciBpY29uIGZyb20gdGhlIFhGQ0UgcGFuZWwiCnhmY29uZi1xdWVyeSAtLXJlc2V0IC1jICd4ZmNlNC1wYW5lbCcgLXAgJy9wbHVnaW5zL3BsdWdpbi0xMScgLS1yZWN1cnNpdmUKCiMgQmVmb3JlIGNvbnRpbnVpbmcgd2l0aCB0aGUgaW5zdGFsbGF0aW9uLCBjaGVjayBpZiBkcGtnIGlzIGxvY2tlZCBhbmQgd2FpdCBmb3IgaXQgdG8gYmUgdW5sb2NrZWQKd2hpbGUgc3VkbyBmdXNlciAvdmFyL2xpYi9kcGtnL2xvY2sgPi9kZXYvbnVsbCAyPiYxIDsgZG8KICAgIGVjaG8gIldhaXRpbmcgNSBzZWNvbmRzIGZvciBvdGhlciBzb2Z0d2FyZSBtYW5hZ2VycyB0byBmaW5pc2guLi4iCiAgICBzbGVlcCA1CmRvbmUKCiMgUmVtb3ZlIE1TIEVkZ2UgRGV2IGFuZCBpbnN0YWxsIFByb2QgdmVyc2lvbgplY2hvICJSZW1vdmluZyB0aGUgZGV2IHZlcnNpb24gb2YgTWljcm9zb2Z0IEVkZ2UgYW5kIGluc3RhbGxpbmcgdGhlIHByb2QgdmVyc2lvbiIKIyMgUmVtb3ZlIHRoZSBkZXYgdmVyc2lvbgplY2hvICJSZW1vdmluZyB0aGUgZGV2IHZlcnNpb24gb2YgTWljcm9zb2Z0IEVkZ2UiCnN1ZG8gYXB0LWdldCByZW1vdmUgbWljcm9zb2Z0LWVkZ2UtZGV2IC15CiMjIERvd25sb2FkIGFuZCBpbnN0YWxsIHRoZSBwcm9kIHZlcnNpb24KIyMgTGF0ZXN0IHN0YWJsZSB2ZXJzaW9uIGxpc3RlZCBoZXJlOiBodHRwczovL3d3dy5taWNyb3NvZnQuY29tL2VuLXVzL2VkZ2UvYnVzaW5lc3MvZG93bmxvYWQ/Zm9ybT1NQTEzRkoKIyMgUmVwbyB2aXNpYmxlIGhlcmU6IGh0dHBzOi8vcGFja2FnZXMubWljcm9zb2Z0LmNvbS9yZXBvcy9lZGdlL3Bvb2wvbWFpbi9tL21pY3Jvc29mdC1lZGdlLXN0YWJsZS8KbXNFZGdlUHJvZFZlcnNpb249IjEzNS4wLjMxNzkuNTQiCmVjaG8gIkRvd25sb2FkaW5nIGFuZCBpbnN0YWxsaW5nIE1pY3Jvc29mdCBFZGdlIHZlcnNpb24gJG1zRWRnZVByb2RWZXJzaW9uIgp3Z2V0IGh0dHBzOi8vcGFja2FnZXMubWljcm9zb2Z0LmNvbS9yZXBvcy9lZGdlL3Bvb2wvbWFpbi9tL21pY3Jvc29mdC1lZGdlLXN0YWJsZS9taWNyb3NvZnQtZWRnZS1zdGFibGVfJG1zRWRnZVByb2RWZXJzaW9uLTFfYW1kNjQuZGViIC1PIG1pY3Jvc29mdC1lZGdlLmRlYgplY2hvICJJbnN0YWxsaW5nIE1pY3Jvc29mdCBFZGdlIgpzdWRvIGFwdCBpbnN0YWxsIC4vbWljcm9zb2Z0LWVkZ2UuZGViIC15CiMgQ2hlY2sgaWYgdGhlcmUgd2FzIG5vIGVycm9yIGFuZCBkZWxldGUgdGhlIGRvd25sb2FkZWQgZmlsZQppZiBbICQ/IC1lcSAwIF07IHRoZW4KICAgIGVjaG8gIk1pY3Jvc29mdCBFZGdlIGluc3RhbGxlZCBzdWNjZXNzZnVsbHkiCiAgICBybSBtaWNyb3NvZnQtZWRnZS5kZWIKZWxzZQogICAgZWNobyAiRXJyb3IgaW5zdGFsbGluZyBNaWNyb3NvZnQgRWRnZTogJD8iCiAgICBleGl0IDEKZmkKCiMjIFRvIGNoYW5nZSB0byBCYXNlIDY0IGVuY29kaW5nIHJ1bjoKIyMgICAgICBjYXQgY29uZmlndXJlX0RTVk1fMjIwNC5zaCB8IGJhc2U2NCAtdyAwID4gY29uZmlndXJlX0RTVk1fMjIwNC5zaC5iNjQ=",
+      "repositoriesRaw": "[string(variables('loome').ProjectResources.DataRepositories)]",
+      "repositoriesEscaped": "[replace(variables('repositoriesRaw'), '\"', '\\\"')]",
+      "userDataScript": [
+        "#!/bin/bash",
+        "mkdir -p /opt/projectrepos",
+        "[concat('echo ', variables('repositoriesEscaped'), '> /opt/projectrepos/repositories.json')]",
+        "chmod 644 /opt/projectrepos/repositories.json",
+        "[concat('echo ', variables('scriptParse'), ' | base64 -d > /opt/projectrepos/parse.py')]",
+        "[concat('echo ', variables('scriptMount'), ' | base64 -d > /opt/projectrepos/mount_azure.py')]",
+        "[concat('echo ', variables('scriptConfigureDSVM'), ' | base64 -d > /opt/projectrepos/configure_dsvm.sh')]",
+        "sudo python3 /opt/projectrepos/parse.py --input /opt/projectrepos/repositories.json --output /opt/projectrepos/processed.json",
+        "sudo python3 /opt/projectrepos/mount_azure.py --input /opt/projectrepos/processed.json",
+        "sudo bash /opt/projectrepos/configure_dsvm.sh",
+        "sleep 5 && sudo rm -r /opt/projectrepos"
+      ]
     },
     "resources": [
+      {
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2020-05-01",
+        "name": "[variables('networkInterfaceName')]",
+        "location": "[variables('location')]",
+        "dependsOn": [
+          "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]"
+        ],
+        "properties": {
+          "ipConfigurations": [
+            {
+              "name": "ipconfig1",
+              "properties": {
+                "subnet": {
+                  "id": "[variables('subnetRef')]"
+                },
+                "privateIPAllocationMethod": "Dynamic"
+              }
+            }
+          ],
+          "networkSecurityGroup": {
+            "id": "[variables('nsgId')]"
+          }
+        }
+      },
       {
         "type": "Microsoft.Network/networkSecurityGroups",
         "apiVersion": "2020-05-01",
@@ -93,31 +174,6 @@
         }
       },
       {
-        "type": "Microsoft.Network/networkInterfaces",
-        "apiVersion": "2020-05-01",
-        "name": "[variables('networkInterfaceName')]",
-        "location": "[variables('location')]",
-        "dependsOn": [
-          "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]"
-        ],
-        "properties": {
-          "ipConfigurations": [
-            {
-              "name": "ipconfig1",
-              "properties": {
-                "subnet": {
-                  "id": "[concat('/subscriptions/', variables('loome').Account.SecureVnet.SubscriptionId, '/resourceGroups/', variables('loome').Account.SecureVnet.ResourceGroupName, '/providers/Microsoft.Network/virtualNetworks/', variables('loome').Account.SecureVnet.VnetName, '/subnets/', variables('loome').ProjectResources.SecureVnet.SubnetName)]"
-                },
-                "privateIPAllocationMethod": "Dynamic"
-              }
-            }
-          ],
-          "networkSecurityGroup": {
-            "id": "[variables('nsgId')]"
-          }
-        }
-      },
-      {
         "type": "Microsoft.Compute/virtualMachines",
         "apiVersion": "2019-07-01",
         "name": "[variables('uniqueVMName')]",
@@ -127,12 +183,11 @@
         ],
         "properties": {
           "hardwareProfile": {
-            "vmSize": "[variables('vmSize')[parameters('Size')]]"
+            "vmSize": "[variables('vmSize')[parameters('Size')]]",
           },
           "storageProfile": {
             "osDisk": {
               "createOption": "fromImage",
-              "diskSizeGB": "[variables('osDiskSize')]",
               "managedDisk": {
                 "storageAccountType": "[variables('osDiskType')]"
               }
@@ -154,24 +209,29 @@
           "osProfile": {
             "computerName": "[variables('uniqueVMName')]",
             "adminUsername": "[parameters('adminUsername')]",
-            "adminPassword": "[parameters('adminPassword')]"
+            "adminPassword": "[parameters('adminPassword')]",
+            "customData": "[base64(join(variables('userDataScript'), '\n'))]"
+          },
+          "priority": "[variables('instancePriority')[parameters('instanceType')]]",
+          "evictionPolicy": "[variables('instanceEvictionPolicy')[parameters('instanceType')]]",
+          "billingProfile": {
+            "maxPrice": "[variables('instanceMaxPrice')[parameters('instanceType')]]"
           }
         }
       }
-      ],
-      "outputs": {
-        "loginUsername": {
-          "type": "string",
-          "value": "[parameters('adminUsername')]"
-        },
-        "privateIPAddress": {
-          "type": "string",
-          "value": "[reference(variables('networkInterfaceName')).ipConfigurations[0].properties.privateIPAddress]"
-        },
-        "deployedVirtualMachineName": {
-          "type": "string",
-          "value": "[variables('uniqueVMName')]"
-      }
+    ],
+    "outputs": {
+       "loginUsername": {
+        "type": "string",
+        "value": "[parameters('adminUsername')]"
+       },
+        "privateIpAddress": {
+        "type": "string",
+        "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))).ipConfigurations[0].properties.privateIpAddress]"
+      },
+       "deployedVirtualMachineName": {
+        "type": "string",
+        "value": "[variables('uniqueVMName')]"
+       }
     }
 }
-
