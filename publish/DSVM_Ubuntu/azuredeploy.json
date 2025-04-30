@@ -223,14 +223,6 @@
         "type": "string",
         "value": "[variables('publicIpAddressName')]"
       },
-      "subscriptionId": {
-        "type": "string",
-        "value": "[subscription().subscriptionId]"
-       },
-       "resourceGroupName1": {
-        "type": "string",
-        "value": "[resourceGroup().name]"
-       },
        "fullyQualifiedDomainName": {
         "type": "string",
         "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).dnsSettings.fqdn]"
@@ -238,10 +230,6 @@
        "loginUsername": {
         "type": "string",
         "value": "[parameters('adminUsername')]"
-       },
-       "deployedVirtualMachineName": {
-        "type": "string",
-        "value": "[variables('uniqueVMName')]"
        }
     }
 }
