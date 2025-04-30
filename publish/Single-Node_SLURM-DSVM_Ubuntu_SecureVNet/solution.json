@@ -1,0 +1,9 @@
+{
+    "name": "Single-Node SLURM",
+    "description": "Deploys a workstation with the SLURM HPC scheduler preinstalled for high-throughput computing.",
+    "version": "2025.04.20.1",
+    "icon": "fa fa-cube",
+    "upgradeAllowed": true,
+    "deploymentMode": "User",
+    "statusCheckFileName": "checkStatus.ps1"
+}

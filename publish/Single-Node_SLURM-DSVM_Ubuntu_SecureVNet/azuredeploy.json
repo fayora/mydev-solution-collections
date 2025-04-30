@@ -1,0 +1,235 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "VirtualMachineName": {
+        "type": "string",
+        "defaultValue": "",
+        "minLength": 4,
+        "metadata": {
+          "description": "The name you want to give your Virtual Machine. Linux VM names may only contain letters, numbers, '.', and '-'."
+        }
+      },
+      "Size": {
+        "type": "string",
+        "defaultValue": "120 CPU cores, 456 GB of RAM",
+        "allowedValues": [
+          "120 CPU cores, 456 GB of RAM",
+          "64 CPU cores, 256 GB of RAM"
+        ],
+        "metadata": {
+          "description": "Choose a virtual machine size with or without a GPU."
+        }
+      },
+      "adminUsername": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "metadata": {
+          "description": "The username for the Administrator's account. A username must only contain letters, numbers, hyphens, and underscores and may not start with a hyphen or number."
+        }
+      },
+      "adminPassword": {
+          "type": "securestring",
+          "minLength": 12,
+          "maxLength": 72,
+          "metadata": {
+          "description": "Password for the Virtual Machine. It must be at least 12 characters long, and have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character."
+          }
+      },
+      "instanceType": {
+        "type": "string",
+        "defaultValue": "Regular",
+        "allowedValues": [
+          "Spot",
+          "Regular"
+        ],
+        "metadata": {
+          "description": "Select between a regular or a spot instance. Spot instances cost significantly less but can be turned off unexpectedly."
+        }
+      },
+    },
+    "variables": {
+      "osDiskSize": "256",
+      "vmSize": {
+        "120 CPU cores, 456 GB of RAM": "Standard_HB120rs_v3",
+        "64 CPU cores, 256 GB of RAM": "Standard_D64as_v5"
+      },
+      "location": "[resourceGroup().location]",
+
+      "uniqueVMName": "[concat(replace(toLower(parameters('VirtualMachineName')), '.', ''), '-', uniqueString(parameters('VirtualMachineName')))]",
+
+      // Only the VNet name
+      "virtualNetworkName": "[variables('loome').Account.SecureVnet.VnetName]",
+
+      // Only the subnet name
+      "subnetName": "[variables('loome').ProjectResources.SecureVnet.SubnetName]",
+
+      // Full VNet ID (across subscription and resource group)
+      "vnetId": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', variables('loome').Account.SecureVnet.SubscriptionId, variables('loome').Account.SecureVnet.ResourceGroupName), 'Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
+
+      // Full subnet reference (VNet ID + subnet name)
+      "subnetRef": "[concat(variables('vnetId'), '/subnets/', variables('subnetName'))]",
+
+      // NSG and NIC
+      "networkSecurityGroupName": "[concat('NSG', uniqueString(resourceGroup().id))]",
+      "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
+      "networkInterfaceName": "[concat(parameters('VirtualMachineName'), 'NetInt')]",
+
+      "osDiskType": "Premium_LRS",
+      "instancePriority": {
+        "Spot": "Spot",
+        "Regular": "Regular"
+      },
+      "instanceEvictionPolicy": {
+        "Spot": "Deallocate",
+        "Regular": null
+      },
+      "instanceMaxPrice": {
+        "Spot": -1,
+        "Regular": null
+      },
+      "scriptParse": "aW1wb3J0IGFyZ3BhcnNlCmltcG9ydCByZQppbXBvcnQganNvbgppbXBvcnQgb3MKCmRlZiBwYXJzZV9maWxlKGlucHV0X3BhdGgpOgogICAgd2l0aCBvcGVuKGlucHV0X3BhdGgsICdyJykgYXMgZjoKICAgICAgICBkYXRhID0gZi5yZWFkKCkKCiAgICBlbnRyaWVzID0gcmUuZmluZGFsbChyJ1xbKC4qPylcXScsIGRhdGEpCgogICAgb25seV9uYW1lID0gW10KICAgIG9ubHlfa2V5ID0gW10KICAgIG9ubHlfZmlsZSA9IFtdCgogICAgZm9yIGVudHJ5IGluIGVudHJpZXM6CiAgICAgICAgcGFpcnMgPSByZS5maW5kYWxsKHInIiguKj8pIjoiKC4qPykiJywgZW50cnkpCiAgICAgICAga2V5cyA9IFtrIGZvciBrLCBfIGluIHBhaXJzXQogICAgICAgIHVuaXF1ZV9rZXlzID0gc2V0KGtleXMpCgogICAgICAgIGlmIGxlbih1bmlxdWVfa2V5cykgPT0gMToKICAgICAgICAgICAga2V5ID0ga2V5c1swXQogICAgICAgICAgICB2YWx1ZXMgPSBbdiBmb3IgXywgdiBpbiBwYWlyc10KICAgICAgICAgICAgaWYga2V5ID09ICJTdG9yYWdlQWNjb3VudE5hbWUiOgogICAgICAgICAgICAgICAgb25seV9uYW1lLmFwcGVuZCh2YWx1ZXMpCiAgICAgICAgICAgIGVsaWYga2V5ID09ICJTdG9yYWdlQWNjb3VudEtleSI6CiAgICAgICAgICAgICAgICBvbmx5X2tleS5hcHBlbmQodmFsdWVzKQogICAgICAgICAgICBlbGlmIGtleSA9PSAiRmlsZXNoYXJlTmFtZSI6CiAgICAgICAgICAgICAgICBvbmx5X2ZpbGUuYXBwZW5kKHZhbHVlcykKCiAgICByZXR1cm4gewogICAgICAgICJTdG9yYWdlQWNjb3VudE5hbWUiOiBvbmx5X25hbWUsCiAgICAgICAgIlN0b3JhZ2VBY2NvdW50S2V5Ijogb25seV9rZXksCiAgICAgICAgIkZpbGVzaGFyZU5hbWUiOiBvbmx5X2ZpbGUKICAgIH0KCmRlZiBtYWluKCk6CiAgICBwYXJzZXIgPSBhcmdwYXJzZS5Bcmd1bWVudFBhcnNlcihkZXNjcmlwdGlvbj0iRmlsdGVyIGVudHJpZXMgYnkgc2luZ2xlIGtleSB0eXBlIikKICAgIHBhcnNlci5hZGRfYXJndW1lbnQoJy0taW5wdXQnLCByZXF1aXJlZD1UcnVlLCBoZWxwPSdQYXRoIHRvIGlucHV0IGZpbGUnKQogICAgcGFyc2VyLmFkZF9hcmd1bWVudCgnLS1vdXRwdXQnLCByZXF1aXJlZD1UcnVlLCBoZWxwPSdQYXRoIHRvIG91dHB1dCBKU09OIGZpbGUnKQoKICAgIGFyZ3MgPSBwYXJzZXIucGFyc2VfYXJncygpCgogICAgaWYgbm90IG9zLnBhdGguaXNmaWxlKGFyZ3MuaW5wdXQpOgogICAgICAgIHByaW50KGYiRXJyb3I6IEZpbGUgJ3thcmdzLmlucHV0fScgZG9lcyBub3QgZXhpc3QuIikKICAgICAgICByZXR1cm4KCiAgICByZXN1bHQgPSBwYXJzZV9maWxlKGFyZ3MuaW5wdXQpCgogICAgd2l0aCBvcGVuKGFyZ3Mub3V0cHV0LCAndycpIGFzIGY6CiAgICAgICAganNvbi5kdW1wKHJlc3VsdCwgZiwgaW5kZW50PTIpCgogICAgcHJpbnQoZiJGaWx0ZXJlZCBvdXRwdXQgd3JpdHRlbiB0byB7YXJncy5vdXRwdXR9IikKCmlmIF9fbmFtZV9fID09ICJfX21haW5fXyI6CiAgICBtYWluKCk=",
+      "scriptMount": "aW1wb3J0IGpzb24KaW1wb3J0IGFyZ3BhcnNlCmltcG9ydCBvcwppbXBvcnQgc3VicHJvY2VzcwoKZGVmIHJ1bl9tb3VudF9zY3JpcHQoanNvbl9kYXRhKToKICAgIGFjY291bnRfbmFtZXMgPSBqc29uX2RhdGEuZ2V0KCJTdG9yYWdlQWNjb3VudE5hbWUiLCBbXSlbMF0KICAgIGFjY291bnRfa2V5cyA9IGpzb25fZGF0YS5nZXQoIlN0b3JhZ2VBY2NvdW50S2V5IiwgW10pWzBdCiAgICBmaWxlc2hhcmVzID0ganNvbl9kYXRhLmdldCgiRmlsZXNoYXJlTmFtZSIsIFtdKVswXQoKICAgICMgTWF0Y2ggdGhlbSBieSBpbmRleAogICAgZm9yIG5hbWUsIGtleSwgc2hhcmUgaW4gemlwKGFjY291bnRfbmFtZXMsIGFjY291bnRfa2V5cywgZmlsZXNoYXJlcyk6CiAgICAgICAgY3JlZF9kaXIgPSAiL2V0Yy9zbWJjcmVkZW50aWFscyIKICAgICAgICBjcmVkX2ZpbGUgPSBmIntjcmVkX2Rpcn0ve25hbWV9LmNyZWQiCiAgICAgICAgbW91bnRfcG9pbnQgPSBmIi9wcm9qZWN0cmVwb3Mve3NoYXJlfSIKICAgICAgICByZW1vdGVfcGF0aCA9IGYiLy97bmFtZX0uZmlsZS5jb3JlLndpbmRvd3MubmV0L3tzaGFyZX0iCgogICAgICAgIHByaW50KGYiQ3JlYXRpbmcgY3JlZGVudGlhbCBmaWxlIGZvciB7bmFtZX0uLi4iKQoKICAgICAgICBvcy5tYWtlZGlycyhjcmVkX2RpciwgZXhpc3Rfb2s9VHJ1ZSkKICAgICAgICB3aXRoIG9wZW4oY3JlZF9maWxlLCAidyIpIGFzIGY6CiAgICAgICAgICAgIHByaW50KGYidXNlcm5hbWU9e25hbWV9IiwgZmlsZT1mKQogICAgICAgICAgICBwcmludChmInBhc3N3b3JkPXtrZXl9IiwgZmlsZT1mKQoKICAgICAgICBvcy5jaG1vZChjcmVkX2ZpbGUsIDBvNjAwKQoKICAgICAgICBwcmludChmIkNyZWF0aW5nIG1vdW50IHBvaW50IGF0IHttb3VudF9wb2ludH0uLi4iKQogICAgICAgIG9zLm1ha2VkaXJzKG1vdW50X3BvaW50LCBleGlzdF9vaz1UcnVlKQoKICAgICAgICBtb3VudF9vcHRzID0gZiJ2ZXJzPTMuMS4xLGNyZWRlbnRpYWxzPXtjcmVkX2ZpbGV9LGRpcl9tb2RlPTA3NzcsZmlsZV9tb2RlPTA3Nzcsc2VydmVyaW5vLG5vc2hhcmVzb2NrLGFjdGltZW89MzAsYXV0byxtZnN5bWxpbmtzLF9uZXRkZXYiCiAgICAgICAgbW91bnRfY21kID0gWyJzdWRvIiwgIm1vdW50IiwgIi10IiwgImNpZnMiLCByZW1vdGVfcGF0aCwgbW91bnRfcG9pbnQsICItbyIsIG1vdW50X29wdHNdCgogICAgICAgIHByaW50KGYiTW91bnRpbmcge3JlbW90ZV9wYXRofSB0byB7bW91bnRfcG9pbnR9Li4uIikKICAgICAgICB0cnk6CiAgICAgICAgICAgIHN1YnByb2Nlc3MucnVuKG1vdW50X2NtZCwgY2hlY2s9VHJ1ZSkKICAgICAgICAgICAgcHJpbnQoZiJNb3VudGVkIHtyZW1vdGVfcGF0aH0gc3VjY2Vzc2Z1bGx5LiIpCiAgICAgICAgZXhjZXB0IHN1YnByb2Nlc3MuQ2FsbGVkUHJvY2Vzc0Vycm9yIGFzIGU6CiAgICAgICAgICAgIHByaW50KGYiRXJyb3IgbW91bnRpbmcge3JlbW90ZV9wYXRofToge2V9IikKCiAgICAgICAgIyBGb3IgYSBtb3JlIHBlcnNpc3RlbnQgbW91bnRpbmcKICAgICAgICBmc3RhYl9saW5lID0gZiJ7cmVtb3RlX3BhdGh9IHttb3VudF9wb2ludH0gY2lmcyB7bW91bnRfb3B0c30gMCAwXG4iCiAgICAgICAgd2l0aCBvcGVuKCIvZXRjL2ZzdGFiIiwgInIiKSBhcyBmc3RhYjoKICAgICAgICAgICAgaWYgZnN0YWJfbGluZS5zdHJpcCgpIG5vdCBpbiBbbGluZS5zdHJpcCgpIGZvciBsaW5lIGluIGZzdGFiXToKICAgICAgICAgICAgICAgIHByaW50KGYiQWRkaW5nIGVudHJ5IHRvIC9ldGMvZnN0YWIgZm9yIHtzaGFyZX0uLi4iKQogICAgICAgICAgICAgICAgd2l0aCBvcGVuKCIvZXRjL2ZzdGFiIiwgImEiKSBhcyBmc3RhYl9hcHBlbmQ6CiAgICAgICAgICAgICAgICAgICAgZnN0YWJfYXBwZW5kLndyaXRlKGZzdGFiX2xpbmUpCiAgICAgICAgICAgIGVsc2U6CiAgICAgICAgICAgICAgICBwcmludChmIi9ldGMvZnN0YWIgZW50cnkgZm9yIHtzaGFyZX0gYWxyZWFkeSBleGlzdHMuIikKCmRlZiBtYWluKCk6CiAgICBwYXJzZXIgPSBhcmdwYXJzZS5Bcmd1bWVudFBhcnNlcihkZXNjcmlwdGlvbj0iTW91bnQgQXp1cmUgZmlsZSBzaGFyZXMgdXNpbmcgSlNPTiBpbnB1dCIpCiAgICBwYXJzZXIuYWRkX2FyZ3VtZW50KCctLWlucHV0JywgcmVxdWlyZWQ9VHJ1ZSwgaGVscD0nUGF0aCB0byBwcm9jZXNzZWQgSlNPTiBmaWxlJykKICAgIGFyZ3MgPSBwYXJzZXIucGFyc2VfYXJncygpCgogICAgd2l0aCBvcGVuKGFyZ3MuaW5wdXQsICJyIikgYXMgZjoKICAgICAgICBkYXRhID0ganNvbi5sb2FkKGYpCgogICAgcnVuX21vdW50X3NjcmlwdChkYXRhKQoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIG1haW4oKQ==",
+      "scriptConfigureDSVM": "IyEvYmluL2Jhc2gKIyBUaGlzIHNjcmlwdCBwcmVwYXJlcyBhbiBBenVyZSBNYXJrZXRwbGFjZSBVYnVudHUgMjIuMDQgRGF0YSBTY2llbmNlIFZpcnR1YWwgTWFjaGluZQoKIyBBIGZ1bmN0aW9uIHRvIGNyZWF0ZSBhIGNvbW1lbnQgd2l0aCBhIHRpbWVzdGFtcApmdW5jdGlvbiBsb2dNZXNzYWdlIHsKICAgIGNvbW1lbnRUaW1lU3RhbXA9IltgZGF0ZSArJVktJW0tJWRfJUg6JU06JVMuJTJOYF1+IgogICAgZWNobyAiJGNvbW1lbnRUaW1lU3RhbXAgJDEiIHwgdGVlIC1hIC90bXAvY29uZmlndXJlX1NMVVJNX0RTVk1fMjIwNC5sb2cKfQoKIyB+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn4KIyB+fn4gU3RhcnRpbmcgdGhlIHRpbWVyIHNvIHRoYXQgd2UgY2FuIGNhbGN1bGF0ZSB0aGUgdGltZSBpdCB0YWtlcyB0byBydW4gdGhlIHNjcmlwdCB+fn4KU0VDT05EUz0wCiMgfn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+CgojIFVwZGF0ZSB0aGUgcGFja2FnZSBsaXN0CmxvZ01lc3NhZ2UgIlVwZGF0aW5nIHRoZSBwYWNrYWdlIGxpc3QiCnN1ZG8gYXB0LWdldCB1cGRhdGUKCiMjIEZPUiBUUk9VQkxFU0hPT1RJTkc6IExpc3QgcnVubmluZyBwcm9jZXNzZXMgd2l0aCBwYXRocwojIHBzIGF1eGYKIyBCZWZvcmUgY29udGludWluZyB3aXRoIHRoZSBpbnN0YWxsYXRpb24sIGNoZWNrIGlmIGRwa2cgaXMgbG9ja2VkIGFuZCB3YWl0IGZvciBpdCB0byBiZSB1bmxvY2tlZAp3aGlsZSBzdWRvIGZ1c2VyIC92YXIvbGliL2Rwa2cvbG9jayA+L2Rldi9udWxsIDI+JjEgOyBkbwogICAgbG9nTWVzc2FnZSAiV2FpdGluZyA1IHNlY29uZHMgZm9yIG90aGVyIHNvZnR3YXJlIG1hbmFnZXJzIHRvIGZpbmlzaC4uLiIKICAgIHNsZWVwIDUKZG9uZQoKCiMjIyMjIyMjIyMjIyMjIyMjIE5WTWUgRGlzayBNb3VudGluZyAjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwojIFByb3ZpZGUgdGhlIHBhdGggd2hlcmUgdGhlIE5WTWUgZGlzayBzaG91bGQgYmUgbW91bnRlZApNT1VOVF9QQVRIPSIvbnZtZWRyaXZlIgoKIyBDaGVjayBpZiB0aGUgVk0gaGFzIGFuIE5WTWUgZGlzawppZiBbIC1iIC9kZXYvbnZtZTBuMSBdOyB0aGVuCiAgICBsb2dNZXNzYWdlICJOVk1lIGRpc2sgZm91bmQuIENoZWNraW5nIGlmIGl0IGlzIGFscmVhZHkgbW91bnRlZC4uLiIKICAgICMjIENoZWNrIGlmIHRoZSBOVk1lIGRpc2sgaXMgYWxyZWFkeSBtb3VudGVkCiAgICBpZiBmaW5kbW50IC9kZXYvbnZtZTBuMTsgdGhlbgogICAgICAgIGxvZ01lc3NhZ2UgIk5WTWUgZGlzayBpcyBhbHJlYWR5IG1vdW50ZWQiCiAgICBlbHNlIAogICAgICAgIGxvZ01lc3NhZ2UgIk5WTWUgZGlzayBpcyBub3QgbW91bnRlZCIKICAgICAgICAjIyBGb3JtYXQgdGhlIHBhcnRpdGlvbgogICAgICAgIHN1ZG8gbWtmcy5leHQ0IC9kZXYvbnZtZTBuMQogICAgICAgICMjIFJ1biBwYXJ0cHJvYmUgdG8gdXBkYXRlIHRoZSBrZXJuZWwgcGFydGl0aW9uIHRhYmxlIHdpdGggdGhlIG5ldyBkcml2ZQogICAgICAgIHN1ZG8gcGFydHByb2JlIC9kZXYvbnZtZTBuMQogICAgICAgICMjIENyZWF0ZSBhIG1vdW50IHBvaW50CiAgICAgICAgc3VkbyBta2RpciAtcCAkTU9VTlRfUEFUSAogICAgICAgICMjIE1vdW50IHRoZSBwYXJ0aXRpb24KICAgICAgICBzdWRvIG1vdW50IC9kZXYvbnZtZTBuMSAkTU9VTlRfUEFUSAogICAgICAgICMjIEFkZCB0aGUgbW91bnQgcG9pbnQgdG8gdGhlIGZzdGFiIGZpbGUgc28gdGhhdCBpdCBpcyBtb3VudGVkIGF1dG9tYXRpY2FsbHkgYWZ0ZXIgYSByZWJvb3QKICAgICAgICBlY2hvICIvZGV2L252bWUwbjEgJE1PVU5UX1BBVEggZXh0NCBkZWZhdWx0cyxub2ZhaWwgMCAyIiB8IHN1ZG8gdGVlIC1hIC9ldGMvZnN0YWIKICAgICAgICAjIyBNYWtlIHRoZSBtb3VudCBwb2ludCBhY2Nlc3NpYmxlIHRvIGFsbCB1c2VycwogICAgICAgIHN1ZG8gY2htb2QgLVIgNzc3ICRNT1VOVF9QQVRICiAgICBmaQplbHNlCiAgICBsb2dNZXNzYWdlICJOVk1lIGRpc2sgbm90IGZvdW5kLiBTa2lwcGluZy4uLiIKZmkKI35+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fgoKIyMjIyMjIyMjIyMjIyMjIyMgU0xVUk0gSW5zdGFsbGF0aW9uICMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwojIEluc3RhbGwgb25seSBpZiBTTFVSTSBpcyBub3QgYWxyZWFkeSBpbnN0YWxsZWQKaWYgWyAtZCAiL2V0Yy9zbHVybSIgXTsgdGhlbgogICAgbG9nTWVzc2FnZSAiU0xVUk0gaXMgYWxyZWFkeSBpbnN0YWxsZWQhIFNraXBwaW5nLiIKZWxzZQogICAgbG9nTWVzc2FnZSAiSW5zdGFsbGluZyBTTFVSTSBvbiB0aGUgbG9jYWwgY29tcHV0ZXIuLi4iCgogICAgIyMgVGhlIFVidW50dSAyMC4wNCBMVFMgSFBDIGltYWdlIGRvZXMgbm90IGNvbWUgd2l0aCB0aGUgU0xVUk0gcmVwb3MgYXZhaWxhYmxlLCBzbyBhZGRpbmcgdGhlbSBmaXJzdAogICAgbG9nTWVzc2FnZSAiQWRkaW5nIHRoZSBTTFVSTSByZXBvc2l0b3J5IHRvIHRoZSBsaXN0IG9mIGluc3RhbGxlcnMuLi4iCiAgICBzdWRvIGFkZC1hcHQtcmVwb3NpdG9yeSAteSBwcGE6b21uaXZlY3Rvci9zbHVybS13bG0KCiAgICAjIyBVcGRhdGUgdGhlIGluc3RhbGxlciBsaXN0CiAgICBsb2dNZXNzYWdlICJVcGRhdGluZyB0aGUgbGlzdCBvZiBpbnN0YWxsZXJzLi4uIgogICAgc3VkbyBhcHQgdXBkYXRlCgogICAgIyMgQ2hlY2sgaWYgJ3NsdXJtJyBpcyBmb3VuZCBpbiB0aGUgYXB0LWNhY2hlIG9yIGxpc3Qgb2YgaW5zdGFsbGVycwogICAgbG9nTWVzc2FnZSAiQ2hlY2tpbmcgaWYgU0xVUk0gaXMgYXZhaWxhYmxlIGluIHRoZSBsaXN0IG9mIGluc3RhbGxlcnMuLi4iCiAgICBhcHQtY2FjaGUgc2VhcmNoIHNsdXJtCgogICAgIyMgSW5zdGFsbCBTTFVSTQogICAgbG9nTWVzc2FnZSAiSW5zdGFsbGluZyBTTFVSTS4uLiIKICAgIHN1ZG8gYXB0IGluc3RhbGwgc2x1cm1kIHNsdXJtY3RsZCAteQpmaQojfn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+CgojIyMjIyMjIyMjIyMjIyMjIyBTTFVSTSBDb25maWd1cmF0aW9uICMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCmxvZ01lc3NhZ2UgIkNvbmZpZ3VyaW5nIFNMVVJNLi4uIgojIENoZWNrIGlmIHRoZSBTTFVSTSBjb25maWd1cmF0aW9uIGZpbGUgYWxyZWFkeSBleGlzdHMKaWYgWyAtZiAiL2V0Yy9zbHVybS9zbHVybS5jb25mIiBdOyB0aGVuCiAgICBsb2dNZXNzYWdlICJTTFVSTSBjb25maWd1cmF0aW9uIGZpbGUgYWxyZWFkeSBleGlzdHMuIEV4aXRpbmcuIgogICAgZXhpdCAwCmZpCgpsb2dNZXNzYWdlICJDcmVhdGluZyB0aGUgU0xVUk0gY29uZmlndXJhdGlvbiBmaWxlLi4uIgoKIyMgR2V0IHRoZSBudW1iZXIgb2YgQ1BVcyBhbmQgc3VidHJhY3QgMiBzbyB0aGF0IHdlIGRvIG5vdCBzdGFydmUgdGhlIE9TCm51bUNQVXM9JChucHJvYykKam9ic0NQVXM9JCgoJG51bUNQVXMtMikpCgojIyBHZXQgdGhlIGFtb3VudCBvZiBSQU0gYW5kIHN1YnRyYWN0IDEwIEdCIHNvIHRoYXQgd2UgZG8gbm90IHN0YXJ2ZSB0aGUgT1MKIyMgSU1QT1JUQU5UOiBQYXNzIHRoZSBhbW91bnQgb2YgUkFNIGluICoqTUIqKiB3aGljaCBpcyB3aGF0IFNMVVJNIGV4cGVjdHMKdG90YWxNZW09JChMQU5HPUMgZnJlZXxhd2sgJy9eTWVtOi97cHJpbnQgJDJ9JykKam9ic01lbT0kKCgkdG90YWxNZW0vMTAyNC0xMDI0MCkpCgojIyBNYWtlIHRoZSBTTFVSTSBjb25maWd1cmF0aW9uIGRpcmVjdG9yeSB3cml0ZWFibGUKc3VkbyBjaG1vZCA3NzcgL2V0Yy9zbHVybQoKIyMgR2VuZXJhdGUgdGhlIFNMVVJNIGNvbmZpZ3VyYXRpb24gZmlsZQpzdWRvIGNhdCA8PCBFT0YgPiAvZXRjL3NsdXJtL3NsdXJtLmNvbmYKQ2x1c3Rlck5hbWU9bG9jYWxjbHVzdGVyClNsdXJtY3RsZEhvc3Q9bG9jYWxob3N0Ck1waURlZmF1bHQ9bm9uZQpQcm9jdHJhY2tUeXBlPXByb2N0cmFjay9saW51eHByb2MKUmV0dXJuVG9TZXJ2aWNlPTIKU2x1cm1jdGxkUGlkRmlsZT0vdmFyL3J1bi9zbHVybWN0bGQucGlkClNsdXJtY3RsZFBvcnQ9NjgxNwpTbHVybWRQaWRGaWxlPS92YXIvcnVuL3NsdXJtZC5waWQKU2x1cm1kUG9ydD02ODE4ClNsdXJtZFNwb29sRGlyPS92YXIvbGliL3NsdXJtL3NsdXJtZApTbHVybVVzZXI9c2x1cm0KU3RhdGVTYXZlTG9jYXRpb249L3Zhci9saWIvc2x1cm0vc2x1cm1jdGxkClN3aXRjaFR5cGU9c3dpdGNoL25vbmUKVGFza1BsdWdpbj10YXNrL25vbmUKIwojIFRJTUVSUwpJbmFjdGl2ZUxpbWl0PTAKS2lsbFdhaXQ9MzAKTWluSm9iQWdlPTMwMApTbHVybWN0bGRUaW1lb3V0PTEyMApTbHVybWRUaW1lb3V0PTMwMApXYWl0dGltZT0wCiMgU0NIRURVTElORwpTY2hlZHVsZXJUeXBlPXNjaGVkL2JhY2tmaWxsClNlbGVjdFR5cGU9c2VsZWN0L2NvbnNfdHJlcwpTZWxlY3RUeXBlUGFyYW1ldGVycz1DUl9Db3JlCiMKI0FjY291bnRpbmdTdG9yYWdlUG9ydD0KQWNjb3VudGluZ1N0b3JhZ2VUeXBlPWFjY291bnRpbmdfc3RvcmFnZS9ub25lCkpvYkNvbXBUeXBlPWpvYmNvbXAvbm9uZQpKb2JBY2N0R2F0aGVyRnJlcXVlbmN5PTMwCkpvYkFjY3RHYXRoZXJUeXBlPWpvYmFjY3RfZ2F0aGVyL25vbmUKU2x1cm1jdGxkRGVidWc9aW5mbwpTbHVybWN0bGRMb2dGaWxlPS92YXIvbG9nL3NsdXJtL3NsdXJtY3RsZC5sb2cKU2x1cm1kRGVidWc9aW5mbwpTbHVybWRMb2dGaWxlPS92YXIvbG9nL3NsdXJtL3NsdXJtZC5sb2cKIwojIENPTVBVVEUgTk9ERVMKTm9kZU5hbWU9bG9jYWxob3N0IENQVXM9JGpvYnNDUFVzIFJlYWxNZW1vcnk9JGpvYnNNZW0gU3RhdGU9VU5LTk9XTgpQYXJ0aXRpb25OYW1lPUxvY2FsUSBOb2Rlcz1BTEwgRGVmYXVsdD1ZRVMgTWF4VGltZT1JTkZJTklURSBTdGF0ZT1VUApFT0YKCiMjIE1ha2UgdGhlIFNMVVJNIGNvbmZpZ3VyYXRpb24gZGlyZWN0b3J5IHJlYWQtb25seQpzdWRvIGNobW9kIDc1NSAvZXRjL3NsdXJtLwoKIyMgU3RhcnQgdGhlIFNMVVJNIGRhZW1vbnMKc3VkbyBzeXN0ZW1jdGwgc3RhcnQgc2x1cm1jdGxkCnN1ZG8gc3lzdGVtY3RsIHN0YXJ0IHNsdXJtZAoKIyMgU3RhcnQgdGhlIGRhZW1vbnMgYXQgYm9vdApzdWRvIHN5c3RlbWN0bCBlbmFibGUgc2x1cm1jdGxkCnN1ZG8gc3lzdGVtY3RsIGVuYWJsZSBzbHVybWQKCmxvZ01lc3NhZ2UgIlRoZSBTTFVSTSBkYWVtb25zIGhhdmUgYmVlbiBzdGFydGVkIGFuZCB3aWxsIHN0YXJ0IGF1dG9tYXRpY2FsbHkgYXQgYm9vdC4iCgojIEVuc3VyZSB0aGF0IHRoZSBsb2NhbCBub2RlIGlzIHJlYWR5IHRvIHJ1biBqb2JzIAojc3VkbyBzY29udHJvbCB1cGRhdGUgbm9kZW5hbWU9bG9jYWxob3N0IHN0YXRlPWlkbGUKbG9nTWVzc2FnZSAiU0xVUk0gaGFzIGJlZW4gaW5zdGFsbGVkIGFuZCBjb25maWd1cmVkIG9uIHRoZSBsb2NhbCBjb21wdXRlci4iCiN+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn4KCiMjIyMjIyMjIyMjIyMjIyMjIFhGQ0Ugc2FuZCBHVUkgdG9vbHMgQ29uZmlndXJhdGlvbiAjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIwojIFJlbW92ZSB0aGUgZGVmYXVsdCBYRkNFIHNjcmVlbnNhdmVyIHRvIHByZXZlbnQgc2NyZWVuIGxvY2sKbG9nTWVzc2FnZSAiUmVtb3ZpbmcgdGhlIGRlZmF1bHQgWEZDRSBzY3JlZW5zYXZlciIKc3VkbyBhcHQtZ2V0IHJlbW92ZSB4ZmNlNC1zY3JlZW5zYXZlciAteQoKIyBEaXNhYmxlIENvbXBvc2l0aW5nIGluIFhGQ0UgPDw8PDw8PDw8PDw8PDw8LS08PDw8PDw8PDw8PDw8PDwtLSBNSUdIVCBOT1QgQkUgTkVFREVEIC0tIExFQVZFIEZPUiBGVVRVUkUgUkVGRVJFTkNFIQojIGxvZ01lc3NhZ2UgIkRpc2FibGluZyBDb21wb3NpdGluZyBpbiBYRkNFIgojIHhmY29uZi1xdWVyeSAtYyB4ZndtNCAtcCAvZ2VuZXJhbC91c2VfY29tcG9zaXRpbmcgLXMgZmFsc2UKIyB4ZmNvbmYtcXVlcnkgLS1jcmVhdGUgLWMgJ3hmd200JyAtcCAnL2dlbmVyYWwvdXNlX2NvbXBvc2l0aW5nJyAtLXR5cGUgJ2Jvb2wnIC0tc2V0ICdmYWxzZScKCiMgUmVtb3ZlIHRoZSBicm9rZW4gRmlyZWZveCBpbnN0YWxsYXRpb24gaW4gVTIyLjA0IERTVk0KbG9nTWVzc2FnZSAiUmVtb3ZpbmcgdGhlIGJyb2tlbiBGaXJlZm94IGluc3RhbGxhdGlvbiIKc3VkbyBzbmFwIHJlbW92ZSAtLXB1cmdlIGZpcmVmb3gKc3VkbyBhcHQgcHVyZ2UgZmlyZWZveCAteQojIyBJZiB0aGUgYWJvdmUgZG9lcyBub3QgcmVtb3ZlIHRoZSBicm9rZW4gV2ViIEJyb3dzZXIgaWNvbiBmcm9tIHRoZSBYRkNFIHBhbmVsLCB0cnkgdGhlIGZvbGxvd2luZwojICMjIElNUE9SVEFOVDogVGhlIHBsdWdpbiBudW1iZXIgbWF5IGNoYW5nZSwgY2hlY2sgdGhlIGN1cnJlbnQgbnVtYmVyIG1hbnVhbGx5IGJ5IGxvb2tpbmcgYXQgdGhlIC5kZXNrdG9wIGZpbGVzIGluIH4vLmNvbmZpZy94ZmNlNC9wYW5lbC9sYXVuY2hlci1OTiAod2hlcmUgTk4gaXMgdGhlIHBsdWdpbiBudW1iZXIpCiMgIyMgVGhpcyBjb21tYW5kIG1heSBiZSBvZiBoZWxwOiBzdWRvIGZpbmQgL2hvbWUvKi8uY29uZmlnIC10eXBlIGYgLWV4ZWMgZ3JlcCAtbCAibWljcm9zb2Z0LWVkZ2UtZGV2LmRlc2t0b3AiCmxvZ01lc3NhZ2UgIlJlbW92aW5nIHRoZSBicm9rZW4gV2ViIEJyb3dzZXIgaWNvbiBmcm9tIHRoZSBYRkNFIHBhbmVsIgp4ZmNvbmYtcXVlcnkgLS1yZXNldCAtYyAneGZjZTQtcGFuZWwnIC1wICcvcGx1Z2lucy9wbHVnaW4tMTEnIC0tcmVjdXJzaXZlCgojIEJlZm9yZSBjb250aW51aW5nIHdpdGggdGhlIGluc3RhbGxhdGlvbiwgY2hlY2sgaWYgZHBrZyBpcyBsb2NrZWQgYW5kIHdhaXQgZm9yIGl0IHRvIGJlIHVubG9ja2VkCndoaWxlIHN1ZG8gZnVzZXIgL3Zhci9saWIvZHBrZy9sb2NrID4vZGV2L251bGwgMj4mMSA7IGRvCiAgICBsb2dNZXNzYWdlICJXYWl0aW5nIDUgc2Vjb25kcyBmb3Igb3RoZXIgc29mdHdhcmUgbWFuYWdlcnMgdG8gZmluaXNoLi4uIgogICAgc2xlZXAgNQpkb25lCgojIFJlbW92ZSBNUyBFZGdlIERldiBhbmQgaW5zdGFsbCBQcm9kIHZlcnNpb24KbG9nTWVzc2FnZSAiUmVtb3ZpbmcgdGhlIGRldiB2ZXJzaW9uIG9mIE1pY3Jvc29mdCBFZGdlIGFuZCBpbnN0YWxsaW5nIHRoZSBwcm9kIHZlcnNpb24iCiMjIFJlbW92ZSB0aGUgZGV2IHZlcnNpb24KbG9nTWVzc2FnZSAiUmVtb3ZpbmcgdGhlIGRldiB2ZXJzaW9uIG9mIE1pY3Jvc29mdCBFZGdlIgpzdWRvIGFwdC1nZXQgcmVtb3ZlIG1pY3Jvc29mdC1lZGdlLWRldiAteQojIyBEb3dubG9hZCBhbmQgaW5zdGFsbCB0aGUgcHJvZCB2ZXJzaW9uCiMjIExhdGVzdCBzdGFibGUgdmVyc2lvbiBsaXN0ZWQgaGVyZTogaHR0cHM6Ly93d3cubWljcm9zb2Z0LmNvbS9lbi11cy9lZGdlL2J1c2luZXNzL2Rvd25sb2FkP2Zvcm09TUExM0ZKCiMjIFJlcG8gdmlzaWJsZSBoZXJlOiBodHRwczovL3BhY2thZ2VzLm1pY3Jvc29mdC5jb20vcmVwb3MvZWRnZS9wb29sL21haW4vbS9taWNyb3NvZnQtZWRnZS1zdGFibGUvCm1zRWRnZVByb2RWZXJzaW9uPSIxMzUuMC4zMTc5LjU0Igpsb2dNZXNzYWdlICJEb3dubG9hZGluZyBhbmQgaW5zdGFsbGluZyBNaWNyb3NvZnQgRWRnZSB2ZXJzaW9uICRtc0VkZ2VQcm9kVmVyc2lvbiIKd2dldCBodHRwczovL3BhY2thZ2VzLm1pY3Jvc29mdC5jb20vcmVwb3MvZWRnZS9wb29sL21haW4vbS9taWNyb3NvZnQtZWRnZS1zdGFibGUvbWljcm9zb2Z0LWVkZ2Utc3RhYmxlXyRtc0VkZ2VQcm9kVmVyc2lvbi0xX2FtZDY0LmRlYiAtTyBtaWNyb3NvZnQtZWRnZS5kZWIKbG9nTWVzc2FnZSAiSW5zdGFsbGluZyBNaWNyb3NvZnQgRWRnZSIKc3VkbyBhcHQgaW5zdGFsbCAuL21pY3Jvc29mdC1lZGdlLmRlYiAteQojIENoZWNrIGlmIHRoZXJlIHdhcyBubyBlcnJvciBhbmQgZGVsZXRlIHRoZSBkb3dubG9hZGVkIGZpbGUKaWYgWyAkPyAtZXEgMCBdOyB0aGVuCiAgICBsb2dNZXNzYWdlICJNaWNyb3NvZnQgRWRnZSBpbnN0YWxsZWQgc3VjY2Vzc2Z1bGx5IgogICAgcm0gbWljcm9zb2Z0LWVkZ2UuZGViCmVsc2UKICAgIGxvZ01lc3NhZ2UgIkVycm9yIGluc3RhbGxpbmcgTWljcm9zb2Z0IEVkZ2U6ICQ/IgogICAgZXhpdCAxCmZpCiN+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn4KCmxvZ01lc3NhZ2UgIkluc3RhbGxhdGlvbiBhbmQgY29uZmlndXJhdGlvbiBjb21wbGV0ZWQgc3VjY2Vzc2Z1bGx5LiIKIyB+fn4gRW5kaW5nIHRoZSB0aW1lciBhbmQgY2FsY3VsYXRpbmcgdGhlIHRpbWUgaXQgdG9vayB0byBydW4gdGhlIHNjcmlwdCB+fn4KbG9nTWVzc2FnZSAiVGhlIHNjcmlwdCB0b29rICQoKFNFQ09ORFMgLyA2MCkpIG1pbnV0ZXMgYW5kICQoKFNFQ09ORFMgJSA2MCkpIHNlY29uZHMgdG8gcnVuLiIKCiMjIFRvIGNoYW5nZSB0byBCYXNlIDY0IGVuY29kaW5nIHJ1bjoKIyMgICAgICBjYXQgPFNDUklQVC1OQU1FPi5zaCB8IGJhc2U2NCAtdyAwID4gPFNDUklQVC1OQU1FPi5zaC5iNjQKCiMhL2Jpbi9iYXNoCiMgVGhpcyBzY3JpcHQgcHJlcGFyZXMgYW4gSEIxMjAgSFBDIFZNIGZvciBydW5uaW5nIHNpbmdsZS1ub2RlIFNMVVJNCiMgSXQgYWxzbyBjaGVja3MgaWYgdGhlIE5WTWUgZGlzayBpcyBtb3VudGVkIGFuZCBpZiBub3QsIGl0IG1vdW50cyBpdCBhbmQgbWFrZXMgaXQgYWNjZXNzaWJsZSB0byBhbGwgdXNlcnMuCg==",
+      "repositoriesRaw": "[string(variables('loome').ProjectResources.DataRepositories)]",
+      "repositoriesEscaped": "[replace(variables('repositoriesRaw'), '\"', '\\\"')]",
+      "userDataScript": [
+        "#!/bin/bash",
+        "mkdir -p /opt/projectrepos",
+        "[concat('echo ', variables('repositoriesEscaped'), '> /opt/projectrepos/repositories.json')]",
+        "chmod 644 /opt/projectrepos/repositories.json",
+        "[concat('echo ', variables('scriptParse'), ' | base64 -d > /opt/projectrepos/parse.py')]",
+        "[concat('echo ', variables('scriptMount'), ' | base64 -d > /opt/projectrepos/mount_azure.py')]",
+        "[concat('echo ', variables('scriptConfigureDSVM'), ' | base64 -d > /opt/projectrepos/configure_dsvm.sh')]",
+        "sudo python3 /opt/projectrepos/parse.py --input /opt/projectrepos/repositories.json --output /opt/projectrepos/processed.json",
+        "sudo python3 /opt/projectrepos/mount_azure.py --input /opt/projectrepos/processed.json",
+        "sudo bash /opt/projectrepos/configure_dsvm.sh",
+        "sleep 5 && sudo rm -r /opt/projectrepos"
+      ]
+    },
+    "resources": [
+      {
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2020-05-01",
+        "name": "[variables('networkInterfaceName')]",
+        "location": "[variables('location')]",
+        "dependsOn": [
+          "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]"
+        ],
+        "properties": {
+          "ipConfigurations": [
+            {
+              "name": "ipconfig1",
+              "properties": {
+                "subnet": {
+                  "id": "[variables('subnetRef')]"
+                },
+                "privateIPAllocationMethod": "Dynamic"
+              }
+            }
+          ],
+          "networkSecurityGroup": {
+            "id": "[variables('nsgId')]"
+          }
+        }
+      },
+      {
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "apiVersion": "2020-05-01",
+        "name": "[variables('networkSecurityGroupName')]",
+        "location": "[variables('location')]",
+        "properties": {
+          "securityRules": [
+            {
+              "name": "JupyterHub",
+              "properties": {
+                "priority": 1010,
+                "protocol": "TCP",
+                "access": "Allow",
+                "direction": "Inbound",
+                "sourceAddressPrefix": "*",
+                "sourcePortRange": "*",
+                "destinationAddressPrefix": "*",
+                "destinationPortRange": "8000"
+              }
+            },
+            {
+              "name": "SSH",
+              "properties": {
+                "priority": 1030,
+                "protocol": "TCP",
+                "access": "Allow",
+                "direction": "Inbound",
+                "sourceAddressPrefix": "*",
+                "sourcePortRange": "*",
+                "destinationAddressPrefix": "*",
+                "destinationPortRange": "22"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "Microsoft.Compute/virtualMachines",
+        "apiVersion": "2019-07-01",
+        "name": "[variables('uniqueVMName')]",
+        "location": "[variables('location')]",
+        "dependsOn": [
+          "[resourceId('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]"
+        ],
+        "properties": {
+          "hardwareProfile": {
+            "vmSize": "[variables('vmSize')[parameters('Size')]]",
+          },
+          "storageProfile": {
+            "osDisk": {
+              "createOption": "fromImage",
+              "diskSizeGB": "[variables('osDiskSize')]",
+              "managedDisk": {
+                "storageAccountType": "[variables('osDiskType')]"
+              }
+            },
+            "imageReference": {
+              "publisher": "microsoft-dsvm",
+              "offer": "ubuntu-2204",
+              "sku": "2204-gen2",
+              "version": "latest"
+            }
+          },
+          "networkProfile": {
+            "networkInterfaces": [
+              {
+                "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+              }
+            ]
+          },
+          "osProfile": {
+            "computerName": "[variables('uniqueVMName')]",
+            "adminUsername": "[parameters('adminUsername')]",
+            "adminPassword": "[parameters('adminPassword')]",
+            "customData": "[base64(join(variables('userDataScript'), '\n'))]"
+          },
+          "priority": "[variables('instancePriority')[parameters('instanceType')]]",
+          "evictionPolicy": "[variables('instanceEvictionPolicy')[parameters('instanceType')]]",
+          "billingProfile": {
+            "maxPrice": "[variables('instanceMaxPrice')[parameters('instanceType')]]"
+          }
+        }
+      }
+    ],
+    "outputs": {
+       "loginUsername": {
+        "type": "string",
+        "value": "[parameters('adminUsername')]"
+       },
+        "privateIpAddress": {
+        "type": "string",
+        "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))).ipConfigurations[0].properties.privateIpAddress]"
+      },
+       "deployedVirtualMachineName": {
+        "type": "string",
+        "value": "[variables('uniqueVMName')]"
+       }
+    }
+}
