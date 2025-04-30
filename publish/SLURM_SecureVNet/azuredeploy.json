@@ -1,0 +1,355 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "ClusterAdminUsername": {
+            "type": "string",
+            "defaultValue": "hpcadmin",
+            "metadata": {
+              "description": "The username of the administrator for the cluster."
+            }
+        },
+        "ClusterAdminPassword": {
+            "type": "securestring",
+            "minLength": 12,
+            "maxLength": 72,
+            "metadata": {
+            "description": "Password for the administrator for the cluster. It must be at least 12 characters long, and have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character."
+            }
+        },
+        "NumberOfWorkerNodes": {
+            "metadata": {
+                "description": "Specify the number of worker nodes in the cluster."
+            },
+            "type": "int",
+            "defaultValue": 2,
+            "minValue": 1
+        },
+        "SizeOfWorkerNodes": {
+            "type": "string",
+            "defaultValue": "4-CPUs,8GB-RAM",
+            "allowedValues": [
+                "4-CPUs,8GB-RAM",
+                "8-CPUs,16GB-RAM",
+                "16-CPUs,32GB-RAM",
+                "HPC-200Gbps-InfiniBand,120-CPUs,456GB-RAM"
+            ],
+            "metadata": {
+              "description": "Select the size of the virtual machines deployed as worker nodes."
+            }
+        }
+    },
+    "variables": {
+        // Use the next lines if you want to use a custom script from the solution collection repo
+        //"solutionCollectionRepoURL": "https://produssolutionrepos.blob.core.windows.net/CONTAINER-NAME/",
+        //"solutionCollectionFolderName": "<FOLDER-NAME/",
+        //"installScriptFileName": "cyclecloud_app_server_install.py",
+        //"solutionCollectionSAS": "<REPO-KEY>",
+        //"installScriptURL": "[concat(variables('solutionCollectionRepoURL'), variables('solutionCollectionFolderName'), variables('installScriptFileName'), '?', variables('solutionCollectionSAS'))]",
+        "installScriptURL": "https://raw.githubusercontent.com/fayora/mydev-solution-collections/main/publish/SLURM_SecureVNet/cyclecloud_app_server_install.py",
+        "cycleCloudAppVersion": "8.6.0-3223",
+        "SLURMVersion": "23.02.7-1",
+        "computeApiVersion": "2019-03-01",
+        "resourceLocation": "[resourceGroup().location]",
+        "uniqueHash": "[uniqueString(deployment().properties.templateHash, deployment().name)]",
+        "cycleName": "[concat('cycleapp', take(variables('uniqueHash'),5), toLower(take(uniqueString(subscription().subscriptionId, deployment().name), 5)))]",
+        "username": "[parameters('ClusterAdminUsername')]",
+        "password": "[parameters('ClusterAdminPassword')]",
+        "cycleNic": "[concat('nic', variables('cycleName'))]",
+        "cycleNsgName": "[concat('nsg', variables('cycleName'))]",
+        "cycleSSHKeyName": "[concat('sshkey', variables('cycleName'))]",
+        // Only the VNet name
+        "vnetName": "[variables('loome').Account.SecureVnet.VnetName]",
+
+        // Only the subnet name
+        "cycleSubnetName": "[variables('loome').ProjectResources.SecureVnet.SubnetName]",
+
+        // Full VNet ID (across subscription and resource group)
+        // "vnetId": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', variables('loome').Account.SecureVnet.SubscriptionId, variables('loome').Account.SecureVnet.ResourceGroupName), 'Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
+
+        // Full subnet reference (VNet ID + subnet name)
+        // "subnetRef": "[concat(variables('vnetId'), '/subnets/', variables('subnetName'))]",
+
+        "vnetResourceGroup": "[variables('loome').Account.SecureVnet.ResourceGroupName]",
+        "cycleSubnetId": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('vnetResourceGroup'), '/providers/Microsoft.Network/virtualNetworks/', variables('vnetName'), '/subnets/', variables('cycleSubnetName'))]",
+        "roleAssignmentScope": "[concat('/Microsoft.Network/virtualNetworks/', variables('vnetName'), '/subnets/', variables('cycleSubnetName'))]",
+
+        "cyclecloudVmSize": "Standard_B8as_v2",
+        "cyclecloudVmStorage": "Premium_LRS",
+        "azureSovereignCloud": "public",
+
+        "storageAccountName": "[concat('sto', variables('cycleName'))]",
+        "storageAccountType": "Standard_LRS",
+        "WorkerSize": {
+            "4-CPUs,8GB-RAM": "Standard_F4s",
+            "8-CPUs,16GB-RAM": "Standard_F8s",
+            "16-CPUs,32GB-RAM": "Standard_F16s",
+            "HPC-200Gbps-InfiniBand,120-CPUs,456GB-RAM": "Standard_HB120rs_v3"
+        },
+        "workerVMSize": "[variables('WorkerSize')[parameters('SizeOfWorkerNodes')]]",
+        "CoreCount": {
+            "2-CPUs,4GB-RAM": 2,
+            "4-CPUs,8GB-RAM": 4,
+            "8-CPUs,16GB-RAM": 8,
+            "16-CPUs,32GB-RAM": 16,
+            "AI-V100-GPU,6-CPUs,112GB-RAM": 6,
+            "HPC-100Gbps-InfiniBand,44-CPUs,352GB-RAM": 44,
+            "HPC-200Gbps-InfiniBand,120-CPUs,456GB-RAM": 120,
+            "HPC-200Gbps-InfiniBand,120-CPUs,448GB-RAM": 120
+        },
+        "workerVMCoreCount": "[variables('CoreCount')[parameters('SizeOfWorkerNodes')]]",
+        "clusterOSImage": "microsoft-dsvm:ubuntu-hpc:2204:latest",
+        "networkApiVersion": "2017-06-01",
+        "contributor": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2022-09-01",
+            "name": "[variables('storageAccountName')]",
+            "location": "[variables('resourceLocation')]",
+            "sku": {
+                "name": "[variables('storageAccountType')]"
+            },
+            "kind": "StorageV2",
+            "properties": {
+                "allowBlobPublicAccess": false
+            }
+        },
+        {
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "name": "[variables('cycleNsgName')]",
+        "apiVersion": "[variables('networkApiVersion')]",
+        "location": "[variables('resourceLocation')]",
+        "properties": {
+            "securityRules": [
+            {
+                "name": "AllowSecuredCyclePortalInBound",
+                "properties": {
+                "protocol": "Tcp",
+                "sourcePortRange": "*",
+                "destinationPortRange": "443",
+                "sourceAddressPrefix": "Internet",
+                "destinationAddressPrefix": "VirtualNetwork",
+                "access": "Allow",
+                "priority": 2000,
+                "direction": "Inbound",
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+                }
+            },
+            {
+                "name": "AllowCyclePortalInBound",
+                "properties": {
+                "protocol": "Tcp",
+                "sourcePortRange": "*",
+                "destinationPortRange": "80",
+                "sourceAddressPrefix": "Internet",
+                "destinationAddressPrefix": "VirtualNetwork",
+                "access": "Allow",
+                "priority": 1000,
+                "direction": "Inbound",
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+                }
+            },
+            {
+                "name": "default-allow-ssh",
+                "properties": {
+                "protocol": "Tcp",
+                "sourcePortRange": "*",
+                "destinationPortRange": "22",
+                "sourceAddressPrefix": "*",
+                "destinationAddressPrefix": "*",
+                "access": "Allow",
+                "priority": 3000,
+                "direction": "Inbound",
+                "sourceAddressPrefixes": [],
+                "destinationAddressPrefixes": []
+                }
+            }
+            ]
+        },
+        "dependsOn": []
+        },
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "[variables('networkApiVersion')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkSecurityGroups', variables('cycleNsgName'))]"
+            ],
+            "location": "[variables('resourceLocation')]",
+            "name": "[variables('cycleNic')]",
+            "properties": {
+                "dnsSettings": {},
+                "enableAcceleratedNetworking": false,
+                "enableIPForwarding": false,
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "primary": true,
+                            "privateIPAddressVersion": "IPv4",
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('cycleSubnetId')]"
+                            }
+                        }
+                    }
+                ],
+                "networkSecurityGroup": {
+                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('cycleNsgName'))]"
+                },
+                "primary": true
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "[variables('computeApiVersion')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', variables('cycleNic'))]"
+            ],
+            "location": "[variables('resourceLocation')]",
+            "name": "[variables('cycleName')]",
+            "identity": {
+                "type": "systemAssigned"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[variables('cyclecloudVmSize')]"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('cycleNic'))]"
+                        }
+                    ]
+                },
+                "osProfile": {
+                    "adminUsername": "[variables('username')]",
+                    "adminPassword": "[variables('password')]",
+                    "computerName": "[variables('cycleName')]",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": false
+                    },
+                    "secrets": []
+                },
+                "storageProfile": {
+                    "dataDisks": [
+                        {
+                            "caching": "ReadOnly",
+                            "createOption": "Empty",
+                            "diskSizeGB": 128,
+                            "lun": 0,
+                            "managedDisk": {
+                                "storageAccountType": "[variables('cyclecloudVmStorage')]"
+                            }
+                        }
+                    ],
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "0001-com-ubuntu-server-focal",
+                        "sku": "20_04-lts-gen2",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage",
+                        "managedDisk": {
+                            "storageAccountType": "[variables('cyclecloudVmStorage')]"
+                        },
+                        "osType": "Linux"
+                    }
+                }
+            },
+            "resources": [
+                {
+                    "type": "extensions",
+                    "apiVersion": "2020-12-01",
+                    "dependsOn": [
+                        "[variables('cycleName')]"
+                    ],
+                    "location": "[variables('resourceLocation')]",
+                    "name": "InstallCycle",
+                    "properties": {
+                        "publisher": "Microsoft.Azure.Extensions",
+                        "type": "CustomScript",
+                        "typeHandlerVersion": "2.1",
+                        "autoUpgradeMinorVersion": true,
+                        "protectedSettings": {
+                            "commandToExecute": "[concat('sudo add-apt-repository -y ppa:deadsnakes/ppa && sudo apt-get update && sudo apt-get install -y python3.9 && sudo python3.9 cyclecloud_app_server_install.py ', '--acceptTerms', ' --useManagedIdentity',' --azureSovereignCloud ', '\"', variables('azureSovereignCloud'), '\"', ' --username ', '\"', variables('username'), '\"', ' --password ', '''', base64(variables('password')), '''', ' --storageAccount ', '\"', variables('storageAccountName'),'\"', ' --resourceGroup ', '\"', resourceGroup().name, '\"', ' --webServerPort 80 --webServerSslPort 443 --webServerMaxHeapSize 4096M', ' --numberOfWorkerNodes ', '\"', parameters('NumberOfWorkerNodes'),'\"', ' --sizeOfWorkerNodes ', '\"', variables('workerVMSize'),'\"', ' --osOfClusterNodes ', '\"', variables('clusterOSImage'),'\"', ' --countOfNodeCores ', '\"', variables('workerVMCoreCount'),'\"', ' --sshkey ', '\"', variables('cycleSSHKeyName'), '\"', ' --cycleCloudVersion ', '\"', variables('cycleCloudAppVersion'), '\"', ' --slurmVersion ', '\"', variables('slurmVersion'), '\"', ' --subnetId ', '\"', variables('cycleSubnetId'), '\"' )]",
+                            "fileUris": ["[variables('installScriptURL')]"]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2018-09-01-preview",
+            "name": "[guid(variables('uniqueHash'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('cycleName'))]"
+            ],
+            "properties": {
+                "roleDefinitionId": "[variables('contributor')]",
+                "principalId": "[reference(variables('cycleName'), '2019-12-01', 'Full').identity.principalId]",
+                "principalType": "ServicePrincipal"
+            }
+        },
+        {
+            "type": "Microsoft.Compute/sshPublicKeys",
+            "apiVersion": "2021-11-01",
+            "name": "[variables('cycleSSHKeyName')]",
+            "location": "[variables('resourceLocation')]"
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2022-09-01",
+            "name": "nestedTemplate",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('cycleName'))]"
+            ],
+            "resourceGroup": "[variables('vnetResourceGroup')]",
+            "properties": {
+                "mode": "Incremental",
+                "expressionEvaluationOptions": {
+                    "scope": "Outer"
+                    },
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.Authorization/roleAssignments",
+                            "apiVersion": "2022-04-01",
+                            "name": "[guid(resourceId('Microsoft.Compute/virtualMachines', variables('cycleName')))]",
+                            "scope": "[variables('roleAssignmentScope')]",
+                            "properties": {
+                                "roleDefinitionId": "[variables('contributor')]",
+                                "principalId": "[reference(variables('cycleName'), '2019-12-01', 'Full').identity.principalId]",
+                                "principalType": "ServicePrincipal"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "ClusterAdminUsername": {
+            "type": "string",
+            "value": "[parameters('ClusterAdminUsername')]"
+        },
+        "CycleCloudVMName": {
+            "type": "string",
+            "value": "[variables('cycleName')]"
+        },
+        "CycleCloudIPaddress": {
+            "type": "string",
+            "value": "[reference(variables('cycleNic')).ipConfigurations[0].properties.privateIPAddress]"
+        }
+    }
+}
