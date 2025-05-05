@@ -1,0 +1,219 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "VirtualMachineName": {
+        "type": "string",
+        "defaultValue": "",
+        "minLength": 4,
+        "maxLength": 15,
+        "metadata": {
+          "description": "The name you want to give your Virtual Machine. Windows VM names may only contain 15 letters or numbers, and can't include '.' or end with '-'."
+        }
+      },
+      "Size": {
+        "type": "string",
+        "defaultValue": "8 CPU cores, 32GB of RAM",
+        "allowedValues": [
+          "8 CPU cores, 32GB of RAM",
+          "16 CPU cores, 64GB of RAM",
+          "Single A100 GPU, 24 CPU cores, 220GB of RAM"
+        ],
+        "metadata": {
+          "description": "Choose a virtual machine size with or without a GPU."
+        }
+      },
+      "adminUsername": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "metadata": {
+          "description": "The username for the Administrator's account. A username must only contain letters, numbers, hyphens, and underscores and may not start with a hyphen or number."
+        }
+      },
+      "adminPassword": {
+          "type": "securestring",
+          "minLength": 12,
+          "maxLength": 72,
+          "metadata": {
+          "description": "Password for the Virtual Machine. It must be at least 12 characters long, and have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character."
+          }
+      },
+      "instanceType": {
+        "type": "string",
+        "defaultValue": "Regular",
+        "allowedValues": [
+          "Spot",
+          "Regular"
+        ],
+        "metadata": {
+          "description": "Select between a regular or a spot instance. Spot instances cost significantly less but can be turned off unexpectedly."
+        }
+      },
+    },
+    "variables": {
+      "osDiskSize": "256",
+      "vmSize": {
+        "8 CPU cores, 32GB of RAM": "Standard_B8as_v2",
+        "16 CPU cores, 64GB of RAM": "Standard_B16as_v2",
+        "Single A100 GPU, 24 CPU cores, 220GB of RAM": "Standard_NC24ads_A100_v4"
+      },
+      "location": "[resourceGroup().location]",
+
+      // Unique VM name, replacing '.' with '' and adding a unique string to the end, and then trimming to 15 characters; this is to ensure that the VM name is unique and does not exceed the maximum length for Azure VM names
+      "unTrimmedVMName": "[concat(replace(toLower(parameters('VirtualMachineName')), '.', ''), '-', uniqueString(parameters('VirtualMachineName')))]",
+      "uniqueVMName": "[substring(variables('unTrimmedVMName'), 0, 15)]",
+
+      // Only the VNet name
+      "virtualNetworkName": "[variables('loome').Account.SecureVnet.VnetName]",
+
+      // Only the subnet name
+      "subnetName": "[variables('loome').ProjectResources.SecureVnet.SubnetName]",
+
+      // Full VNet ID (across subscription and resource group)
+      "vnetId": "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', variables('loome').Account.SecureVnet.SubscriptionId, variables('loome').Account.SecureVnet.ResourceGroupName), 'Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
+
+      // Full subnet reference (VNet ID + subnet name)
+      "subnetRef": "[concat(variables('vnetId'), '/subnets/', variables('subnetName'))]",
+
+      // NSG and NIC
+      "networkSecurityGroupName": "[concat('NSG', uniqueString(resourceGroup().id))]",
+      "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
+      "networkInterfaceName": "[concat(parameters('VirtualMachineName'), 'NetInt')]",
+
+      "osDiskType": "Premium_LRS",
+      "instancePriority": {
+        "Spot": "Spot",
+        "Regular": "Regular"
+      },
+      "instanceEvictionPolicy": {
+        "Spot": "Deallocate",
+        "Regular": null
+      },
+      "instanceMaxPrice": {
+        "Spot": -1,
+        "Regular": null
+      },
+      "scriptParse": "",
+      "scriptMount": "",
+      "scriptConfigureDSVM": "",
+      "repositoriesRaw": "[string(variables('loome').ProjectResources.DataRepositories)]",
+      "repositoriesEscaped": "[replace(variables('repositoriesRaw'), '\"', '\\\"')]",
+      "userDataScript": []
+    },
+    "resources": [
+      {
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2020-05-01",
+        "name": "[variables('networkInterfaceName')]",
+        "location": "[variables('location')]",
+        "dependsOn": [
+          "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]"
+        ],
+        "properties": {
+          "ipConfigurations": [
+            {
+              "name": "ipconfig1",
+              "properties": {
+                "subnet": {
+                  "id": "[variables('subnetRef')]"
+                },
+                "privateIPAllocationMethod": "Dynamic"
+              }
+            }
+          ],
+          "networkSecurityGroup": {
+            "id": "[variables('nsgId')]"
+          }
+        }
+      },
+      {
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "apiVersion": "2020-05-01",
+        "name": "[variables('networkSecurityGroupName')]",
+        "location": "[variables('location')]",
+        "properties": {
+          "securityRules": [
+            {
+              "name": "RDP",
+              "properties": {
+                "priority": 1010,
+                "protocol": "TCP",
+                "access": "Allow",
+                "direction": "Inbound",
+                "sourceAddressPrefix": "*",
+                "sourcePortRange": "*",
+                "destinationAddressPrefix": "*",
+                "destinationPortRange": "3389"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "Microsoft.Compute/virtualMachines",
+        "apiVersion": "2019-07-01",
+        "name": "[variables('uniqueVMName')]",
+        "location": "[variables('location')]",
+        "dependsOn": [
+          "[resourceId('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]"
+        ],
+        "properties": {
+          "hardwareProfile": {
+            "vmSize": "[variables('vmSize')[parameters('Size')]]"
+          },
+          "storageProfile": {
+            "osDisk": {
+              "createOption": "fromImage",
+              "diskSizeGB": "[variables('osDiskSize')]",
+              "managedDisk": {
+                "storageAccountType": "[variables('osDiskType')]"
+              }
+            },
+            "imageReference": {
+              "publisher": "microsoft-dsvm",
+              "offer": "dsvm-win-2022",
+              "sku": "winserver-2022",
+              "version": "latest"
+            }
+          },
+          "networkProfile": {
+            "networkInterfaces": [
+              {
+                "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+              }
+            ]
+          },
+          "osProfile": {
+            "computerName": "[variables('uniqueVMName')]",
+            "adminUsername": "[parameters('adminUsername')]",
+            "adminPassword": "[parameters('adminPassword')]",
+            "windowsConfiguration": {
+                        "enableAutomaticUpdates": true,
+                        "provisionVmAgent": true
+            },
+            "customData": "[base64(join(variables('userDataScript'), '\n'))]"
+          },
+          "priority": "[variables('instancePriority')[parameters('instanceType')]]",
+          "evictionPolicy": "[variables('instanceEvictionPolicy')[parameters('instanceType')]]",
+          "billingProfile": {
+            "maxPrice": "[variables('instanceMaxPrice')[parameters('instanceType')]]"
+          }
+        }
+      }
+    ],
+    "outputs": {
+       "loginUsername": {
+        "type": "string",
+        "value": "[parameters('adminUsername')]"
+       },
+        "privateIpAddress": {
+        "type": "string",
+        "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))).ipConfigurations[0].properties.privateIpAddress]"
+      },
+       "deployedVirtualMachineName": {
+        "type": "string",
+        "value": "[variables('uniqueVMName')]"
+       }
+    }
+}

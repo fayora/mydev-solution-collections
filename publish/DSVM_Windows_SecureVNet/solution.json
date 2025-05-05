@@ -1,0 +1,9 @@
+{
+    "name": "Windows Data Analysis Workstation",
+    "description": "Deploys a very powerful workstation using one of the most popular images provided by Microsoft. This VM comes packed with applications and solutions for complex data analytics and machine learning. It can be deployed with or without a GPU.",
+    "version": "2025.04.30.1",
+    "icon": "fa fa-windows",
+    "upgradeAllowed": true,
+    "deploymentMode": "User",
+    "statusCheckFileName": "checkStatus.ps1"
+}
