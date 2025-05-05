@@ -6,6 +6,7 @@
         "type": "string",
         "defaultValue": "",
         "minLength": 4,
+        "maxLength": 15,
         "metadata": {
           "description": "The name you want to give your Virtual Machine. Linux VM names may only contain letters, numbers, '.', and '-'."
         }
@@ -61,7 +62,9 @@
       },
       "location": "[resourceGroup().location]",
 
-      "uniqueVMName": "[concat(replace(toLower(parameters('VirtualMachineName')), '.', ''), '-', uniqueString(parameters('VirtualMachineName')))]",
+      // Unique VM name, replacing '.' with '' and adding a unique string to the end, and then trimming to 15 characters; this is to ensure that the VM name is unique and does not exceed the maximum length for Azure VM names
+      "unTrimmedVMName": "[concat(replace(toLower(parameters('VirtualMachineName')), '.', ''), '-', uniqueString(parameters('VirtualMachineName')))]",
+      "uniqueVMName": "[substring(variables('unTrimmedVMName'), 0, 15)]",
 
       // Only the VNet name
       "virtualNetworkName": "[variables('loome').Account.SecureVnet.VnetName]",
@@ -184,7 +187,7 @@
         ],
         "properties": {
           "hardwareProfile": {
-            "vmSize": "[variables('vmSize')[parameters('Size')]]",
+            "vmSize": "[variables('vmSize')[parameters('Size')]]"
           },
           "storageProfile": {
             "osDisk": {
