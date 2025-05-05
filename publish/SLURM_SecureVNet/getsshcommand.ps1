@@ -1,3 +1,11 @@
+# Get the trimmed name of the Solution Collection from the Resource Group name
+$stringArray = $resourceGroupName.Split("-")
+$solutionCollectionIndex = $stringArray.Count - 2
+$solutionCollectionName = $stringArray[$solutionCollectionIndex].Replace("_", "").Replace(".", "")
+
+# Specify the name of the private key file by using the name of the Solution Collection, so that it is easy to identify
+$downloadFileName = $solutionCollectionName + "-cluster.pem"
+
 try {
     # Only install modules that are used to avoid agent timeout (3mins)
     if (-Not (Get-Module -ListAvailable -Name Az.Accounts)) {
@@ -15,20 +23,16 @@ try {
 
     # Get the network interface detail of the scheduler node
     $networkInterfaces = Get-AzNetworkInterface -ResourceGroupName $resourceGroupName
-    # Find the network interface of the scheduler node by looking for "scheduler-" at the beginning of the name of the virtual machine it is attached to
-    $schedulerNetworkInterface = $networkInterfaces | Where-Object { $_.VirtualMachine.Id -like "*scheduler-*" }
+    $schedulerNetworkInterface = $networkInterfaces | Where-Object {($_.VirtualMachine.Id.Split("/"))[-1] -match "scheduler-*"}
 
-    # Pick up its public IP address name
-    $publicIpAddressName = ($schedulerNetworkInterface.IpConfigurations.PublicIpAddress.Id.Split("/"))[-1]
-
-    # Get the public IP address of the scheduler
-    $schedulerPublicIpAddress = (Get-AzPublicIpAddress -ResourceGroupName $resourceGroupName -Name $publicIpAddressName).IpAddress
+    # Get the private IP address of the scheduler
+    $schedulerPrivateIpAddress = $schedulerNetworkInterface.IpConfigurations.PrivateIpAddress
 
     # Disconnect account after use
     Disconnect-AzAccount
 
     # Assign value  to $result so it can be return to the UI
-    $result = "ssh hpcadmin@" + $schedulerPublicIpAddress + " -i <private key>"
+    $result = "ssh $ClusterAdminUsername@" + $schedulerPrivateIpAddress + " -i $downloadFileName"
 }
 catch {
     Write-Host "Unable to get ssh detail of the scheduler node." $_.Exception.Message
