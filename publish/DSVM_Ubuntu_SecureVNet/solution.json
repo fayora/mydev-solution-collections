@@ -1,6 +1,6 @@
 {
-    "name": "Research Workstation",
-    "description": "Deploys a powerful workstation with applications and solutions for complex data analytics and machine learning. It can be deployed with or without a GPU.",
+    "name": "Linux Data Analysis Workstation",
+    "description": "Deploys a powerful workstation with applications and solutions for complex data analyses and machine learning. It is deployed in an isolated, secure environment.",
     "version": "2025.04.01.1",
     "icon": "fa fa-linux",
     "upgradeAllowed": true,
