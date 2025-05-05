@@ -219,7 +219,3 @@ logMessage "The script took $((SECONDS / 60)) minutes and $((SECONDS % 60)) seco
 
 ## To change to Base 64 encoding run:
 ##      cat <SCRIPT-NAME>.sh | base64 -w 0 > <SCRIPT-NAME>.sh.b64
-
-#!/bin/bash
-# This script prepares an HB120 HPC VM for running single-node SLURM
-# It also checks if the NVMe disk is mounted and if not, it mounts it and makes it accessible to all users.
