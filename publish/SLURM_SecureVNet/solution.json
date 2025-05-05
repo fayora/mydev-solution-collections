@@ -1,6 +1,6 @@
 {
-    "name": "SLURM cluster for HPC",
-    "description": "Deploys a SLURM cluster with your specified number of worker nodes and node sizes.",
+    "name": "Secure SLURM cluster for HPC",
+    "description": "Deploys a SLURM cluster that is isolated in a private network, with your specified number of worker nodes and node sizes.",
     "version": "2025.04.30.1",
     "icon": "fa fa-cubes",
     "deploymentMode": "User",
