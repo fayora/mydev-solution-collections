@@ -100,7 +100,7 @@ function Mount-AzureFileShare {
 Write-Host "Starting to mount Azure file shares..."
 
 $driveIndex = 0
-foreach ($repo in $config.DataRepositories) {
+foreach ($repo in $config) {
     # Check if we have available drive letters
     if ($driveIndex -ge $availableDriveLetters.Count) {
         Write-Host "ERROR: No more available drive letters to use!"
