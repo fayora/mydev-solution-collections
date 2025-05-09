@@ -73,9 +73,8 @@ function Mount-AzureFileShare {
     Write-Host "Mounting $FileshareName from $StorageAccountName as drive $DriveLetter..."
     
     # Save the password so the drive will persist on reboot
-    $cmdKeyCommand = "cmdkey /add:`"$StorageAccountName.file.core.windows.net`" /user:`"localhost\$StorageAccountName`" /pass:`'$StorageAccountKey`'"
     Write-Host "Storing credentials for $FileshareName using key $StorageAccountKey..."
-    cmd.exe /C "$cmdKeyCommand"
+    cmd.exe /C "cmdkey /add:`"$StorageAccountName.file.core.windows.net`" /user:`"localhost\$StorageAccountName`" /pass:`"$StorageAccountKey`""
     
     # Check if drive is already mounted
     $existingDrive = Get-PSDrive -Name $DriveLetter -ErrorAction SilentlyContinue
