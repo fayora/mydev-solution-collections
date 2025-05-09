@@ -1,4 +1,4 @@
-# Script to mount Azure File Shares from a JSON configuration file
+# Script to mount Azure File Shares from a JSON file
 # It accepts a JSON string with the following structure:
 # {
 #     "DataRepositories": [
@@ -15,7 +15,7 @@
 #     ]
 # }
 
-# Parameter to accept JSON configuration string, passed from the command line
+# Parameter to accept JSON string, passed from the command line
 param (
     [string]$jsonConfig
 )
@@ -31,20 +31,27 @@ $logFile = Join-Path -Path $logDir -ChildPath "mountRepos.log"
 # Redirect all output to the log file
 $null = Start-Transcript -Path $logFile -Append -NoClobber
 
-# Check if the JSON configuration is provided
+# Check if the JSON is provided
 if (-not $jsonConfig) {
-    Write-Host "ERROR: No JSON configuration provided. Exiting."
+    Write-Host "ERROR: No JSON provided. Exiting."
     exit 1
 }
+
+# Output the JSON input for reference
+Write-Host "----------------------------------------"
+Write-Host "Input JSON:"
+Write-Host "$jsonConfig"
+Write-Host "----------------------------------------"
+ 
 # Check if the JSON is valid
 try {
     $jsonConfig | ConvertFrom-Json | Out-Null
 } catch {
-    Write-Host "ERROR: Invalid JSON configuration. Exiting."
+    Write-Host "ERROR: Invalid JSON. Exiting."
     exit 1
 }
 
-# Parse the JSON configuration
+# Parse the JSON
 $config = $jsonConfig | ConvertFrom-Json
 
 # Available drive letters to use (excluding already used ones)
