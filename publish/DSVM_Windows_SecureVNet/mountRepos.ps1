@@ -77,6 +77,9 @@ function Mount-AzureFileShare {
     Write-Host "cmdkey /add:`"$StorageAccountName.file.core.windows.net`" /user:`"localhost\$StorageAccountName`" /pass:`"$StorageAccountKey`""
     Write-Host "Executing command..."
     cmd.exe /C "cmdkey /add:`"$StorageAccountName.file.core.windows.net`" /user:`"localhost\$StorageAccountName`" /pass:`"$StorageAccountKey`""
+    Write-Host "Command executed. Listing stored credentials:"
+    cmd.exe /C "cmdkey /list"
+    Write-Host "--------------------------------"
     
     # Check if drive is already mounted
     $existingDrive = Get-PSDrive -Name $DriveLetter -ErrorAction SilentlyContinue
@@ -86,11 +89,14 @@ function Mount-AzureFileShare {
     }
     
     # Mount the drive
-    $rootPath = "\\$StorageAccountName.file.core.windows.net\$FileshareName"
+    $rootPath = "\\$($StorageAccountName).file.core.windows.net\$($FileshareName)"
     Write-Host "Mounting $rootPath as drive $DriveLetter..."
     try {
+        Write-Host "Attempting to mount using:"
+        Write-Host "New-PSDrive -Name $DriveLetter -PSProvider FileSystem -Root $rootPath -Persist -Scope Global"
         New-PSDrive -Name $DriveLetter -PSProvider FileSystem -Root $rootPath -Persist -Scope Global
         Write-Host "Successfully mounted $FileshareName as drive $DriveLetter."
+        Write-Host "--------------------------------"
     }
     catch {
         Write-Host "ERROR: Failed to mount $FileshareName as drive $DriveLetter. Error: $_"
