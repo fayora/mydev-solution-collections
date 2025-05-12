@@ -19,6 +19,9 @@
 param (
     [string]$jsonConfigBase64
 )
+# Start a timer to measure script execution time
+$startTime = Get-Date
+
 # Convert the base64 encoded JSON string back to a regular string
 $jsonConfig = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String($jsonConfigBase64))
 
@@ -32,6 +35,9 @@ if (-not (Test-Path -Path $logDir)) {
 $logFile = Join-Path -Path $logDir -ChildPath "mountRepos.log"
 # Redirect all output to the log file
 $null = Start-Transcript -Path $logFile -Append -NoClobber
+
+# Write the start time to the log file
+Write-Host "Script started at: $startTime"
 
 # Check if the JSON is provided
 if (-not $jsonConfig) {
@@ -72,9 +78,11 @@ function Mount-AzureFileShare {
         [string]$DriveLetter
     )
     
+    Write-Host "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     Write-Host "Mounting $FileshareName from $StorageAccountName as drive $DriveLetter..."
     
     # Save the password so the drive will persist on reboot
+    Write-Host "--------------------------------"
     Write-Host "Storing credentials for $FileshareName using key $StorageAccountKey with command:"
     Write-Host "cmdkey /add:`"$StorageAccountName.file.core.windows.net`" /user:`"localhost\$StorageAccountName`" /pass:`"$StorageAccountKey`""
     Write-Host "Executing command..."
@@ -98,15 +106,18 @@ function Mount-AzureFileShare {
         Write-Host "New-PSDrive -Name $DriveLetter -PSProvider FileSystem -Root $rootPath -Persist -Scope Global"
         New-PSDrive -Name $DriveLetter -PSProvider FileSystem -Root $rootPath -Persist -Scope Global
         Write-Host "Successfully mounted $FileshareName as drive $DriveLetter."
-        Write-Host "--------------------------------"
+        Write-Host "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     }
     catch {
         Write-Host "ERROR: Failed to mount $FileshareName as drive $DriveLetter. Error: $_"
+        Write-Host "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
     }
 }
 
 # Main script execution
 Write-Host "Starting to mount Azure file shares..."
+Write-Host "=========================================="
+Write-Host "Available drive letters: $($availableDriveLetters -join ', ')"
 
 $driveIndex = 0
 foreach ($repo in $config) {
@@ -126,4 +137,10 @@ foreach ($repo in $config) {
 }
 
 Write-Host "File share mounting process completed."
+# Calculate and display the total execution time
+$endTime = Get-Date
+$executionTime = $endTime - $startTime
+Write-Host "Script completed at: $endTime"
+Write-Host "Total execution time: $($executionTime.TotalSeconds) seconds"
+Write-Host "=========================================="
 Stop-Transcript

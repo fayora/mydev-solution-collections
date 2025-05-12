@@ -5,6 +5,9 @@ param (
     [string]$jsonConfig
 )
 
+# Start a timer to measure script execution time
+$startTime = Get-Date
+
 # Write the output to a log file
 # ====================================================================================
 # Ensure the directory exists in the ProgramData folder
@@ -17,9 +20,12 @@ $logFile = Join-Path -Path $logDir -ChildPath "bootStrapScript.log"
 # Redirect all output to the log file
 $null = Start-Transcript -Path $logFile -Append -NoClobber
 
+# Write the start time to the log file
+Write-Host "Script started at: $startTime"
+
 # Specify the scripts directory and create it if it doesn't exist
 # ====================================================================================
-$LoomeScriptsDir ="C:\ProgramData\LoomeAssist"
+$LoomeScriptsDir = Join-Path -Path $Env:ProgramData -ChildPath "Loome"
 if (!(Test-Path $LoomeScriptsDir)) {
     New-Item -ItemType Directory -Path $LoomeScriptsDir -Force | Out-Null
 }
@@ -45,3 +51,13 @@ $MountScriptCommand
 "
 # Pipe the contents of the startup script to the startup file
 $StartupScript | Out-File -FilePath $StartupFile -Encoding ascii
+
+Write-Host "Bootstrap script completed."
+# Calculate and display the total execution time
+$endTime = Get-Date
+$executionTime = $endTime - $startTime
+Write-Host "Script completed at: $endTime"
+Write-Host "Total execution time: $($executionTime.TotalSeconds) seconds"
+Write-Host "=========================================="
+# Stop the transcript
+Stop-Transcript
