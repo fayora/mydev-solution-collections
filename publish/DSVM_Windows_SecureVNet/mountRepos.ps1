@@ -69,6 +69,12 @@ $driveLetters = @('K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W
 $usedDrives = (Get-PSDrive -PSProvider FileSystem).Name
 $availableDriveLetters = $driveLetters | Where-Object { $usedDrives -notcontains $_ }
 
+# Function to check if a repository is already mounted
+function Test-RepositoryMounted ($StorageHost, $FileShareName) {
+    $ExistingDrive = Get-PSDrive | Where-Object { "\\$($StorageHost)\$($FileShareName)" -eq $_.DisplayRoot } | Select-Object -First 1;
+    return $null -ne $ExistingDrive;
+}
+
 # Function to mount a file share
 function Mount-AzureFileShare {
     param (
@@ -80,6 +86,13 @@ function Mount-AzureFileShare {
     
     Write-Host "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     Write-Host "Mounting $FileshareName from $StorageAccountName as drive $DriveLetter..."
+
+    # Check if the drive is already mounted
+    Write-Host "Checking if $FileshareName is already mounted..."
+    if (Test-RepositoryMounted -StorageHost "$($StorageAccountName).file.core.windows.net" -FileShareName $FileshareName) {
+        Write-Host "WARNING: Drive $FileshareName is already mounted. Skipping..."
+        return
+    }
     
     # Save the password so the drive will persist on reboot
     Write-Host "--------------------------------"
@@ -91,7 +104,8 @@ function Mount-AzureFileShare {
     cmd.exe /C "cmdkey /list"
     Write-Host "--------------------------------"
     
-    # Check if drive is already mounted
+    # Check if drive letter has been taken by another share
+    Write-Host "Checking if drive letter $DriveLetter is already in use..."
     $existingDrive = Get-PSDrive -Name $DriveLetter -ErrorAction SilentlyContinue
     if ($existingDrive) {
         Write-Host "WARNING: Drive $DriveLetter is already in use. Skipping..."
