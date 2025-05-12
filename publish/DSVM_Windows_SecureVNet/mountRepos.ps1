@@ -15,10 +15,12 @@
 #     ]
 # }
 
-# Parameter to accept JSON string, passed from the command line
+# Parameter to accept JSON string, passed from the command line as a base64 encoded string
 param (
-    [string]$jsonConfig
+    [string]$jsonConfigBase64
 )
+# Convert the base64 encoded JSON string back to a regular string
+$jsonConfig = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String($jsonConfigBase64))
 
 # Write the output to a log file
 # Ensure the directory exists in the ProgramData folder

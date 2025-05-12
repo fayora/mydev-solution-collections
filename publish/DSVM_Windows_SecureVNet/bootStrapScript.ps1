@@ -31,13 +31,17 @@ $MountScript = "mountRepos.ps1"
 $MountScriptPath = Join-Path -Path $LoomeScriptsDir -ChildPath $MountScript
 # Copy the mount script to the directory
 Copy-Item -Path $PSScriptRoot\$MountScript -Destination $MountScriptPath -Force
+# Convert the JSON string to base64 for passing to the script
+$jsonConfigBase64 = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($jsonConfig))
+# Create the command to run the mount script with the JSON string as an argument
+$MountScriptCommand = "Powershell.exe -WindowStyle Hidden -File $MountScriptPath `"$jsonConfigBase64`""
 
 # Startup Script: Creates a script to run the other scripts each time the VM starts up
 # ====================================================================================
 $StartupFile ="C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup\LoomeBootStrapScript.cmd"
 $StartupScript ="
 echo Run the mount script for all Loome repositories
-Powershell.exe -WindowStyle Hidden -File $MountScriptPath `"$jsonConfig`"
+$MountScriptCommand
 "
 # Pipe the contents of the startup script to the startup file
 $StartupScript | Out-File -FilePath $StartupFile -Encoding ascii
