@@ -84,17 +84,14 @@
             "4 CPUs, 8GB of RAM": "Standard_B4als_v2",
             "8 CPUs, 16GB of RAM": "Standard_B8als_v2",
             "16 CPUs, 32GB of RAM": "Standard_B16als_v2",
-            "HPC 200Gbps InfiniBand, 120 CPUs, 456GB of RAM": "Standard_HB120rs_v3"
+            "HPC 200Gbps InfiniBand, 120 CPUs, 456GB of RAM": "Standard_HB120rs_v2"
         },
         "workerVMSize": "[variables('WorkerSize')[parameters('SizeOfWorkerNodes')]]",
         "CoreCount": {
             "4 CPUs, 8GB of RAM": 4,
             "8 CPUs, 16GB of RAM": 8,
             "16 CPUs, 32GB of RAM": 16,
-            "AI-V100-GPU,6-CPUs,112GB-RAM": 6,
-            "HPC-100Gbps-InfiniBand,44-CPUs,352GB-RAM": 44,
-            "HPC 200Gbps InfiniBand, 120 CPUs, 456GB of RAM": 120,
-            "HPC-200Gbps-InfiniBand,120-CPUs,448GB-RAM": 120
+            "HPC 200Gbps InfiniBand, 120 CPUs, 456GB of RAM": 120
         },
         "workerVMCoreCount": "[variables('CoreCount')[parameters('SizeOfWorkerNodes')]]",
         "clusterOSImage": "microsoft-dsvm:ubuntu-hpc:2204:latest",
