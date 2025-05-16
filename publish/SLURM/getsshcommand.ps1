@@ -1,3 +1,5 @@
+$keepFile = 'True'
+
 try {
     # Only install modules that are used to avoid agent timeout (3mins)
     if (-Not (Get-Module -ListAvailable -Name Az.Accounts)) {
