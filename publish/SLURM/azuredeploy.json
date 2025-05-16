@@ -2,7 +2,22 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "NumberOfWorkerNodes":{
+        "ClusterAdminUsername": {
+            "type": "string",
+            "defaultValue": "hpcadmin",
+            "metadata": {
+              "description": "The username of the administrator for the cluster."
+            }
+        },
+        "ClusterAdminPassword": {
+            "type": "securestring",
+            "minLength": 12,
+            "maxLength": 72,
+            "metadata": {
+            "description": "Password for the administrator for the cluster. It must be at least 12 characters long, and have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character."
+            }
+        },
+        "NumberOfWorkerNodes": {
             "metadata": {
                 "description": "Specify the number of worker nodes in the cluster."
             },
@@ -47,8 +62,8 @@
         "resourceLocation": "[resourceGroup().location]",
         "uniqueHash": "[uniqueString(deployment().properties.templateHash, deployment().name)]",
         "cycleName": "[concat('cycleapp', take(variables('uniqueHash'),5), toLower(take(uniqueString(subscription().subscriptionId, deployment().name), 5)))]",
-        "username": "hpcadmin",
-        "password": "LoomeRockS12",
+        "username": "[parameters('ClusterAdminUsername')]",
+        "password": "[parameters('ClusterAdminPassword')]",
         "cycleNic": "[concat('nic', variables('cycleName'))]",
         "cycleNsgName": "[concat('nsg', variables('cycleName'))]",
         "cycleIPName": "[concat('ip', variables('cycleName'))]",
@@ -335,7 +350,7 @@
     "outputs": {
         "SystemID1": {
             "type": "string",
-            "value": "[variables('password')]"
+            "value": "[parameters('ClusterAdminUsername')]"
         },
         "SystemID2": {
             "type": "string",
