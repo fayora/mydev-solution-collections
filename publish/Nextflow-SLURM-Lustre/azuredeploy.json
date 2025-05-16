@@ -17,6 +17,7 @@
             "allowedValues": [
                 "8-CPUs, 32GB-RAM",
                 "16-CPUs, 64GB-RAM",
+                "32-CPUs, 128GB-RAM",
                 "AI, A100-GPU, 24-CPUs, 220GB-RAM",
                 "HPC, 200Gbps InfiniBand, 120-CPUs, 456GB-RAM",
                 "HPC, 200Gbps InfiniBand, 120-CPUs, 448GB-RAM",
@@ -84,6 +85,7 @@
         "WorkerSize": {
             "8-CPUs, 32GB-RAM": "Standard_D8as_v5",
             "16-CPUs, 64GB-RAM": "Standard_D16as_v5",
+            "32-CPUs, 128GB-RAM": "Standard_D32as_v6",
             "AI, A100-GPU, 24-CPUs, 220GB-RAM": "Standard_NC24ads_A100_v4",
             "HPC, 200Gbps InfiniBand, 120-CPUs, 456GB-RAM": "Standard_HB120rs_v2",
             "HPC, 200Gbps InfiniBand, 120-CPUs, 448GB-RAM": "Standard_HB120rs_v3",
@@ -93,6 +95,7 @@
         "CoreCount": {
             "8-CPUs, 32GB-RAM": 8,
             "16-CPUs, 64GB-RAM": 16,
+            "32-CPUs, 128GB-RAM": 32,
             "AI, A100-GPU, 24-CPUs, 220GB-RAM": 24,
             "HPC, 200Gbps InfiniBand, 120-CPUs, 456GB-RAM": 120,
             "HPC, 200Gbps InfiniBand, 120-CPUs, 448GB-RAM": 120,
@@ -124,9 +127,9 @@
         "amlfsAvailabiltyZone" : [ "1" ],
         "dataResourceGroup" : "rg-LustreData",
         "dataStorageAccountName" : "stlustredatasync",
-        "amlfsDataContainer": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('dataResourceGroup'),'/providers/Microsoft.Storage/storageAccounts/', variables('dataStorageAccountName'), '/blobServices/default/containers/', parameters('dataContainerToSync'))]",
+        "amlfsDataContainer": "[concat('/subscriptions/74bdf443-9081-4138-9af1-61f8542cdb45/resourceGroups/', variables('dataResourceGroup'),'/providers/Microsoft.Storage/storageAccounts/', variables('dataStorageAccountName'), '/blobServices/default/containers/', parameters('dataContainerToSync'))]",
         "amlfsLoggingContainerName": "logging",
-        "amlfsLoggingContainer": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('dataResourceGroup'),'/providers/Microsoft.Storage/storageAccounts/', variables('dataStorageAccountName'), '/blobServices/default/containers/', variables('amlfsLoggingContainerName'))]",
+        "amlfsLoggingContainer": "[concat('/subscriptions/74bdf443-9081-4138-9af1-61f8542cdb45/resourceGroups/', variables('dataResourceGroup'),'/providers/Microsoft.Storage/storageAccounts/', variables('dataStorageAccountName'), '/blobServices/default/containers/', variables('amlfsLoggingContainerName'))]",
         "amlfsImportPrefix": ""
     },
     "resources": [
