@@ -1,10 +1,14 @@
-[CmdletBinding()]
-[OutputType([psobject])]
-param (
-    [Parameter( Mandatory = $true, ValueFromPipeline = $true)]
-    [string]$fullyQualifiedDomainName
-)
-process {
+
+# $keepFile = 'True'
+
+try {
+    # Use String from the output of the ARM script
     $JupyterHubURL = "https://" + $fullyQualifiedDomainName + ":8000"
-    New-Object -Property @{ReturnText = "$JupyterHubURL"} -TypeName psobject
+    $result = "$JupyterHubURL"
+
+}
+catch {
+
+    Write-Host "Unable to get URL." $_.Exception.Message
+
 }
