@@ -1,5 +1,5 @@
 {
-    "name": "Linux Data Analysis Workstation",
+    "name": "Secure Linux Workstation",
     "description": "Deploys a powerful workstation with applications and solutions for complex data analyses and machine learning. It is deployed in an isolated, secure environment.",
     "version": "2025.04.01.1",
     "icon": "fa fa-linux",
