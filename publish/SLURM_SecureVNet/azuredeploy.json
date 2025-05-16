@@ -298,6 +298,40 @@
             "apiVersion": "2021-11-01",
             "name": "[variables('cycleSSHKeyName')]",
             "location": "[variables('resourceLocation')]"
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2022-09-01",
+            "name": "nestedTemplate",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', variables('cycleName'))]"
+            ],
+            "resourceGroup": "[variables('vnetResourceGroup')]",
+            "properties": {
+                "mode": "Incremental",
+                "expressionEvaluationOptions": {
+                    "scope": "Outer"
+                    },
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.Authorization/roleAssignments",
+                            "apiVersion": "2022-04-01",
+                            "name": "[guid(resourceId('Microsoft.Compute/virtualMachines', variables('cycleName')))]",
+                            "scope": "[variables('roleAssignmentScope')]",
+                            "properties": {
+                                "roleDefinitionId": "[variables('contributor')]",
+                                "principalId": "[reference(variables('cycleName'), '2019-12-01', 'Full').identity.principalId]",
+                                "principalType": "ServicePrincipal"
+                            }
+                        }
+                    ]
+                }
+            }
         }
     ],
     "outputs": {
