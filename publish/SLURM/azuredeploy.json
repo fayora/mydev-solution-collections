@@ -14,17 +14,17 @@
             "minLength": 12,
             "maxLength": 72,
             "metadata": {
-            "description": "Password for the administrator for the cluster. It must be at least 12 characters long, and have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character."
+                "description": "Password for the administrator for the cluster. It must be at least 12 characters long, and have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character."
             }
         },
         "NumberOfWorkerNodes": {
-            "metadata": {
-                "description": "Specify the number of worker nodes in the cluster."
-            },
             "type": "int",
             "defaultValue": 2,
             "minValue": 1,
-            "maxValue": 20
+            "maxValue": 20,
+            "metadata": {
+                "description": "Specify the number of worker nodes in the cluster."
+            }
         },
         "SizeOfWorkerNodes": {
             "type": "string",
@@ -36,7 +36,6 @@
                 "HPC, 200Gbps InfiniBand, 120-CPUs, 456GB-RAM",
                 "HPC, 200Gbps InfiniBand, 120-CPUs, 448GB-RAM",
                 "HPC, 200Gbps InfiniBand, 176-CPUs, 768GB-RAM"
-
             ],
             "metadata": {
               "description": "Select the size of the virtual machines deployed as worker nodes."
