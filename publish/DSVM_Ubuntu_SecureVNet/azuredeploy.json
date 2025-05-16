@@ -54,6 +54,7 @@
     },
     "variables": {
       "osDiskSize": "256",
+      "osDiskType": "Premium_LRS",
       "vmSize": {
         "4 CPU cores, 16GB of RAM": "Standard_B4as_v2",
         "8 CPU cores, 32GB of RAM": "Standard_B8as_v2",
@@ -82,8 +83,6 @@
       "networkSecurityGroupName": "[concat('NSG', uniqueString(resourceGroup().id))]",
       "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
       "networkInterfaceName": "[concat(parameters('VirtualMachineName'), 'NetInt')]",
-
-      "osDiskType": "Premium_LRS",
       "instancePriority": {
         "Spot": "Spot",
         "Regular": "Regular"
@@ -226,17 +225,17 @@
       }
     ],
     "outputs": {
-       "loginUsername": {
-        "type": "string",
-        "value": "[parameters('adminUsername')]"
-       },
-        "privateIpAddress": {
-        "type": "string",
-        "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))).ipConfigurations[0].properties.privateIpAddress]"
+      "privateIpAddress": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))).ipConfigurations[0].properties.privateIpAddress]"
       },
-       "deployedVirtualMachineName": {
-        "type": "string",
-        "value": "[variables('uniqueVMName')]"
-       }
+      "deployedVirtualMachineName": {
+      "type": "string",
+      "value": "[variables('uniqueVMName')]"
+      },
+      "loginUsername": {
+      "type": "string",
+      "value": "[parameters('adminUsername')]"
+      }
     }
 }
