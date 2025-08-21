@@ -1,0 +1,9 @@
+[
+    {
+        "name": "Get URI",
+        "icon": "fa fa-sign-in",
+        "fileName": "Ollama_GetURI.ps1",
+        "actionType": "String"
+    }
+
+]

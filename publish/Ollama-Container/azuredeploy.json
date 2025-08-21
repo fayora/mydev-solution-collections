@@ -1,0 +1,170 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "ContainerName": {
+            "defaultValue": "",
+            "type": "string",
+            "metadata": {
+                "description": "The value must be between 2 and 28 characters long, consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character. It cannot contain '--'."
+            },
+            "minLength": 2,
+            "maxLength": 28
+        },
+        "ContainerSize": {
+            "defaultValue": "CPU: 4 vCPUs, 16 GiB RAM",
+            "type": "string",
+            "metadata": {
+                "description": "The size of the container. Note that GPU resources can be very expensive if not managed carefully!"
+            },
+            "allowedValues": [
+                "CPU: 4 vCPUs, 16 GiB RAM",
+                "CPU: 8 vCPUs, 32 GiB RAM",
+                "CPU: 16 vCPUs, 64 GiB RAM",
+                "CPU: 32 vCPUs, 128 GiB RAM",
+                "GPU: 1 x NVIDIA T4, 8 vCPUs, 56 GiB RAM",
+                "GPU: 1 x NVIDIA A100, 24 vCPUs, 220 GiB RAM"
+            ]
+        }
+    },
+    "variables": {
+        "location": "[resourceGroup().location]",
+        "containerImage": "docker.io/ollama/ollama:latest",
+        "sanitisedContainerName": "[toLower(replace(replace(trim(parameters('ContainerName')), ' ', '-'), '_', '-'))]",
+        "managedEnvironmentName": "[concat('me-',variables('sanitisedContainerName'))]",
+        "workloadProfileType" : {
+            "CPU: 4 vCPUs, 16 GiB RAM": "D4",
+            "CPU: 8 vCPUs, 32 GiB RAM": "D8",
+            "CPU: 16 vCPUs, 64 GiB RAM": "D16",
+            "CPU: 32 vCPUs, 128 GiB RAM": "D32",
+            "GPU: 1 x NVIDIA T4, 8 vCPUs, 56 GiB RAM": "Consumption-GPU-NC8as-T4",
+            "GPU: 1 x NVIDIA A100, 24 vCPUs, 220 GiB RAM": "Consumption-GPU-NC24-A100"
+        },
+        "workloadProfileName": "[replace(variables('workloadProfileType')[parameters('ContainerSize')], 'Consumption-GPU-', '')]",
+        "workloadProfileCPUs": {
+            "CPU: 4 vCPUs, 16 GiB RAM": 4,
+            "CPU: 8 vCPUs, 32 GiB RAM": 8,
+            "CPU: 16 vCPUs, 64 GiB RAM": 16,
+            "CPU: 32 vCPUs, 128 GiB RAM": 32,
+            "GPU: 1 x NVIDIA T4, 8 vCPUs, 56 GiB RAM": 8,
+            "GPU: 1 x NVIDIA A100, 24 vCPUs, 220 GiB RAM": 24
+        },
+        "workloadProfileRAM": {
+            "CPU: 4 vCPUs, 16 GiB RAM": "16Gi",
+            "CPU: 8 vCPUs, 32 GiB RAM": "32Gi",
+            "CPU: 16 vCPUs, 64 GiB RAM": "64Gi",
+            "CPU: 32 vCPUs, 128 GiB RAM": "128Gi",
+            "GPU: 1 x NVIDIA T4, 8 vCPUs, 56 GiB RAM": "56Gi",
+            "GPU: 1 x NVIDIA A100, 24 vCPUs, 220 GiB RAM": "220Gi"
+        },
+        "minMaxCount": {
+            "CPU: 4 vCPUs, 16 GiB RAM": 1,
+            "CPU: 8 vCPUs, 32 GiB RAM": 1,
+            "CPU: 16 vCPUs, 64 GiB RAM": 1,
+            "CPU: 32 vCPUs, 128 GiB RAM": 1,
+            "GPU: 1 x NVIDIA T4, 8 vCPUs, 56 GiB RAM": null,
+            "GPU: 1 x NVIDIA A100, 24 vCPUs, 220 GiB RAM": null
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.App/managedEnvironments",
+            "apiVersion": "2025-02-02-preview",
+            "name": "[variables('managedEnvironmentName')]",
+            "location": "[variables('location')]",
+            "properties": {
+                "zoneRedundant": false,
+                "kedaConfiguration": {},
+                "daprConfiguration": {},
+                "customDomainConfiguration": {},
+                "workloadProfiles": [
+                    {
+                        "workloadProfileType": "Consumption",
+                        "name": "Consumption",
+                        "enableFips": false
+                    },
+                    {
+                        "workloadProfileType": "[variables('workloadProfileType')[parameters('ContainerSize')]]",
+                        "name": "[variables('workloadProfileName')]",
+                        "enableFips": false,
+                        "minimumCount": "[variables('minMaxCount')[parameters('ContainerSize')]]",
+                        "maximumCount": "[variables('minMaxCount')[parameters('ContainerSize')]]"
+                    }
+                ],
+                "peerAuthentication": {
+                    "mtls": {
+                        "enabled": false
+                    }
+                },
+                "peerTrafficConfiguration": {
+                    "encryption": {
+                        "enabled": false
+                    }
+                },
+                "publicNetworkAccess": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.App/containerapps",
+            "apiVersion": "2025-02-02-preview",
+            "name": "[variables('sanitisedContainerName')]",
+            "location": "[variables('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.App/managedEnvironments', variables('managedEnvironmentNAme'))]"
+            ],
+            "kind": "containerapps",
+            "identity": {
+                "type": "None"
+            },
+            "properties": {
+                "managedEnvironmentId": "[resourceId('Microsoft.App/managedEnvironments', variables('managedEnvironmentNAme'))]",
+                "environmentId": "[resourceId('Microsoft.App/managedEnvironments', variables('managedEnvironmentNAme'))]",
+                "workloadProfileName": "[variables('workloadProfileName')]",
+                "configuration": {
+                    "activeRevisionsMode": "Single",
+                    "ingress": {
+                        "external": true,
+                        "targetPort": 11434,
+                        "exposedPort": 0,
+                        "transport": "Auto",
+                        "traffic": [
+                            {
+                                "weight": 100,
+                                "latestRevision": true
+                            }
+                        ],
+                        "allowInsecure": false,
+                        "stickySessions": {
+                            "affinity": "none"
+                        }
+                    },
+                    "identitySettings": [],
+                    "maxInactiveRevisions": 100
+                },
+                "template": {
+                    "containers": [
+                        {
+                            "image": "[variables('containerImage')]",
+                            "imageType": "ContainerImage",
+                            "name": "[variables('sanitisedContainerName')]",
+                            "resources": {
+                                "cpu": "[variables('workloadProfileCPUs')[parameters('ContainerSize')]]",
+                                "memory": "[variables('workloadProfileRAM')[parameters('ContainerSize')]]"
+                            }
+                        }
+                    ],
+                    "scale": {
+                        "minReplicas": 1,
+                        "maxReplicas": 1
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "OllamaContainerURI": {
+            "type": "string",
+            "value": "[concat('https://', reference(resourceId('Microsoft.App/containerApps', variables('sanitisedContainerName'))).configuration.ingress.fqdn)]"
+        }
+    }
+}

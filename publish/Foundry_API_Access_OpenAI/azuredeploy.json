@@ -1,0 +1,111 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "accountName": {
+            "defaultValue": "",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64,
+            "metadata": {
+                "description": "The name you want to give your OpenAI deployment so that you can identify it later. The name must be unique across all Azure subscriptions."
+            }
+        },
+        "model": {
+            "defaultValue": "gpt-4.1-nano",
+            "type": "string",
+            "allowedValues": [
+                "gpt-4.1-nano",
+                "gpt-4.1-mini",
+                "gpt-4o-mini",
+                "o4-mini"
+            ],
+            "metadata": {
+                "description": "Select the model that you want to deploy. The latest version of the model will be deployed by default."
+            }
+        }
+    },
+    "variables": {
+        "location": "[resourceGroup().location]",
+        "uniqueHash": "[uniqueString(deployment().properties.templateHash, deployment().name)]",
+        "uniqueSuffix": "[take(guid(variables('uniqueHash')), 6)]",
+        // The curated account name. Account name can only include alphanumeric characters, underscores and hyphens; Account name only allows 2 to 64 characters.
+        "curatedAccountName": "[toLower(take(replace(replace(replace(replace(replace(parameters('accountName'), ' ', ''), '.', '-'), '/', ''), '_', '-'), '\\', ''), 64))]",
+        // The curated subdomain name. Subdomain name can only include alphanumeric characters, underscores and hyphens
+        "curatedSubDomainName": "[take(concat(toLower(variables('curatedAccountName')), variables('uniqueSuffix')), 64)]",
+        "serviceSKU": "S0",
+        "serviceKind": "OpenAI",
+        "modelSKU": "GlobalStandard",
+        "uniqueDeploymentName": "[concat(parameters('model'), '-', variables('uniqueSuffix'))]",
+        "fullDeploymentName": "[concat(variables('curatedSubDomainName'), '/', variables('uniqueDeploymentName'))]",
+        "modelCapacity": {
+            "gpt-4.1-nano": 100,
+            "gpt-4.1-mini": 100,
+            "gpt-4o-mini": 100,
+            "o4-mini": 100
+        },
+        "modelCapacityValue": "[variables('modelCapacity')[parameters('model')]]",
+        "modelLocation": {
+            "gpt-4.1-nano": "[variables('location')]",
+            "gpt-4.1-mini": "[variables('location')]",
+            "gpt-4o-mini": "[variables('location')]",
+            "o4-mini": "southeastasia"
+        },
+        "modelLocationValue": "[variables('modelLocation')[parameters('model')]]",
+        "openAIAPIVersion": "2025-04-01-preview"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.CognitiveServices/accounts",
+            "apiVersion": "2023-05-01",
+            "name": "[variables('curatedSubDomainName')]",
+            "location": "[variables('modelLocationValue')]",
+            "sku": {
+                "name": "[variables('serviceSKU')]"
+            },
+            "kind": "[variables('serviceKind')]",
+            "properties": {
+                "customSubDomainName": "[variables('curatedSubDomainName')]",
+                "apiProperties": {},
+                "allowProjectManagement": false,
+                "publicNetworkAccess": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.CognitiveServices/accounts/deployments",
+            "apiVersion": "2025-04-01-preview",
+            "name": "[variables('fullDeploymentName')]",
+            "location": "[variables('modelLocationValue')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.CognitiveServices/accounts', variables('curatedSubDomainName'))]"
+            ],
+            "sku": {
+                "name": "[variables('modelSKU')]",
+                "capacity": "[variables('modelCapacityValue')]"
+            },
+            "properties": {
+                "model": {
+                    "format": "[variables('serviceKind')]",
+                    "name": "[parameters('model')]"
+                },
+                "versionUpgradeOption": "OnceNewDefaultVersionAvailable",
+                "currentCapacity": "[variables('modelCapacityValue')]",
+                "raiPolicyName": "Microsoft.Nil"
+            }
+        }
+    ],
+    "outputs": {
+        "AIAccountName": {
+            "type": "string",
+            "value": "[variables('curatedSubDomainName')]"
+        },
+        "deploymentName": {
+            "type": "string",
+            "value": "[variables('uniqueDeploymentName')]"
+        },
+        "endpointURI": {
+            "type": "string",
+            "value": "[concat('https://', variables('curatedSubDomainName'), '.openai.azure.com/openai/deployments/', variables('uniqueDeploymentName'), '/chat/completions?api-version=', variables('openAIAPIVersion'))]"
+        }
+    }
+}

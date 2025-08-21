@@ -1,0 +1,176 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "accountName": {
+            "defaultValue": "",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64,
+            "metadata": {
+                "description": "The name you want to give your OpenAI deployment so that you can identify it later. The name must be unique across all Azure subscriptions."
+            }
+        },
+        "model": {
+            "defaultValue": "grok-3-mini",
+            "type": "string",
+            "allowedValues": [
+                // "gpt-4.1-nano",
+                // "gpt-4.1-mini",
+                // "gpt-4o-mini",
+                // "o4-mini",
+                "grok-3-mini",
+                "Llama-4-Maverick-17B-128E-Instruct-FP8",
+                "Llama-4-Scout-17B-16E-Instruct",
+                "Phi-4",
+                "mistral-small-2503",
+                "MAI-DS-R1",
+                "DeepSeek-R1"
+            ],
+            "metadata": {
+                "description": "Select the model that you want to deploy. The latest version of the model will be deployed by default."
+            }
+        }
+    },
+    "variables": {
+        "location": "[resourceGroup().location]",
+        "uniqueHash": "[uniqueString(deployment().properties.templateHash, deployment().name)]",
+        "uniqueSuffix": "[take(guid(variables('uniqueHash')), 6)]",
+        // The curated account name. Account name can only include alphanumeric characters, underscores and hyphens; Account name only allows 2 to 64 characters.
+        "curatedAccountName": "[toLower(take(replace(replace(replace(replace(replace(parameters('accountName'), ' ', ''), '.', '-'), '/', ''), '_', '-'), ',', ' '), 64))]",
+        // The curated subdomain name. Subdomain name can only include alphanumeric characters, underscores and hyphens
+        "curatedSubDomainName": "[take(concat(toLower(variables('curatedAccountName')), variables('uniqueSuffix')), 64)]",
+        "serviceSKU": "S0",
+        "serviceKind": "AIServices",
+        "modelSKU": "GlobalStandard",
+        "uniqueDeploymentName": "[concat(parameters('model'), '-', variables('uniqueSuffix'))]",
+        "fullDeploymentName": "[concat(variables('curatedSubDomainName'), '/', variables('uniqueDeploymentName'))]",
+        "modelCapacity": {
+            "gpt-4.1-nano": 100,
+            "gpt-4.1-mini": 100,
+            "gpt-4o-mini": 100,
+            "o4-mini": 100,
+            "DeepSeek-R1": 1,
+            "MAI-DS-R1": 1,
+            "Llama-4-Maverick-17B-128E-Instruct-FP8": 1,
+            "Llama-4-Scout-17B-16E-Instruct": 1,
+            "Phi-4": 1,
+            "mistral-small-2503": 1,
+            "grok-3-mini": 1
+        },
+        "modelCapacityValue": "[variables('modelCapacity')[parameters('model')]]",
+        "modelFormat": {
+            "gpt-4.1-nano": "OpenAI",
+            "gpt-4.1-mini": "OpenAI",
+            "gpt-4o-mini": "OpenAI",
+            "o4-mini": "OpenAI",
+            "DeepSeek-R1": "DeepSeek",
+            "MAI-DS-R1": "Microsoft",
+            "Llama-4-Maverick-17B-128E-Instruct-FP8": "Meta",
+            "Llama-4-Scout-17B-16E-Instruct": "Meta",
+            "Phi-4": "Microsoft",
+            "mistral-small-2503": "Mistral AI",
+            "grok-3-mini": "xAI"
+        },
+        "modelFormatValue": "[variables('modelFormat')[parameters('model')]]",
+        "modelVersion": {
+            "gpt-4.1-nano": "",
+            "gpt-4.1-mini": "",
+            "gpt-4o-mini": "",
+            "o4-mini": "",
+            "DeepSeek-R1": "1",
+            "MAI-DS-R1": "1",
+            "Llama-4-Maverick-17B-128E-Instruct-FP8": "1",
+            "Llama-4-Scout-17B-16E-Instruct": "1",
+            "Phi-4": "7",
+            "mistral-small-2503": "1",
+            "grok-3-mini": "1"
+        },
+        "modelVersionValue": "[variables('modelVersion')[parameters('model')]]",
+        "modelLocation": {
+            "gpt-4.1-nano": "[variables('location')]",
+            "gpt-4.1-mini": "[variables('location')]",
+            "gpt-4o-mini": "[variables('location')]",
+            "o4-mini": "southeastasia",
+            "DeepSeek-R1": "[variables('location')]",
+            "MAI-DS-R1": "[variables('location')]",
+            "Llama-4-Maverick-17B-128E-Instruct-FP8": "[variables('location')]",
+            "Llama-4-Scout-17B-16E-Instruct": "[variables('location')]",
+            "Phi-4": "[variables('location')]",
+            "mistral-small-2503": "[variables('location')]",
+            "grok-3-mini": "[variables('location')]"
+        },
+        "modelLocationValue": "[variables('modelLocation')[parameters('model')]]",
+        "openAIAPIVersion": "2025-04-01-preview",
+        "generalAIAPIVersion": "2024-05-01-preview",
+        // The endpoint URIs for the General AI and OpenAI services, depending on the model selected.
+        // The General AI endpoint is used for models that are not OpenAI models.
+        "generalAIEndpointURI": "[concat('https://', variables('curatedSubDomainName'), '.services.ai.azure.com/models/chat/completions?api-version=', variables('generalAIAPIVersion'))]",
+        // The OpenAI endpoint is used for OpenAI models.
+        "OpenAIEndpointURI": "[concat('https://', variables('curatedSubDomainName'), '.cognitiveservices.azure.com/openai/deployments/', variables('uniqueDeploymentName'), '/chat/completions?api-version=', variables('openAIAPIVersion'))]",
+        "endpointURI": "[if(equals(variables('modelFormatValue'), 'OpenAI'), variables('OpenAIEndpointURI'), variables('generalAIEndpointURI'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.CognitiveServices/accounts",
+            "apiVersion": "2025-04-01-preview",
+            "name": "[variables('curatedSubDomainName')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "[variables('serviceSKU')]"
+            },
+            "kind": "[variables('serviceKind')]",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "apiProperties": {},
+                "customSubDomainName": "[variables('curatedSubDomainName')]",
+                "networkAcls": {
+                    "defaultAction": "Allow",
+                    "virtualNetworkRules": [],
+                    "ipRules": []
+                },
+                "allowProjectManagement": false,
+                "publicNetworkAccess": "Enabled"
+            }
+        },
+        {
+            "type": "Microsoft.CognitiveServices/accounts/deployments",
+            "apiVersion": "2025-04-01-preview",
+            "name": "[variables('fullDeploymentName')]",
+            "location": "[variables('modelLocationValue')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.CognitiveServices/accounts', variables('curatedSubDomainName'))]"
+            ],
+            "sku": {
+                "name": "[variables('modelSKU')]",
+                "capacity": "[variables('modelCapacityValue')]"
+            },
+            "properties": {
+                "model": {
+                    "format": "[variables('modelFormatValue')]",
+                    "name": "[parameters('model')]",
+                    "version": "[variables('modelVersionValue')]"
+                },
+                "versionUpgradeOption": "OnceNewDefaultVersionAvailable",
+                "currentCapacity": "[variables('modelCapacityValue')]",
+                "raiPolicyName": "Microsoft.Nil"
+            }
+        }
+    ],
+    "outputs": {
+        "AIAccountName": {
+            "type": "string",
+            "value": "[variables('curatedSubDomainName')]"
+        },
+        "deploymentName": {
+            "type": "string",
+            "value": "[variables('uniqueDeploymentName')]"
+        },
+        "endpointURI": {
+            "type": "string",
+            "value": "[variables('endpointURI')]"
+        }
+    }
+}

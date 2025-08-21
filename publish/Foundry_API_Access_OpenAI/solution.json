@@ -1,0 +1,8 @@
+{
+    "name": "OpenAI model for API use",
+    "description": "Deploys and OpenAI model of your choice to use programmatically using APIs.",
+    "version": "2025.06.04.1",
+    "icon": "fa fa-cube",
+    "upgradeAllowed": true,
+    "deploymentMode": "User"
+}

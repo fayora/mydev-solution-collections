@@ -1,0 +1,16 @@
+[
+    
+    {
+        "name": "Get API Key",
+        "icon": "fa fa-key",
+        "fileName": "AzureOpenAI_GetKey.ps1",
+        "actionType": "String"
+    },
+    {
+        "name": "Get Endpoint URI",
+        "icon": "fa fa-sign-in",
+        "fileName": "AzureOpenAI_GetURI.ps1",
+        "actionType": "String"
+    }
+
+]

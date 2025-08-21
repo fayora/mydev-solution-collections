@@ -1,0 +1,8 @@
+{
+    "name": "Ollama Container",
+    "description": "Deploys an Ollama container running on a single NVIDIA T4 GPU, with 8 AMD EPYC vCPUs and 56 GiB of RAM.",
+    "version": "2025.08.21.1",
+    "icon": "fa fa-cube",
+    "upgradeAllowed": true,
+    "deploymentMode": "User"
+}
