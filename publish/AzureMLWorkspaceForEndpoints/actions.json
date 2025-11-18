@@ -1,0 +1,9 @@
+[
+    {
+        "name": "Get started",
+        "icon": "fa fa-info",
+        "fileName": "getStartedInfo.ps1",
+        "actionType": "File"
+    }
+
+]

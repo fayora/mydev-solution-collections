@@ -1,0 +1,129 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "machineLearningEnvironmentNamePrefix": {
+      "type": "string",
+      "defaultValue": "",
+      "minLength": 3,
+      "maxLength": 16,
+      "metadata": {
+        "description": "A recognisable prefix to use for the name of your ML environment. Must be 3-16 characters, lowercase alphanumeric and hyphens only, starting with a letter.",
+        "regex": "^[a-z][a-z0-9-]{2,15}$",
+        "validationMessage": "The prefix must be between 3 and 16 characters, start with a letter, and contain only lowercase letters, numbers, and hyphens."
+      }
+    }
+  },
+  "variables": {
+    "location": "[resourceGroup().location]",
+    "uniqueSuffix": "[uniqueString(deployment().properties.templateHash, deployment().name)]",
+    "storageAccountName": "[replace(take(toLower(concat('st', take(parameters('machineLearningEnvironmentNamePrefix'), 16), take(variables('uniqueSuffix'), 8))),24),'-','')]",
+    "keyVaultName": "[take(concat(parameters('machineLearningEnvironmentNamePrefix'), '-kv-', take(variables('uniqueSuffix'), 8)),24)]",
+    "appInsightsName": "[concat(parameters('machineLearningEnvironmentNamePrefix'), '-ai-', take(variables('uniqueSuffix'), 8))]",
+    "mlWorkspaceName": "[take(concat(parameters('machineLearningEnvironmentNamePrefix'), '-mlws-', take(variables('uniqueSuffix'), 8)),32)]",
+    "containerRegistryName": "[replace(toLower(take(concat('acr',take(parameters('machineLearningEnvironmentNamePrefix'), 16), take(variables('uniqueSuffix'), 13)),50)),'-','')]",
+    "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+    "keyVaultId": "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+    "appInsightsId": "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
+    "subscriptionId": "[subscription().subscriptionId]",
+    "resourceGroupName": "[resourceGroup().name]",
+    "mlStudioLink": "[concat('https://ml.azure.com/?wsid=/subscriptions/', variables('subscriptionId'), '/resourceGroups/', variables('resourceGroupName'), '/providers/Microsoft.MachineLearningServices/workspaces/', variables('mlWorkspaceName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-06-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "accessTier": "Hot",
+        "allowBlobPublicAccess": false,
+        "minimumTlsVersion": "TLS1_2"
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2021-11-01-preview",
+      "name": "[variables('keyVaultName')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "enabledForDeployment": true,
+        "enabledForTemplateDeployment": true,
+        "enabledForDiskEncryption": false,
+        "tenantId": "[subscription().tenantId]",
+        "sku": {
+          "name": "standard",
+          "family": "A"
+        },
+        "accessPolicies": []
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02",
+      "name": "[variables('appInsightsName')]",
+      "location": "[variables('location')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "RetentionInDays": 90,
+        "publicNetworkAccessForIngestion": "Enabled",
+        "publicNetworkAccessForQuery": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2021-09-01",
+      "name": "[variables('containerRegistryName')]",
+      "location": "[variables('location')]",
+      "sku": {
+        "name": "Basic"
+      },
+      "properties": {
+        "adminUserEnabled": true,
+        "publicNetworkAccess": "Enabled"
+      }
+    },
+    {
+      "type": "Microsoft.MachineLearningServices/workspaces",
+      "apiVersion": "2018-03-01-preview",
+      "name": "[variables('mlWorkspaceName')]",
+      "location": "[variables('location')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "dependsOn": [
+        "[variables('storageAccountId')]",
+        "[variables('keyVaultId')]",
+        "[variables('appInsightsId')]"
+      ],
+      "properties": {
+        "friendlyName": "[concat(variables('mlWorkspaceName'), ' ML Workspace')]",
+        "storageAccount": "[variables('storageAccountId')]",
+        "keyVault": "[variables('keyVaultId')]",
+        "applicationInsights": "[variables('appInsightsId')]",
+        "containerRegistry": "[resourceId('Microsoft.ContainerRegistry/registries', variables('containerRegistryName'))]",
+        "discoveryUrl": "https://ml.azure.com/discovery",
+        "encryption": {
+          "status": "Disabled"
+        },
+        "hbiWorkspace": false,
+        "imageBuildCompute": "",
+        "publicNetworkAccess": "Enabled"
+      }
+    }
+  ],
+  "outputs": {
+    "workspaceName": {
+      "type": "string",
+      "value": "[variables('mlWorkspaceName')]",
+      "metadata": {
+        "description": "Name of the Azure ML Workspace"
+      }
+    }
+}
+}

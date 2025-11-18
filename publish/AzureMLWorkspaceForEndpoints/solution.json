@@ -1,0 +1,8 @@
+{
+  "name": "Azure ML Workspace for Online Endpoints",
+  "description": "Deploy an Azure Machine Learning Workspace with support for deploying machine learning models as online endpoints",
+  "version": "1.0.0",
+  "icon": "fa fa-lightbulb-o",
+  "upgradeAllowed": true,
+  "deploymentMode": "User"
+}
