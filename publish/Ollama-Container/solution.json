@@ -4,5 +4,6 @@
     "version": "2025.08.21.1",
     "icon": "fa fa-cube",
     "upgradeAllowed": true,
-    "deploymentMode": "User"
+    "deploymentMode": "User",
+    "statusCheckFileName": "checkContainerStatus.ps1"
 }

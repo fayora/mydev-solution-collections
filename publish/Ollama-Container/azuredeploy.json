@@ -165,6 +165,10 @@
         "OllamaContainerURI": {
             "type": "string",
             "value": "[concat('https://', reference(resourceId('Microsoft.App/containerApps', variables('sanitisedContainerName'))).configuration.ingress.fqdn)]"
+        },
+        "containerAppName": {
+            "type": "string",
+            "value": "[variables('sanitisedContainerName')]"
         }
     }
 }

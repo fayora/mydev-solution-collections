@@ -1,5 +1,5 @@
 # This script returns the Endpoint URI for the Azure OpenAI deployment
-
+$executionPolicy = 'RemoteSigned'
 # Set for troubleshooting, so that the agent preserves the script file
 # $keepFile = 'True'
 
