@@ -1,0 +1,9 @@
+{
+    "name": "Ollama Container",
+    "description": "Deploys an Ollama container with or without a GPU, and your selection of number of CPUs and RAM.",
+    "version": "2025.08.21.1",
+    "icon": "fa fa-cube",
+    "upgradeAllowed": true,
+    "deploymentMode": "User",
+    "statusCheckFileName": "checkContainerStatus.ps1"
+}

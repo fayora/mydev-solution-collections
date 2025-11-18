@@ -1,0 +1,8 @@
+{
+    "name": "AI model for API use",
+    "description": "Deploys a model of your choice to use programmatically using APIs.",
+    "version": "2025.06.04.1",
+    "icon": "fa fa-file-code-o",
+    "upgradeAllowed": true,
+    "deploymentMode": "User"
+}

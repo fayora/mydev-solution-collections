@@ -1,0 +1,15 @@
+[
+    {
+        "name": "Get URI",
+        "icon": "fa fa-sign-in",
+        "fileName": "Ollama_GetURI.ps1",
+        "actionType": "String"
+    },
+    {
+        "name": "Start or stop the container",
+        "icon": "fa fa-power-off",
+        "fileName": "StopAndStartContainerApp.ps1",
+        "confirmationMessage": "Are you sure that you want to stop or start this container? If you are stopping it, any changes will be lost. If you are starting it, usage charges will start to apply until you stop it again.",
+        "actionType": "Notification"
+    }
+]

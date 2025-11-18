@@ -1,0 +1,9 @@
+{
+    "name": "Data Science Virtual Machine",
+    "description": "Deploys a workstation with applications and solutions for complex data analytics and machine learning, including Jupyter Lab.",
+    "version": "2024.11.11.1",
+    "icon": "fa fa-linux",
+    "upgradeAllowed": true,
+    "deploymentMode": "User",
+    "statusCheckFileName": "checkStatus.ps1"
+}
