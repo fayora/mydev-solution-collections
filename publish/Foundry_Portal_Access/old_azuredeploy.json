@@ -1,0 +1,63 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "projectName": {
+            "defaultValue": "",
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64,
+            "metadata": {
+                "description": "The name you want to give your Foundry project so that you can identify it later. The name must be between 2 and 64 characters long, and can only include lowercase alphanumeric characters, underscores and hyphens.",
+                "regex": "^[a-z0-9-_]{2,64}$",
+                "validationMessage": "The project name must be between 2 and 64 characters long and can only include lowercase alphanumeric characters, underscores and hyphens."
+            }
+        }
+    },
+    "variables": {
+        "location": "[resourceGroup().location]",
+        "subscriptionId": "[subscription().subscriptionId]",
+        "resourceGroupName": "[resourceGroup().name]",
+        "uniqueHash": "[uniqueString(deployment().properties.templateHash, deployment().name)]",
+        "uniqueSuffix": "[take(guid(variables('uniqueHash')), 6)]",
+        "curatedSubDomainName": "[take(concat(toLower(parameters('projectName')), variables('uniqueSuffix')), 64)]",
+        "serviceSKU": "S0",
+        "serviceKind": "AIServices",
+        "foundryPortalURL": "[concat('https://ai.azure.com/resource/overview?wsid=/subscriptions/', variables('subscriptionId'), '/resourceGroups/', variables('resourceGroupName'), '/providers/Microsoft.CognitiveServices/accounts/', variables('curatedSubDomainName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.CognitiveServices/accounts",
+            "apiVersion": "2025-04-01-preview",
+            "name": "[variables('curatedSubDomainName')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "[variables('serviceSKU')]"
+            },
+            "kind": "[variables('serviceKind')]",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "apiProperties": {},
+                "customSubDomainName": "[variables('curatedSubDomainName')]",
+                "networkAcls": {
+                    "defaultAction": "Allow",
+                    "virtualNetworkRules": [],
+                    "ipRules": []
+                },
+                "publicNetworkAccess": "Enabled"
+            }
+        }
+    ],
+    "outputs": {
+        "projectName": {
+            "type": "string",
+            "value": "[variables('curatedSubDomainName')]"
+        },
+        "foundryPortalURL": {
+            "type": "string",
+            "value": "[variables('foundryPortalURL')]"
+        }
+    }
+}

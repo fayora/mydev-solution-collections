@@ -1,0 +1,8 @@
+{
+    "name": "Azure AI Foundry Project Portal Access",
+    "description": "Deploys an Azure AI Foundry project and provides direct access to the Foundry portal.",
+    "version": "2025.12.12.1",
+    "icon": "fa fa-flask",
+    "upgradeAllowed": true,
+    "deploymentMode": "User"
+}

@@ -1,0 +1,8 @@
+[
+    {
+        "name": "Open Foundry Portal",
+        "icon": "fa fa-external-link",
+        "fileName": "GetFoundryPortalURL.ps1",
+        "actionType": "Url"
+    }
+]
