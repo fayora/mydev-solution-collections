@@ -3,6 +3,11 @@ $executionPolicy = 'RemoteSigned'
 # $keepFile = 'True'
 
 try {
+    # TIP: Get-Command <cmdlet_you_are_after> | select name, module
+    if (-not (Get-Module -Name Az.App -ListAvailable)) {
+        Install-Module -Name Az.App -AllowClobber -Scope CurrentUser -Force -ErrorAction Stop
+    }
+
     # Get an access token for managed identities for Azure resources
     $response = Invoke-WebRequest `
         -Uri 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fmanagement.azure.com%2F' `
