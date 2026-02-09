@@ -17,10 +17,8 @@
             "allowedValues": [
                 "8-CPUs, 32GB-RAM",
                 "16-CPUs, 64GB-RAM",
-                "32-CPUs, 128GB-RAM",
                 "AI, A100-GPU, 24-CPUs, 220GB-RAM",
                 "HPC, 200Gbps InfiniBand, 120-CPUs, 456GB-RAM",
-                "HPC, 200Gbps InfiniBand, 120-CPUs, 448GB-RAM",
                 "HPC, 200Gbps InfiniBand, 176-CPUs, 768GB-RAM"
             ],
             "metadata": {
@@ -75,7 +73,7 @@
         "cycleIPName": "[concat('ip', variables('cycleName'))]",
         "cycleSSHKeyName": "[concat('sshkey', variables('cycleName'))]",
         "cycleSubnet": "cycle",
-        "cyclecloudVmSize": "Standard_B8als_v2",
+        "cyclecloudVmSize": "Standard_D8as_v5",
         "cyclecloudVmStorage": "Premium_LRS",
         "azureSovereignCloud": "public",
         "vnetName": "[concat('vnet', variables('cycleName'))]",
@@ -85,20 +83,16 @@
         "WorkerSize": {
             "8-CPUs, 32GB-RAM": "Standard_D8as_v5",
             "16-CPUs, 64GB-RAM": "Standard_D16as_v5",
-            "32-CPUs, 128GB-RAM": "Standard_D32as_v6",
             "AI, A100-GPU, 24-CPUs, 220GB-RAM": "Standard_NC24ads_A100_v4",
             "HPC, 200Gbps InfiniBand, 120-CPUs, 456GB-RAM": "Standard_HB120rs_v2",
-            "HPC, 200Gbps InfiniBand, 120-CPUs, 448GB-RAM": "Standard_HB120rs_v3",
             "HPC, 200Gbps InfiniBand, 176-CPUs, 768GB-RAM": "Standard_HB176rs_v4"
         },
         "workerVMSize": "[variables('WorkerSize')[parameters('SizeOfWorkerNodes')]]",
         "CoreCount": {
             "8-CPUs, 32GB-RAM": 8,
             "16-CPUs, 64GB-RAM": 16,
-            "32-CPUs, 128GB-RAM": 32,
             "AI, A100-GPU, 24-CPUs, 220GB-RAM": 24,
             "HPC, 200Gbps InfiniBand, 120-CPUs, 456GB-RAM": 120,
-            "HPC, 200Gbps InfiniBand, 120-CPUs, 448GB-RAM": 120,
             "HPC, 200Gbps InfiniBand, 176-CPUs, 768GB-RAM": 176
         },
         "workerVMCoreCount": "[variables('CoreCount')[parameters('SizeOfWorkerNodes')]]",
@@ -118,18 +112,17 @@
         "clusterOSImage": "[variables('clusterOS')[parameters('OSOfClusterNodes')]]",
         "networkApiVersion": "2017-06-01",
         "contributor": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
-        "amlfsAPIVerson" : "2021-11-01-preview",
+        "amlfsAPIVerson" : "2024-03-01",
         "amlfsName" : "[concat('amlfs', variables('cycleName'))]",
         "amlfsSku" : "AMLFS-Durable-Premium-500",
         "amlfsCycleSubnet" : "compute",
         "amlfsMaintenanceDayOfWeek" : "Saturday",
-        "amlfsMaintenanceTimeOfDay" : "00:00",
-        "amlfsAvailabiltyZone" : [ "1" ],
+        "amlfsMaintenanceTimeOfDay" : "22:00",
         "dataResourceGroup" : "rg-LustreData",
         "dataStorageAccountName" : "stlustredatasync",
-        "amlfsDataContainer": "[concat('/subscriptions/74bdf443-9081-4138-9af1-61f8542cdb45/resourceGroups/', variables('dataResourceGroup'),'/providers/Microsoft.Storage/storageAccounts/', variables('dataStorageAccountName'), '/blobServices/default/containers/', parameters('dataContainerToSync'))]",
+        "amlfsDataContainer": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('dataResourceGroup'),'/providers/Microsoft.Storage/storageAccounts/', variables('dataStorageAccountName'), '/blobServices/default/containers/', parameters('dataContainerToSync'))]",
         "amlfsLoggingContainerName": "logging",
-        "amlfsLoggingContainer": "[concat('/subscriptions/74bdf443-9081-4138-9af1-61f8542cdb45/resourceGroups/', variables('dataResourceGroup'),'/providers/Microsoft.Storage/storageAccounts/', variables('dataStorageAccountName'), '/blobServices/default/containers/', variables('amlfsLoggingContainerName'))]",
+        "amlfsLoggingContainer": "[concat('/subscriptions/', subscription().subscriptionId, '/resourceGroups/', variables('dataResourceGroup'),'/providers/Microsoft.Storage/storageAccounts/', variables('dataStorageAccountName'), '/blobServices/default/containers/', variables('amlfsLoggingContainerName'))]",
         "amlfsImportPrefix": ""
     },
     "resources": [
@@ -369,13 +362,15 @@
             "sku": {
                 "name": "[variables('amlfsSku')]"
             },
+            "zones": [
+                "1"
+            ],
             "properties": {
                 "storageCapacityTiB": "[variables('amlfsCapacity')]",
-                "zones": "[variables('amlfsAvailabiltyZone')]",
                 "filesystemSubnet": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('amlfsCycleSubnet'))]",
                 "maintenanceWindow": {
                     "dayOfWeek": "[variables('amlfsMaintenanceDayOfWeek')]",
-                    "timeOfDay": "[variables('amlfsMaintenanceTimeOfDay')]"
+                    "timeOfDayUTC": "[variables('amlfsMaintenanceTimeOfDay')]"
                 },
                 "hsm": {
                     "settings": {
@@ -407,10 +402,6 @@
         }
     ],
     "outputs": {
-        "AMLFSMountCommand": {
-            "type": "string",
-            "value": "[reference(variables('amlfsName')).mountCommand]"
-        },
         "SystemID1": {
             "type": "string",
             "value": "[variables('password')]"
