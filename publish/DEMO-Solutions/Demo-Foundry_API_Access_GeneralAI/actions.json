@@ -1,0 +1,22 @@
+[
+    
+    {
+        "name": "Get API Key",
+        "icon": "fa fa-key",
+        "fileName": "AzureGeneralAI_GetKey.ps1",
+        "actionType": "String"
+    },
+    {
+        "name": "Get Endpoint URI",
+        "icon": "fa fa-sign-in",
+        "fileName": "AzureGeneralAI_GetURI.ps1",
+        "actionType": "String"
+    },
+    {
+        "name": "Get Deployment Name",
+        "icon": "fa fa-wrench",
+        "fileName": "AzureGeneralAI_GetDeploymentName.ps1",
+        "actionType": "String"
+    }
+
+]

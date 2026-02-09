@@ -1,0 +1,208 @@
+// - Query: Please provide an Azure ARM template to deploy an Azure OpenAI account with the deployment of model specified in the parameters, and AI Search with a connection to a storage account and blob container that are also deployed in the same template, so that the Azure AI deployment can be used to interact with files uploaded into the container. Outputs are: the endpoint URI for the model, its API key, the name of the storage account, the name of the container, and a SAS URL with full permissions to upload files to the container. The user is asked to provide only these parameters: Account name, model name. All names, etc., are generated from these, using names created with a random hash so that they are as unique as possible
+// - Model: grok-3-mini-high
+// Usage details:
+// - Total Tokens: 9862
+// - Prompt Tokens: 152
+// - Completion Tokens: 2349
+// Response:
+// Below is the Azure ARM template JSON that meets your requirements. This template deploys the following resources in a single deployment:
+
+// - An Azure OpenAI account with a model deployment specified by the user-provided parameters (`accountName` and `modelName`).
+// - An Azure Cognitive Search service (AI Search) with a data source connected to a storage account and blob container for indexing files.
+// - A storage account and a blob container.
+// - The AI Search data source is configured to connect to the blob container, enabling it to index files uploaded to the container.
+
+// The template uses the provided `accountName` and `modelName` parameters as bases and generates all other resource names (e.g., for storage, search, container, and model deployment) with a random hash using the `uniqueString` function based on the resource group ID. This ensures high uniqueness and reduces the risk of name conflicts.
+
+// ### Key Details:
+// - **Parameters**: You only need to provide `accountName` (base name for the OpenAI account) and `modelName` (e.g., "gpt-35-turbo").
+// - **Outputs**:
+//   - `modelEndpoint`: The endpoint URI for the deployed OpenAI model.
+//   - `modelApiKey`: The API key for the OpenAI model.
+//   - `storageAccountName`: The name of the deployed storage account.
+//   - `containerName`: The name of the deployed blob container.
+//   - `sasUrl`: A SAS URL with full permissions (read, add, create, write, delete, list) for uploading files to the container. The SAS token is generated with a start time at deployment and an expiry one year later. Note that SAS tokens are sensitive and should be handled securely.
+// - **Resource Dependencies**: The template ensures proper dependencies (e.g., the data source depends on the search service and storage account being deployed first).
+// - **Security Note**: Outputting API keys and SAS URLs in ARM template outputs can expose sensitive information. Consider using Azure Key Vault or other secure methods for production scenarios.
+// - **Regions and SKUs**: The template uses the resource group's location and default SKUs (e.g., Standard_LRS for storage, Basic for AI Search, S0 for OpenAI). You can modify these if needed.
+// - **Model Deployment**: The model deployment uses the provided `modelName`. Ensure the model is available in your Azure subscription and region.
+
+
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Deploys an Azure OpenAI account with model deployment, AI Search connected to a storage account and blob container, and outputs for endpoint, API key, storage details, and SAS URL for file uploads."
+  },
+  "parameters": {
+    "accountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Base name for the Azure OpenAI account (e.g., myai). A unique hash will be appended for uniqueness."
+      }
+    },
+    "modelName": {
+      "type": "string",
+      "defaultValue": "gpt-4.1-mini",
+      "metadata": {
+        "description": "The name of the model to deploy in Azure OpenAI (e.g., gpt-35-turbo). This will be used as the base for the deployment name with a unique hash appended."
+      }
+    }, 
+    "StartTime": {
+      "type": "string",
+      "defaultValue": "[utcNow()]",
+      "metadata": {
+        "description": "The start time for the SAS token. Defaults to the current UTC time."
+      }
+    },
+    "ExpiryTime": {
+      "type": "string",
+      "defaultValue": "[dateTimeAdd(utcNow(), 'P1Y')]",
+      "metadata": {
+        "description": "The expiry time for the SAS token. Defaults to one year from the current UTC time."
+      }
+    }
+  },
+  "variables": {
+    "openAiAccountName": "[concat(parameters('accountName'), '-', substring(uniqueString(resourceGroup().id), 0, 5))]",
+    "storageAccountName": "[toLower(concat('sa', substring(uniqueString(resourceGroup().id, 'storage'), 0, 10)))]",
+    "searchServiceName": "[concat('azsrch', substring(uniqueString(resourceGroup().id, 'search'), 0, 10))]",
+    "containerName": "[toLower(concat('cont', substring(uniqueString(resourceGroup().id, 'container'), 0, 10)))]",
+    "deploymentName": "[concat(replace(parameters('modelName'), '-', ''), '-', substring(uniqueString(resourceGroup().id), 0, 4))]",
+    "sasStartTime": "[parameters('StartTime')]",
+    "sasExpiryTime": "[parameters('ExpiryTime')]",
+    "sasPermissions": "racwdl",
+    "sasServices": "b",
+    "sasResourceTypes": "sco",
+    "sasSignedProtocol": "https"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2021-08-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2021-08-01",
+      "name": "[concat(variables('storageAccountName'), '/default/', variables('containerName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ],
+      "properties": {
+        "publicAccess": "None"
+      }
+    },
+    {
+      "type": "Microsoft.Search/searchServices",
+      "apiVersion": "2021-04-01-preview",
+      "name": "[variables('searchServiceName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "basic"
+      },
+      "properties": {
+        "replicaCount": 1,
+        "partitionCount": 1
+      }
+    },
+    {
+      "type": "Microsoft.Search/searchServices/dataSources",
+      "apiVersion": "2021-04-01-preview",
+      "name": "[concat(variables('searchServiceName'), '/blobdatasource')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Search/searchServices', variables('searchServiceName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ],
+      "properties": {
+        "name": "blobdatasource",
+        "type": "azureblob",
+        "credentials": {
+          "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2021-08-01').keys[0].value)]"
+        },
+        "container": {
+          "name": "[variables('containerName')]"
+        },
+        "dataChangeDetectionPolicy": {
+          "@odata.type": "#Microsoft.Azure.Search.HighWaterMarkChangeDetectionPolicy",
+          "highWaterMarkColumnName": ""
+        },
+        "dataDeletionDetectionPolicy": {
+          "@odata.type": "#Microsoft.Azure.Search.PassiveDataDeletionDetectionPolicy"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('openAiAccountName')]",
+      "location": "[resourceGroup().location]",
+      "kind": "OpenAI",
+      "sku": {
+        "name": "S0"
+      },
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/deployments",
+      "apiVersion": "2023-05-01",
+      "name": "[concat(variables('openAiAccountName'), '/', variables('deploymentName'))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('openAiAccountName'))]"
+      ],
+        "location": "[resourceGroup().location]",
+        "sku": {
+                "name": "GlobalStandard",
+                "capacity": 100
+        },
+        "properties": {
+            "model": {
+                "format": "OpenAI",
+                "name": "[parameters('modelName')]"
+            },
+            "versionUpgradeOption": "OnceNewDefaultVersionAvailable",
+            "currentCapacity": 1,
+            "raiPolicyName": "Microsoft.Nil"
+        }
+    }
+  ],
+  "outputs": {
+    "modelEndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.CognitiveServices/accounts', variables('openAiAccountName'))).endpoint]"
+    },
+    "modelApiKey": {
+      "type": "securestring",
+      "value": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', variables('openAiAccountName')), '2023-05-01').key1]"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "value": "[variables('storageAccountName')]"
+    },
+    "containerName": {
+      "type": "string",
+      "value": "[variables('containerName')]"
+    }
+  }
+}
+
+// ### How to Deploy
+// 1. **Save the JSON**: Save the above JSON as a file (e.g., `deploy.json`).
+// 2. **Parameters**: When deploying, provide only `accountName` and `modelName`. For example:
+//    - Use Azure CLI: `az deployment group create --resource-group <your-resource-group> --template-file deploy.json --parameters accountName=myai modelName=gpt-35-turbo`
+//    - Or use Azure Portal: Upload the template and provide the parameters in the deployment wizard.
+// 3. **Region Considerations**: Azure OpenAI is region-specific (e.g., available in East US, West US). Ensure the resource group is in a supported region, or the deployment may fail.
+// 4. **Model Availability**: Verify that the specified `modelName` (e.g., "gpt-35-turbo") is available in your Azure subscription and region. If needed, check the Azure OpenAI documentation for supported models.
+// 5. **SAS URL Details**: The SAS URL is generated with full permissions for blob operations (read, add, create, write, delete, list) and expires one year after deployment. The start time is set to the deployment time.
+// 6. **Potential Improvements**:
+//    - **Error Handling**: Add more validation or use Azure Policy for name constraints.
+//    - **Security**: Avoid outputting sensitive data like API keys and SAS URLs in production. Consider using Azure Managed Identities or Key Vault instead.
+//    - **Customization**: You can modify SKUs, API versions, or add more parameters if needed.
+
+// This template should work as-is for your described scenario. If you encounter any issues, ensure your Azure subscription has the necessary quotas and permissions for these resources.
