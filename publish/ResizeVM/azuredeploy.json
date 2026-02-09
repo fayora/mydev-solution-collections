@@ -1,0 +1,336 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.24.24.22086",
+      "templateHash": "1816428178073284583"
+    }
+  },
+  "parameters": {
+    "VirtualMachineName": {
+      "type": "string",
+      "defaultValue": "MyVm",
+      "minLength": 4,
+      "maxLength": 64,
+      "metadata": {
+        "description": "The name you want to give your workstation. The name can only contain letters, numbers, '.', and '-'."
+      }
+    },
+    "Size": {
+      "type": "string",
+      "defaultValue": "Standard: 4/8/16 CPUs, 16/32/64 GiB of RAM",
+      "allowedValues": [
+        "Standard: 4/8/16 CPUs, 16/32/64 GiB of RAM",
+        "Performance: newer 4/8/16 CPUs, 8/16/32 GiB of faster RAM"
+      ],
+      "metadata": {
+        "description": "Select the size of the workstation."
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "metadata": {
+        "description": "The username for the Administrator's account. A username must only contain letters, numbers, hyphens, and underscores and may not start with a hyphen or number."
+      }
+    },
+    "adminPassword": {
+      "type": "securestring",
+      "minLength": 12,
+      "maxLength": 72,
+      "metadata": {
+        "description": "Password for the workstation. It must be at least 12 characters long, and have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character."
+      }
+    },
+    "enableSpot": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "DO NOT DISABLE SPOT, unless you are confident you want to do this. Spot is a great way to save up to 80% on your compute costs."
+      }
+    }
+  },
+  "variables": {
+    "copy": [
+      {
+        "name": "VirtualMachineNameStrArr",
+        "count": "[length(range(0, length(parameters('VirtualMachineName'))))]",
+        "input": "[substring(parameters('VirtualMachineName'), range(0, length(parameters('VirtualMachineName')))[copyIndex('VirtualMachineNameStrArr')], 1)]"
+      },
+      {
+        "name": "VirtualMachineNameStrCleaned",
+        "count": "[length(variables('VirtualMachineNameStrArr'))]",
+        "input": "[if(contains(variables('acceptedChars'), variables('VirtualMachineNameStrArr')[copyIndex('VirtualMachineNameStrCleaned')]), variables('VirtualMachineNameStrArr')[copyIndex('VirtualMachineNameStrCleaned')], '_')]"
+      }
+    ],
+    "$fxv#1": {
+      "StandardB": {
+        "Description": "Standard B series VMs are burstable VMs that provide a cost-effective option for workloads that do not require continuous full CPU performance. They accumulate credits when underutilized, which can be used to burst to higher performance when needed.",
+        "small": {
+          "SKU": "Standard_B4as_v2",
+          "Name": "4 CPUs, 16GiB of RAM",
+          "Description": ""
+        },
+        "medium": {
+          "SKU": "Standard_B8as_v2",
+          "Name": "8 CPUs, 32GiB of RAM",
+          "Description": ""
+        },
+        "large": {
+          "SKU": "Standard_B16as_v2",
+          "Name": "16 CPUs, 64GiB of RAM",
+          "Description": ""
+        }
+      },
+      "StandardD": {
+        "Description": "Standard D series VMs are general purpose VMs that offer a balanced CPU-to-memory ratio. They are suitable for a wide variety of workloads, including web servers, small to medium databases, and application servers.",
+        "small": {
+          "SKU": "Standard_D4as_v6",
+          "Name": "4 CPUs, 16GiB of RAM",
+          "Description": ""
+        },
+        "medium": {
+          "SKU": "Standard_D8as_v6",
+          "Name": "8 CPUs, 32GiB of RAM",
+          "Description": ""
+        },
+        "large": {
+          "SKU": "Standard_D16as_v6",
+          "Name": "16 CPUs, 64GiB of RAM",
+          "Description": ""
+        }
+      }
+    },
+    "acceptedChars": [
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f",
+      "g",
+      "h",
+      "i",
+      "j",
+      "k",
+      "l",
+      "m",
+      "n",
+      "o",
+      "p",
+      "q",
+      "r",
+      "s",
+      "t",
+      "u",
+      "v",
+      "w",
+      "x",
+      "y",
+      "z",
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F",
+      "G",
+      "H",
+      "I",
+      "J",
+      "K",
+      "L",
+      "M",
+      "N",
+      "O",
+      "P",
+      "Q",
+      "R",
+      "S",
+      "T",
+      "U",
+      "V",
+      "W",
+      "X",
+      "Y",
+      "Z",
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "@",
+      "-",
+      "_"
+    ],
+    "VirtualMachineNameClean": "[take(toLower(join(variables('VirtualMachineNameStrCleaned'), '')), 25)]",
+    "location": "[resourceGroup().location]",
+    "networkSecurityGroupName": "[format('nsg{0}', variables('VirtualMachineNameClean'))]",
+    "networkInterfaceName": "[format('{0}NetInt', variables('VirtualMachineNameClean'))]",
+    "osDiskType": "StandardSSD_LRS",
+    "osDiskSize": 256,
+    "vmSize": {
+      "Standard: 4/8/16 CPUs, 16/32/64 GiB of RAM": "StandardB",
+      "Performance: newer 4/8/16 CPUs, 8/16/32 GiB of faster RAM": "StandardD"
+    },
+    "vmOptions": "[variables('$fxv#1')]",
+    "SKUlist": "[variables('vmOptions')[variables('vmSize')[parameters('Size')]]]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2020-05-01",
+      "name": "[variables('networkSecurityGroupName')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "SSH",
+            "properties": {
+              "priority": 1030,
+              "protocol": "TCP",
+              "access": "Allow",
+              "direction": "Inbound",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "22"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "condition": "[equals(variables('loome').Account.SecureVnet.VnetName, '')]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-04-01",
+      "name": "[format('{0}PublicIP', variables('VirtualMachineNameClean'))]",
+      "location": "[variables('location')]",
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic"
+      }
+    },
+    {
+      "condition": "[equals(variables('loome').Account.SecureVnet.VnetName, '')]",
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-04-01",
+      "name": "[format('{0}Vnet', variables('VirtualMachineNameClean'))]",
+      "location": "[variables('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        }
+      }
+    },
+    {
+      "condition": "[equals(variables('loome').Account.SecureVnet.VnetName, '')]",
+      "type": "Microsoft.Network/virtualNetworks/subnets",
+      "apiVersion": "2023-04-01",
+      "name": "[format('{0}/{1}', format('{0}Vnet', variables('VirtualMachineNameClean')), format('{0}Subnet', variables('VirtualMachineNameClean')))]",
+      "properties": {
+        "addressPrefix": "10.0.0.0/24",
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', format('{0}Vnet', variables('VirtualMachineNameClean')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-05-01",
+      "name": "[variables('networkInterfaceName')]",
+      "location": "[variables('location')]",
+      "properties": {
+        "ipConfigurations": [
+          "[if(equals(variables('loome').Account.SecureVnet.VnetName, ''), createObject('name', 'ipconfig1', 'properties', createObject('privateIPAllocationMethod', 'Dynamic', 'publicIPAddress', createObject('id', resourceId('Microsoft.Network/publicIPAddresses', format('{0}PublicIP', variables('VirtualMachineNameClean')))), 'subnet', createObject('id', resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}Vnet', variables('VirtualMachineNameClean')), format('{0}Subnet', variables('VirtualMachineNameClean')))))), createObject('name', 'ipconfig1', 'properties', createObject('subnet', createObject('id', format('/subscriptions/{0}/resourceGroups/{1}/providers/Microsoft.Network/virtualNetworks/{2}/subnets/{3}', variables('loome').Account.SecureVnet.SubscriptionId, variables('loome').Account.SecureVnet.ResourceGroupName, variables('loome').Account.SecureVnet.VnetName, variables('loome').ProjectResources.SecureVnet.SubnetName)), 'privateIPAllocationMethod', 'Dynamic')))]"
+        ],
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}PublicIP', variables('VirtualMachineNameClean')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks/subnets', format('{0}Vnet', variables('VirtualMachineNameClean')), format('{0}Subnet', variables('VirtualMachineNameClean')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "name": "[variables('VirtualMachineNameClean')]",
+      "location": "[variables('location')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[variables('SKUlist').small.SKU]"
+        },
+        "storageProfile": {
+          "osDisk": {
+            "createOption": "fromImage",
+            "diskSizeGB": "[variables('osDiskSize')]",
+            "managedDisk": {
+              "storageAccountType": "[variables('osDiskType')]"
+            }
+          },
+          "imageReference": {
+            "publisher": "Canonical",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts-gen2",
+            "version": "latest"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[variables('VirtualMachineNameClean')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "priority": "[if(parameters('enableSpot'), 'Spot', 'Regular')]",
+        "evictionPolicy": "[if(parameters('enableSpot'), 'Deallocate', null())]",
+        "billingProfile": "[if(parameters('enableSpot'), createObject('maxPrice', -1), null())]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "loginUsername": {
+      "type": "string",
+      "value": "[parameters('adminUsername')]"
+    },
+    "privateIPAddress": {
+      "type": "string",
+      "value": "[if(equals(variables('loome').Account.SecureVnet.VnetName, ''), '', reference(resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName')), '2020-05-01').ipConfigurations[0].properties.privateIPAddress)]"
+    },
+    "deployedVirtualMachineName": {
+      "type": "string",
+      "value": "[variables('VirtualMachineNameClean')]"
+    },
+    "SKUList64": {
+      "type": "string",
+      "value": "[base64(string(variables('SKUlist')))]"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+[
+    {
+        "name": "Get SSH command",
+        "icon": "fa fa-arrow-down",
+        "fileName": "getsshcommand.ps1",
+        "actionType": "String"
+    },
+    {
+        "name": "Connect with X2Go Client",
+        "icon": "fa fa-plug",
+        "fileName": "X2GoFile.ps1",
+        "actionType": "File"
+    },
+
+    {
+        "name": "Info",
+        "icon": "fa fa-info",
+        "fileName": "info.ps1",
+        "actionType": "Markdown"
+    },
+
+    {
+        "name": "Resize to small",
+        "icon": "fa fa-bicycle",
+        "confirmationMessage": "This will reboot this VM. Are you sure you want to resize it?",
+        "fileName": "resizesmall.ps1",
+        "actionType": "Notification"
+    },
+    {
+        "name": "Resize to medium",
+        "icon": "fa fa-car",
+        "confirmationMessage": "This will reboot this VM. Are you sure you want to resize it?",
+        "fileName": "resizemedium.ps1",
+        "actionType": "Notification"
+    },
+    {
+        "name": "Resize to large",
+        "icon": "fa fa-fighter-jet",
+        "confirmationMessage": "This will reboot this VM. Are you sure you want to resize it?",
+        "fileName": "resizelarge.ps1",
+        "actionType": "Notification"
+    },
+    {
+        "name": "Start or stop the VM",
+        "icon": "fa fa-power-off",
+        "fileName": "turnVMOnOff.ps1",
+        "confirmationMessage": "Are you sure that you want to stop or start this VM? If you are stopping the VM, you can lose data that has not been downloaded or saved in persistent storage. If you are starting the VM, usage charges will start to apply until you stop it again.",
+        "actionType": "Notification"
+    }
+]

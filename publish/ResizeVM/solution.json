@@ -1,0 +1,9 @@
+{
+    "name": "Resizable Linux VM",
+    "description": "Creates a virtual machine that can be resized. Once deployed you can change the size using the actions (buttons).",
+    "version": "AUTO_UPDATED",
+    "icon": "fa fa-expand",
+    "deploymentMode": "User",
+    "upgradeAllowed": true,
+    "statusCheckFileName": "checkStatus.ps1"
+}

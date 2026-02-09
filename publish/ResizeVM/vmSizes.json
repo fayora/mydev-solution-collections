@@ -1,0 +1,116 @@
+{
+
+    "StandardB" :{
+        "Description" : "Standard B series VMs are burstable VMs that provide a cost-effective option for workloads that do not require continuous full CPU performance. They accumulate credits when underutilized, which can be used to burst to higher performance when needed.",
+       
+        "small" :{
+            "SKU": "Standard_B4as_v2",
+            "Name" : "4 CPUs, 16GiB of RAM",
+            "Description" : ""
+        },
+        "medium" :{
+            "SKU": "Standard_B8as_v2",
+            "Name" : "8 CPUs, 32GiB of RAM",
+            "Description" : ""
+        },
+        "large" :{
+            "SKU": "Standard_B16as_v2",
+            "Name" : "16 CPUs, 64GiB of RAM",
+            "Description" : ""
+        },
+        "xlarge" :{
+            "SKU": "Standard_B32as_v2",
+            "Name" : "32 CPUs, 128GiB of RAM",
+            "Description" : ""
+        }
+        
+    },
+
+    "StandardD" :{
+        "Description" : "Standard D series VMs are general purpose VMs that offer a balanced CPU-to-memory ratio. They are suitable for a wide variety of workloads, including web servers, small to medium databases, and application servers.",
+        "small" : {
+            "SKU": "Standard_D2as_v6",
+            "Name" : "2 CPUs, 8GiB of RAM",
+            "Description" : ""
+        },
+        "medium" :{
+            "SKU": "Standard_D4as_v6",
+            "Name" : "4 CPUs, 16GiB of RAM",
+            "Description" : ""
+        },
+        "large" :{
+            "SKU": "Standard_D8as_v6",
+            "Name" : "8 CPUs, 32GiB of RAM",
+            "Description" : ""
+        },
+        "xlarge" :{
+            "SKU": "Standard_D16as_v6",
+            "Name" : "16 CPUs, 64GiB of RAM",
+            "Description" : ""
+        }
+        
+    },
+
+    "StandardE" :{
+        "Description" : "Standard E series VMs are optimized for memory-intensive applications. They provide a higher memory-to-CPU ratio, making them suitable for relational database servers, in-memory caching, and analytics workloads.",
+        "small" : {
+            "SKU": "Standard_E2as_v6",
+            "Name" : "2 CPUs, 16GiB of RAM",
+            "Description" : ""
+        },
+        "medium" :{
+            "SKU": "Standard_E4as_v6",
+            "Name" : "4 CPUs, 32GiB of RAM",
+            "Description" : ""
+        },
+        "large" :{
+            "SKU": "Standard_E8as_v6",
+            "Name" : "8 CPUs, 64GiB of RAM",
+            "Description" : ""
+        },
+        "xlarge" :{
+            "SKU": "Standard_E16as_v6",
+            "Name" : "16 CPUs, 128GiB of RAM",
+            "Description" : ""
+        },
+        "xxlarge" :{
+            "SKU": "Standard_E32as_v6",
+            "Name" : "32 CPUs, 256GiB of RAM",
+            "Description" : ""
+        },
+        // "xxxlarge" :{
+        //     "SKU": "Standard_E64as_v6",
+        //     "Name" : "64 CPUs, 512GiB of RAM",
+        //     "Description" : ""
+        // }
+        
+    },
+
+     "StandardEMax" :{
+        "Description" : "Standard E series VMs are optimized for memory-intensive applications. They provide a higher memory-to-CPU ratio, making them suitable for relational database servers, in-memory caching, and analytics workloads.",
+       
+        "small" :{
+            "SKU": "Standard_E8as_v6",
+            "Name" : "8 CPUs, 64GiB of RAM",
+            "Description" : ""
+        },
+        "medium" :{
+            "SKU": "Standard_E16as_v6",
+            "Name" : "16 CPUs, 128GiB of RAM",
+            "Description" : ""
+        },
+        "large" :{
+            "SKU": "Standard_E32as_v6",
+            "Name" : "32 CPUs, 256GiB of RAM",
+            "Description" : ""
+        },
+        // "xxxlarge" :{
+        //     "SKU": "Standard_E64as_v6",
+        //     "Name" : "64 CPUs, 512GiB of RAM",
+        //     "Description" : ""
+        // }
+        
+    },
+
+    
+}
