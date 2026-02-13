@@ -1,0 +1,16 @@
+[
+    {
+        "name": "Run Now",
+        "icon": "fa fa-play",
+        "fileName": "RunNow.ps1",
+        "actionType": "Notification",
+        "confirmationMessage": "Are you sure you want to run the budget enforcement logic now?"
+    },
+    {
+        "name": "Enable/Disable",
+        "icon": "fa fa-toggle-on",
+        "fileName": "EnableDisable.ps1",
+        "actionType": "Notification",
+        "confirmationMessage": "Toggle the budget enforcement schedule?"
+    }
+]

@@ -1,0 +1,9 @@
+{
+    "name": "Budget Enforcement",
+    "description": "Deploys an Azure Function App to stop or delete resources with 'Loome-Budget Status : Exceeded' tag based on a schedule.",
+    "version": "1.0.0",
+    "icon": "fa fa-gavel",
+    "upgradeAllowed": true,
+    "deploymentMode": "User",
+    "statusCheckFileName": "checkEnabledDisabled.ps1"
+}

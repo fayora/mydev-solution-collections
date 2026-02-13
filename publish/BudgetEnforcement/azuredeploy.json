@@ -1,0 +1,364 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "enforcementFrequency": {
+            "type": "string",
+            "allowedValues": [
+                "15 minutes",
+                "30 minutes",
+                "1 hour",
+                "2 hours",
+                "4 hours",
+                "8 hours",
+                "12 hours",
+                "24 hours"
+            ],
+            "defaultValue": "24 hours",
+            "metadata": {
+                "description": "How often the Budget Enforcement function should run to check for budget breaches and take action."
+            }
+        },
+        "action": {
+            "type": "string",
+            "allowedValues": [
+                "Stop compute resources, do not delete storage accounts or disks (Recommended)",
+                "Delete compute resources and disks, keep storage accounts  ***CAUTION: Possible data loss!***",
+                "Delete all resources, including storage accounts and disks ***CAUTION: Possible data loss!***"
+            ],
+            "defaultValue": "Stop compute resources, do not delete storage accounts or disks (Recommended)",
+            "metadata": {
+                "description": "Action to perform when the project budget is exceeded."
+            }
+        },
+        "alertEmailAddresses": {
+            "type": "string",
+            "metadata": {
+                "description": "Comma-separated list of email addresses to receive Budget Enforcement alerts."
+            }
+        }
+    },
+    "variables": {
+        "actionGroupName": "[concat('loome-budget-ag-', variables('uniqueHash'))]",
+        "uniqueHash": "[uniqueString(deployment().properties.templateHash, deployment().name)]",
+        "appName": "[concat('loome-budget-', variables('uniqueHash'))]",
+        "storageName": "[concat('loomebudg', substring(variables('uniqueHash'), 0, 13))]",
+        "planName": "[concat('loome-budget-plan-', variables('uniqueHash'))]",
+        "identityName": "[concat('loome-budget-ds-id-', variables('uniqueHash'))]",
+        "appInsightsName": "[concat('loome-budget-ai-', variables('uniqueHash'))]",
+        "functionName": "BudgetEnforcement",
+        "selectedAction": {
+            "Stop compute resources, do not delete storage accounts or disks (Recommended)": "stop",
+            "Delete compute resources and disks, keep storage accounts  ***CAUTION: Possible data loss!***": "deleteComputeOnly",
+            "Delete all resources, including storage accounts and disks ***CAUTION: Possible data loss!***": "deleteAll"
+        },
+        "cronMap": {
+            "15 minutes": "0 */15 * * * *",
+            "30 minutes": "0 0,30 * * * *",
+            "1 hour": "0 0 * * * *",
+            "2 hours": "0 0 */2 * * *",
+            "4 hours": "0 0 */4 * * *",
+            "8 hours": "0 0 */8 * * *",
+            "12 hours": "0 0 */12 * * *",
+            "24 hours": "0 0 0 * * *"
+        },
+        "scheduleExpression": "[variables('cronMap')[parameters('enforcementFrequency')]]",
+        "contributorRoleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+        "functionScript": "param($Timer)\r\n$Action = $env:BE_Action\r\n\r\nWrite-Host \"Starting Budget Enforcement. Action: $Action\"\r\n\r\n# Authenticate used Managed Identity (Function App automatically handles this with Connect-AzAccount -Identity in profile)\r\n\r\n$tagName = 'Loome-Budget Status'\r\n$tagValue = 'Exceeded'\r\n\r\nWrite-Host \"Searching for resources with tag: $tagName = $tagValue\"\r\n$resources = Get-AzResource -TagName $tagName -TagValue $tagValue\r\n\r\nif ($null -eq $resources -or $resources.Count -eq 0) {\r\n    Write-Host \"No resources found with the budget exceeded tag.\"\r\n    return\r\n}\r\n\r\n    foreach ($res in $resources) {\r\n        Write-Host \"Processing $($res.Name) ($($res.ResourceType))\"\r\n        try {\r\n            if ($Action -eq 'stop') {\r\n                if ($res.ResourceType -eq 'Microsoft.Compute/virtualMachines') {\r\n                    $status = Get-AzVM -ResourceGroupName $res.ResourceGroupName -Name $res.Name -Status\r\n                    $statusAz = $status.Statuses[1].DisplayStatus\r\n                    if ($statusAz -eq 'VM running') {\r\n                        Write-Host \"Stopping VM $($res.Name)...\"\r\n                        Stop-AzVM -ResourceGroupName $res.ResourceGroupName -Name $res.Name -Force -NoWait\r\n                    } else {\r\n                        Write-Host \"VM $($res.Name) is in state $($statusAz). Skipping...\"\r\n                    }\r\n                } else {\r\n                    Write-Host \"Resource type $($res.ResourceType) does not support explicit 'Stop' action. Skipping...\"\r\n                }\r\n            } elseif ($Action -eq 'deleteAll' -or $Action -eq 'deleteComputeOnly') {\r\n                # Safe-guards: Do not remove NSGs or VNets\r\n                if ($res.ResourceType -in @('Microsoft.Network/networkSecurityGroups', 'Microsoft.Network/virtualNetworks')) {\r\n                    Write-Host \"Skipping deletion of $($res.ResourceType) $($res.Name) (Global Exclusion)\"\r\n                    continue\r\n                }\r\n\r\n                # Compute Only Logic: Skip Storage Accounts and Managed Disks\r\n                if ($Action -eq 'deleteComputeOnly' -and ($res.ResourceType -eq 'Microsoft.Storage/storageAccounts' -or $res.ResourceType -eq 'Microsoft.Compute/disks')) {\r\n                     Write-Host \"Skipping deletion of $($res.ResourceType) $($res.Name) (Action is Delete Compute Only)\"\r\n                     continue\r\n                }\r\n\r\n                Write-Host \"Deleting resource...\"\r\n                Remove-AzResource -ResourceId $res.ResourceId -Force -ErrorAction Stop\r\n            }\r\n        } catch {\r\n            Write-Error \"Failed to process resource $($res.Name): $_\"\r\n        }\r\n    }"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Insights/components",
+            "apiVersion": "2020-02-02",
+            "name": "[variables('appInsightsName')]",
+            "location": "[resourceGroup().location]",
+            "kind": "web",
+            "properties": {
+                "Application_Type": "web"
+            }
+        },
+        {
+            "type": "Microsoft.Insights/actionGroups",
+            "apiVersion": "2023-01-01",
+            "name": "[variables('actionGroupName')]",
+            "location": "Global",
+            "properties": {
+                "groupShortName": "BudgetAlerts",
+                "enabled": true,
+                "copy": [
+                    {
+                        "name": "emailReceivers",
+                        "count": "[length(split(parameters('alertEmailAddresses'), ','))]",
+                        "input": {
+                            "name": "[concat('Email-', copyIndex('emailReceivers'))]",
+                            "emailAddress": "[trim(split(parameters('alertEmailAddresses'), ',')[copyIndex('emailReceivers')])]",
+                            "useCommonAlertSchema": true
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Insights/scheduledQueryRules",
+            "apiVersion": "2022-06-15",
+            "name": "[concat(variables('appName'), '-alert-delete')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
+                "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+            ],
+            "properties": {
+                "displayName": "Budget Enforcement - Resource Deleted",
+                "description": "Alert when Budget Enforcement automation deletes a resource.",
+                "severity": 1,
+                "enabled": true,
+                "evaluationFrequency": "PT5M",
+                "scopes": [
+                    "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+                ],
+                "windowSize": "PT5M",
+                "criteria": {
+                    "allOf": [
+                        {
+                            "query": "traces | where message contains \"Deleting resource...\"",
+                            "timeAggregation": "Count",
+                            "dimensions": [],
+                            "operator": "GreaterThan",
+                            "threshold": 0,
+                            "failingPeriods": {
+                                "numberOfEvaluationPeriods": 1,
+                                "minFailingPeriodsToAlert": 1
+                            }
+                        }
+                    ]
+                },
+                "actions": {
+                    "actionGroups": [
+                        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Insights/scheduledQueryRules",
+            "apiVersion": "2022-06-15",
+            "name": "[concat(variables('appName'), '-alert-stop')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
+                "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+            ],
+            "properties": {
+                "displayName": "Budget Enforcement - Resource Stopped",
+                "description": "Alert when Budget Enforcement automation stops a resource.",
+                "severity": 2,
+                "enabled": true,
+                "evaluationFrequency": "PT5M",
+                "scopes": [
+                    "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+                ],
+                "windowSize": "PT5M",
+                "criteria": {
+                    "allOf": [
+                        {
+                            "query": "traces | where message contains \"Stopping VM\"",
+                            "timeAggregation": "Count",
+                            "dimensions": [],
+                            "operator": "GreaterThan",
+                            "threshold": 0,
+                            "failingPeriods": {
+                                "numberOfEvaluationPeriods": 1,
+                                "minFailingPeriodsToAlert": 1
+                            }
+                        }
+                    ]
+                },
+                "actions": {
+                    "actionGroups": [
+                        "[resourceId('Microsoft.Insights/actionGroups', variables('actionGroupName'))]"
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2023-01-01",
+            "name": "[variables('storageName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "kind": "StorageV2"
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2022-09-01",
+            "name": "[variables('planName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Y1",
+                "tier": "Dynamic"
+            },
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2022-09-01",
+            "name": "[variables('appName')]",
+            "location": "[resourceGroup().location]",
+            "kind": "functionapp",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('planName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageName'))]"
+            ],
+            "properties": {
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('planName'))]",
+                "siteConfig": {
+                    "cors": {
+                        "allowedOrigins": [
+                            "https://portal.azure.com"
+                        ]
+                    },
+                    "appSettings": [
+                        {   "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+                            "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').InstrumentationKey]"
+                        },
+                        {
+                            "name": "APPLICATIONINSIGHTS_CONNECTION_STRING",
+                            "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2020-02-02').ConnectionString]"
+                        },
+                        {
+                            "name": "AzureWebJobsStorage",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageName')), '2023-01-01').keys[0].value)]"
+                        },
+                        {
+                            "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageName')), '2023-01-01').keys[0].value)]"
+                        },
+                        {
+                            "name": "WEBSITE_CONTENTSHARE",
+                            "value": "[toLower(variables('appName'))]"
+                        },
+                        {
+                            "name": "FUNCTIONS_WORKER_RUNTIME",
+                            "value": "powershell"
+                        },
+                        {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~4"
+                        },
+                        {
+                            "name": "BE_Action",
+                            "value": "[variables('selectedAction')[parameters('action')]]"
+                        },
+                        {
+                            "name": "BE_Frequency",
+                            "value": "[string(parameters('enforcementFrequency'))]"
+                        }
+                    ],
+                    "powerShellVersion": "7.4"
+                },
+                "httpsOnly": true
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2021-04-01",
+            "name": "FunctionIdentityRoleAssignment",
+            "location": "[resourceGroup().location]",
+            "subscriptionId": "[subscription().subscriptionId]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "type": "Microsoft.Authorization/roleAssignments",
+                            "apiVersion": "2020-10-01-preview",
+                            "name": "[guid(subscription().id, variables('appName'), 'contributor')]",
+                            "properties": {
+                                "roleDefinitionId": "[variables('contributorRoleDefinitionId')]",
+                                "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('appName')), '2022-09-01', 'Full').identity.principalId]",
+                                "principalType": "ServicePrincipal"
+                            }
+                        }
+                    ]
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('appName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+            "apiVersion": "2023-01-31",
+            "name": "[variables('identityName')]",
+            "location": "[resourceGroup().location]"
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2022-04-01",
+            "name": "[guid(resourceGroup().id, variables('identityName'), 'contributor')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]"
+            ],
+            "properties": {
+                "roleDefinitionId": "[variables('contributorRoleDefinitionId')]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')), '2023-01-31').principalId]",
+                "principalType": "ServicePrincipal"
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deploymentScripts",
+            "apiVersion": "2020-10-01",
+            "name": "deployFunctionCode",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('appName'))]",
+                "[resourceId('Microsoft.Authorization/roleAssignments', guid(resourceGroup().id, variables('identityName'), 'contributor'))]"
+            ],
+            "kind": "AzurePowerShell",
+            "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                    "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]": {}
+                }
+            },
+            "properties": {
+                "azPowerShellVersion": "10.0",
+                "retentionInterval": "PT1H",
+                "storageAccountSettings": {
+                    "storageAccountName": "[variables('storageName')]",
+                    "storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageName')), '2023-01-01').keys[0].value]"
+                },
+                "environmentVariables": [
+                    {
+                        "name": "APP_NAME",
+                        "value": "[variables('appName')]"
+                    },
+                    {
+                        "name": "RESOURCE_GROUP",
+                        "value": "[resourceGroup().name]"
+                    },
+                    {
+                        "name": "FUNC_NAME",
+                        "value": "[variables('functionName')]"
+                    },
+                    {
+                        "name": "SCHEDULE",
+                        "value": "[variables('scheduleExpression')]"
+                    },
+                    {
+                        "name": "SCRIPT_CONTENT",
+                        "value": "[variables('functionScript')]"
+                    }
+                ],
+                "scriptContent": "$appName = $env:APP_NAME\r\n$rg = $env:RESOURCE_GROUP\r\n$funcName = $env:FUNC_NAME\r\n$schedule = $env:SCHEDULE\r\n\r\n# Create local folder structure\r\n$path = Join-Path $HOME 'site'\r\nNew-Item -Path $path -ItemType Directory -Force | Out-Null\r\n\r\n# function.json\r\n$funcJson = @{\r\n    retry = @{\r\n        strategy = 'fixedDelay'\r\n        maxRetryCount = 3\r\n        delayInterval = '00:01:00'\r\n    }\r\n    bindings = @(\r\n        @{\r\n            name = 'Timer'\r\n            type = 'timerTrigger'\r\n            direction = 'in'\r\n            schedule = $schedule\r\n        }\r\n    )\r\n}\r\n$funcPath = Join-Path $path $funcName\r\nNew-Item -Path $funcPath -ItemType Directory -Force | Out-Null\r\nSet-Content -Path (Join-Path $funcPath 'function.json') -Value ($funcJson | ConvertTo-Json -Depth 5)\r\n\r\n# run.ps1\r\nSet-Content -Path (Join-Path $funcPath 'run.ps1') -Value $env:SCRIPT_CONTENT\r\n\r\n# requirements.psd1\r\n$reqContent = \"@{\r\n    'Az' = '10.*'\r\n}\"\r\nSet-Content -Path (Join-Path $path 'requirements.psd1') -Value $reqContent\r\n\r\n# profile.ps1\r\n$profileContent = 'if ($env:MSI_SECRET) {\r\n    Disable-AzContextAutosave -Scope Process | Out-Null\r\n    Connect-AzAccount -Identity\r\n}'\r\nSet-Content -Path (Join-Path $path 'profile.ps1') -Value $profileContent\r\n\r\n# host.json\r\n$hostJson = @{\r\n    version = '2.0'\r\n    functionTimeout = '00:10:00'\r\n    managedDependency = @{\r\n        enabled = $true\r\n    }\r\n    logging = @{\r\n        applicationInsights = @{\r\n            samplingSettings = @{\r\n                isEnabled = $true\r\n                excludedTypes = 'Request'\r\n            }\r\n        }\r\n    }\r\n    extensionBundle = @{\r\n        id = 'Microsoft.Azure.Functions.ExtensionBundle'\r\n        version = '[4.*, 5.0.0)'\r\n    }\r\n}\r\nSet-Content -Path (Join-Path $path 'host.json') -Value ($hostJson | ConvertTo-Json -Depth 5)\r\n\r\n# Zip it\r\n$zipPath = Join-Path $HOME 'site.zip'\r\nCompress-Archive -Path \"$path\\*\" -DestinationPath $zipPath -Force\r\n\r\n# Deploy\r\nWrite-Host \"Deploying to Function App: $appName\"\r\nPublish-AzWebApp -ResourceGroupName $rg -Name $appName -ArchivePath $zipPath -Force"
+            }
+        }
+    ]
+}
