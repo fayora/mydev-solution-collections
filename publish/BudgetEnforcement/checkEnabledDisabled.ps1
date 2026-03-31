@@ -17,23 +17,31 @@
 # Comment or uncomment the line below to keep or remove (default) script file that Loome runs.
 $keepFile="True"
 
-# Install the Az.Functions module if not already installed
-if (-not (Get-Module -ListAvailable -Name Az.Functions)) {
-    Install-Module -Name Az.Functions -Force -Scope CurrentUser
-}
-
-# Find the Function App
-$functionApp = Get-AzFunctionApp -ResourceGroupName $resourceGroupName -SubscriptionId $subscriptionId | Where-Object { $_.Name -like 'loome-budget-*' } | Select-Object -First 1
-
-if (-not $functionApp) {
-    Write-Error "No Budget Enforcement solution found in resource group $resourceGroupName."
-    exit 1
-}
-
-$appName = $functionApp.Name
-$functionName = "BudgetEnforcement"
-
 try {
+
+    # Install the Az.Functions module if not already installed
+    if (-not (Get-Module -ListAvailable -Name Az.Functions)) {
+        Install-Module -Name Az.Functions -Force -Scope CurrentUser
+    }
+
+    # Set the context for Azure authentication
+    ## Connect to azure account via managed identity
+    Connect-AzAccount -Identity
+
+    ## Set context for current subscription
+    Set-AzContext -Subscription $subscriptionId
+
+    # Find the Function App
+    $functionApp = Get-AzFunctionApp -ResourceGroupName $resourceGroupName -SubscriptionId $subscriptionId | Where-Object { $_.Name -like 'loome-budget-*' } | Select-Object -First 1
+
+    if (-not $functionApp) {
+        Write-Error "No Budget Enforcement solution found in resource group $resourceGroupName."
+        exit 1
+    }
+
+    $appName = $functionApp.Name
+    $functionName = "BudgetEnforcement" 
+
     # Get the current state of the function (Enabled/Disabled)
     $appSettings = Get-AzFunctionAppSetting -Name $appName -ResourceGroupName $resourceGroupName -SubscriptionId $subscriptionId
     $disableSetting = "AzureWebJobs.${functionName}.Disabled"
