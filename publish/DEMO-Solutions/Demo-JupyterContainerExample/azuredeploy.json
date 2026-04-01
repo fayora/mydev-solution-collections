@@ -57,9 +57,6 @@
         "osType": "Linux",
         "numberCpuCores": "[variables('containerCPUs')[parameters('ContainerSize')]]",
         "memory": "[variables('containerMemory')[parameters('ContainerSize')]]",
-        "availabilityZones": [
-            "1"
-        ],
         "location": "[resourceGroup().location]"
     },
     "resources": [
@@ -68,7 +65,6 @@
             "apiVersion": "2022-10-01-preview",
             "name": "[variables('sanitisedContainerName')]",
             "location": "[variables('location')]",
-            "zones": "[variables('availabilityZones')]",
             "properties": {
                 "containers": [
                     {
