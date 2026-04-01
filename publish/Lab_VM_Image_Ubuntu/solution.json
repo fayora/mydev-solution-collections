@@ -1,0 +1,9 @@
+{
+    "name": "Lab VM Image",
+    "description": "Deploys a Data Science Virtual Machine on Ubuntu for teaching labs and includes a guided action to capture the VM as an Azure Compute Gallery image version.",
+    "version": "2026.03.31.1",
+    "icon": "fa fa-linux",
+    "upgradeAllowed": true,
+    "deploymentMode": "User",
+    "statusCheckFileName": "checkStatus.ps1"
+}

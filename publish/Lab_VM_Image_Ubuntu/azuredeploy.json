@@ -1,0 +1,277 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "labName": {
+        "type": "string",
+        "defaultValue": "",
+        "minLength": 1,
+        "maxLength": 100,
+        "metadata": {
+          "description": "The display name for the lab. This name is used to derive the image definition name when capturing VM images."
+        }
+      },
+      "Size": {
+        "type": "string",
+        "defaultValue": "4 CPU cores, 16GB of RAM",
+        "allowedValues": [
+          "4 CPU cores, 16GB of RAM",
+          "8 CPU cores, 32GB of RAM",
+          "Single T4 GPU, 4 CPU cores, 28GB of RAM"
+        ],
+        "metadata": {
+          "description": "Choose a virtual machine size with or without a GPU."
+        }
+      },
+      "adminUsername": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "metadata": {
+          "description": "The username for the Administrator's account. A username must only contain letters, numbers, hyphens, and underscores and may not start with a hyphen or number."
+        }
+      },
+      "adminPassword": {
+          "type": "securestring",
+          "minLength": 12,
+          "maxLength": 72,
+          "metadata": {
+          "description": "Password for the Virtual Machine. It must be at least 12 characters long, and have 3 of the following: 1 lower case character, 1 upper case character, 1 number, and 1 special character."
+          }
+      },
+      "instanceType": {
+        "type": "string",
+        "defaultValue": "Regular",
+        "allowedValues": [
+          "Spot",
+          "Regular"
+        ],
+        "metadata": {
+          "description": "Select between a regular or a spot instance. Spot instances cost significantly less but can be turned off unexpectedly."
+        }
+      }
+    },
+    "variables": {
+      "imageGalleryResourceId": "/subscriptions/74bdf443-9081-4138-9af1-61f8542cdb45/resourceGroups/ImageGallery_CSP/providers/Microsoft.Compute/galleries/CSPImageGallery",
+      "osDiskSize": "256",
+      "osDiskType": "Premium_LRS",
+      "vmSize": {
+        "4 CPU cores, 16GB of RAM": "Standard_B4as_v2",
+        "8 CPU cores, 32GB of RAM": "Standard_B8as_v2",
+        "Single T4 GPU, 4 CPU cores, 28GB of RAM": "Standard_NC4as_T4_v3"
+      },
+      "location": "[resourceGroup().location]",
+
+      // Derive VM name from labName: sanitize to lowercase alphanumeric+hyphen, take 6-char readable prefix,
+      // then append a 5-char unique suffix derived from labName + resource group id.
+      // Format: vm-{prefix}-{suffix} = 15 chars, always starts with 'vm', always ends with alphanumeric.
+      "labVmSanitized": "[replace(replace(replace(replace(replace(replace(replace(toLower(parameters('labName')), ' ', '-'), '_', '-'), '.', '-'), '(', ''), ')', ''), '[', ''), ']', '')]",
+      "labVmPrefix": "[substring(concat(variables('labVmSanitized'), 'xxxxxx'), 0, 6)]",
+      "uniqueVMName": "[concat('vm-', variables('labVmPrefix'), '-', substring(uniqueString(parameters('labName'), resourceGroup().id), 0, 5))]",
+
+      // Only the VNet name
+      "virtualNetworkName": "[concat('VNet', uniqueString(resourceGroup().id))]",
+
+      // Only the subnet name
+      "subnetName": "[concat('Subnet', uniqueString(resourceGroup().id))]",
+      // Full subnet reference
+      "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('subnetName'))]",
+
+      // NSG and NIC
+      "networkSecurityGroupName": "[concat('NSG', uniqueString(resourceGroup().id))]",
+      "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]",
+      "networkInterfaceName": "[concat(variables('uniqueVMName'), '-nic')]",
+      "publicIpAddressName": "[concat(variables('uniqueVMName'), '-pip')]",
+      "instancePriority": {
+        "Spot": "Spot",
+        "Regular": "Regular"
+      },
+      "instanceEvictionPolicy": {
+        "Spot": "Deallocate",
+        "Regular": null
+      },
+      "instanceMaxPrice": {
+        "Spot": -1,
+        "Regular": null
+      }
+    },
+    "resources": [
+      {
+        "type": "Microsoft.Network/networkInterfaces",
+        "apiVersion": "2020-05-01",
+        "name": "[variables('networkInterfaceName')]",
+        "location": "[variables('location')]",
+        "dependsOn": [
+          "[resourceId('Microsoft.Network/networkSecurityGroups/', variables('networkSecurityGroupName'))]",
+          "[resourceId('Microsoft.Network/virtualNetworks/', variables('virtualNetworkName'))]",
+          "[resourceId('Microsoft.Network/publicIpAddresses/', variables('publicIpAddressName'))]"
+        ],
+        "properties": {
+          "ipConfigurations": [
+            {
+              "name": "ipconfig1",
+              "properties": {
+                "subnet": {
+                  "id": "[variables('subnetRef')]"
+                },
+                "privateIPAllocationMethod": "Dynamic",
+                "publicIpAddress": {
+                  "id": "[resourceId('Microsoft.Network/publicIpAddresses', variables('publicIpAddressName'))]"
+                }
+              }
+            }
+          ],
+          "networkSecurityGroup": {
+            "id": "[variables('nsgId')]"
+          }
+        }
+      },
+      {
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "apiVersion": "2020-05-01",
+        "name": "[variables('networkSecurityGroupName')]",
+        "location": "[variables('location')]",
+        "properties": {
+          "securityRules": [
+            {
+              "name": "JupyterHub",
+              "properties": {
+                "priority": 1010,
+                "protocol": "TCP",
+                "access": "Allow",
+                "direction": "Inbound",
+                "sourceAddressPrefix": "*",
+                "sourcePortRange": "*",
+                "destinationAddressPrefix": "*",
+                "destinationPortRange": "8000"
+              }
+            },
+            {
+              "name": "SSH",
+              "properties": {
+                "priority": 1030,
+                "protocol": "TCP",
+                "access": "Allow",
+                "direction": "Inbound",
+                "sourceAddressPrefix": "*",
+                "sourcePortRange": "*",
+                "destinationAddressPrefix": "*",
+                "destinationPortRange": "22"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "Microsoft.Network/virtualNetworks",
+        "apiVersion": "2020-05-01",
+        "name": "[variables('virtualNetworkName')]",
+        "location": "[variables('location')]",
+        "properties": {
+          "addressSpace": {
+            "addressPrefixes": [
+              "10.0.0.0/24"
+            ]
+          },
+          "subnets": [
+            {
+              "name": "[variables('subnetName')]",
+              "properties": {
+                "addressPrefix": "10.0.0.0/24",
+                "privateEndpointNetworkPolicies": "Enabled",
+                "privateLinkServiceNetworkPolicies": "Enabled"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "type": "Microsoft.Network/publicIpAddresses",
+        "apiVersion": "2020-05-01",
+        "name": "[variables('publicIpAddressName')]",
+        "location": "[variables('location')]",
+        "sku": {
+          "name": "Standard",
+          "tier": "Regional"
+        },
+        "properties": {
+          "publicIpAllocationMethod": "Static",
+          "dnsSettings": {
+            "domainNameLabel": "[variables('uniqueVMName')]"
+            }
+        }
+      },
+      {
+        "type": "Microsoft.Compute/virtualMachines",
+        "apiVersion": "2019-07-01",
+        "name": "[variables('uniqueVMName')]",
+        "location": "[variables('location')]",
+        "dependsOn": [
+          "[resourceId('Microsoft.Network/networkInterfaces/', variables('networkInterfaceName'))]"
+        ],
+        "properties": {
+          "hardwareProfile": {
+            "vmSize": "[variables('vmSize')[parameters('Size')]]"
+          },
+          "storageProfile": {
+            "osDisk": {
+              "createOption": "fromImage",
+              "diskSizeGB": "[variables('osDiskSize')]",
+              "managedDisk": {
+                "storageAccountType": "[variables('osDiskType')]"
+              }
+            },
+            "imageReference": {
+              "publisher": "microsoft-dsvm",
+              "offer": "ubuntu-2204",
+              "sku": "2204-gen2",
+              "version": "latest"
+            }
+          },
+          "networkProfile": {
+            "networkInterfaces": [
+              {
+                "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkInterfaceName'))]"
+              }
+            ]
+          },
+          "osProfile": {
+            "computerName": "[variables('uniqueVMName')]",
+            "adminUsername": "[parameters('adminUsername')]",
+            "adminPassword": "[parameters('adminPassword')]"
+          },
+          "priority": "[variables('instancePriority')[parameters('instanceType')]]",
+          "evictionPolicy": "[variables('instanceEvictionPolicy')[parameters('instanceType')]]",
+          "billingProfile": {
+            "maxPrice": "[variables('instanceMaxPrice')[parameters('instanceType')]]"
+          }
+        }
+      }
+    ],
+    "outputs": {
+      "deployedVirtualMachineName": {
+        "type": "string",
+        "value": "[variables('uniqueVMName')]"
+      },
+      "publicIpAddressName": {
+      "type": "string",
+      "value": "[variables('publicIpAddressName')]"
+      },
+      "fullyQualifiedDomainName": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))).dnsSettings.fqdn]"
+      },
+      "loginUsername": {
+      "type": "string",
+      "value": "[parameters('adminUsername')]"
+      },
+      "labName": {
+      "type": "string",
+      "value": "[parameters('labName')]"
+      },
+      "imageGalleryResourceId": {
+      "type": "string",
+      "value": "[variables('imageGalleryResourceId')]"
+      }
+    }
+}
