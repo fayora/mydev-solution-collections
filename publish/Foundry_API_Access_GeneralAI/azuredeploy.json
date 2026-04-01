@@ -14,7 +14,7 @@
             }
         },
         "model": {
-            "defaultValue": "grok-3-mini",
+            "defaultValue": "grok-4-fast",
             "type": "string",
             "allowedValues": [
                 "gpt-5.2",
@@ -25,6 +25,7 @@
                 "gpt-4.1-mini",
                 "gpt-4o-mini",
                 "o4-mini",
+                "grok-4-fast",
                 "grok-3-mini",
                 "Llama-4-Maverick-17B-128E-Instruct-FP8",
                 "Llama-4-Scout-17B-16E-Instruct",
@@ -32,6 +33,7 @@
                 "mistral-small-2503",
                 "MAI-DS-R1",
                 "DeepSeek-R1",
+                "DeepSeek-V3",
                 "DeepSeek-V3.2"
             ],
             "metadata": {
@@ -60,13 +62,15 @@
             "gpt-4o-mini": 100,
             "o4-mini": 100,
             "DeepSeek-R1": 1,
+            "DeepSeek-V3": 1,
             "DeepSeek-V3.2": 1,
             "MAI-DS-R1": 1,
             "Llama-4-Maverick-17B-128E-Instruct-FP8": 1,
             "Llama-4-Scout-17B-16E-Instruct": 1,
             "Phi-4": 1,
             "mistral-small-2503": 1,
-            "grok-3-mini": 1
+            "grok-3-mini": 1,
+            "grok-4-fast": 1
         },
         "modelCapacityValue": "[variables('modelCapacity')[parameters('model')]]",
         "modelFormat": {
@@ -79,13 +83,15 @@
             "gpt-4o-mini": "OpenAI",
             "o4-mini": "OpenAI",
             "DeepSeek-R1": "DeepSeek",
+            "DeepSeek-V3": "DeepSeek",
             "DeepSeek-V3.2": "DeepSeek",
             "MAI-DS-R1": "Microsoft",
             "Llama-4-Maverick-17B-128E-Instruct-FP8": "Meta",
             "Llama-4-Scout-17B-16E-Instruct": "Meta",
             "Phi-4": "Microsoft",
             "mistral-small-2503": "Mistral AI",
-            "grok-3-mini": "xAI"
+            "grok-3-mini": "xAI",
+            "grok-4-fast": "xAI"
         },
         "modelFormatValue": "[variables('modelFormat')[parameters('model')]]",
         "modelVersion": {
@@ -98,13 +104,15 @@
             "gpt-4o-mini": "",
             "o4-mini": "",
             "DeepSeek-R1": "1",
+            "DeepSeek-V3": "1",
             "DeepSeek-V3.2": "1",
             "MAI-DS-R1": "1",
             "Llama-4-Maverick-17B-128E-Instruct-FP8": "1",
             "Llama-4-Scout-17B-16E-Instruct": "1",
             "Phi-4": "7",
             "mistral-small-2503": "1",
-            "grok-3-mini": "1"
+            "grok-3-mini": "1",
+            "grok-4-fast": "1"
         },
         "modelVersionValue": "[variables('modelVersion')[parameters('model')]]",
         "modelLocation": {
@@ -117,13 +125,15 @@
             "gpt-4o-mini": "[variables('location')]",
             "o4-mini": "southeastasia",
             "DeepSeek-R1": "[variables('location')]",
+            "DeepSeek-V3": "[variables('location')]",
             "DeepSeek-V3.2": "[variables('location')]",
             "MAI-DS-R1": "[variables('location')]",
             "Llama-4-Maverick-17B-128E-Instruct-FP8": "[variables('location')]",
             "Llama-4-Scout-17B-16E-Instruct": "[variables('location')]",
             "Phi-4": "[variables('location')]",
             "mistral-small-2503": "[variables('location')]",
-            "grok-3-mini": "[variables('location')]"
+            "grok-3-mini": "[variables('location')]",
+            "grok-4-fast": "[variables('location')]"
         },
         "modelLocationValue": "[variables('modelLocation')[parameters('model')]]",
         "openAIAPIVersion": "2025-04-01-preview",
@@ -162,7 +172,7 @@
         },
         {
             "type": "Microsoft.CognitiveServices/accounts/deployments",
-            "apiVersion": "2025-04-01-preview",
+            "apiVersion": "2025-06-01",
             "name": "[variables('fullDeploymentName')]",
             "location": "[variables('modelLocationValue')]",
             "dependsOn": [
