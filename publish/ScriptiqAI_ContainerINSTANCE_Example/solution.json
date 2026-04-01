@@ -1,0 +1,9 @@
+{
+    "name": "scryptIQ Module",
+    "description": "Enrol in a scryptIQ module and deploy the necessary resources to run the module labs.",
+    "version": "2025.12.15.1",
+    "icon": "fa fa-graduation-cap",
+    "upgradeAllowed": true,
+    "deploymentMode": "User",
+    "statusCheckFileName": "checkContainerStatus.ps1"
+}

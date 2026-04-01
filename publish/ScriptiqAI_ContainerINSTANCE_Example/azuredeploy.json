@@ -1,0 +1,156 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "Module": {
+            "defaultValue": "Artificial Intelligence (AI) - GPU resources will be deployed",
+            "type": "string",
+            "metadata": {
+                "description": "The course selection, which determines the container resources that are deployed."
+            },
+            "allowedValues": [
+                "Artificial Intelligence (AI) - GPU resources will be deployed",
+                "Python Fundamentals - No GPU resources will be deployed",
+                "Data Processing - No GPU resources will be deployed",
+                "Classical Machine Learning - GPU resources will be deployed",
+                "Networks - No GPU resources will be deployed"
+            ]
+        },
+        "password": {
+            "type": "securestring",
+            "minLength": 12,
+            "maxLength": 64,
+            "metadata": {
+                "description": "The access password to secure access to the lab's main instance for the module. Similar to a password. It must be at least 12 characters long, have one uppercase letter, one lowercase letter, one number, and one special character.",
+                "regex": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\w\\s]).{12,64}$",
+                "validationMessage": "The password must be 12-64 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character."
+            }
+        }
+    },
+    "variables": {
+        "containerBaseName": "jupyter-container",
+        "containerRegistry": "ghcr.io",
+        "containerImage": "ghcr.io/fayora/jupyter-container:2025-12-10",
+        "uniqueHash": "[uniqueString(deployment().properties.templateHash, deployment().name)]",
+        "containerName": "[take(concat('jupyter-', variables('uniqueHash')), 24)]",
+        "sanitisedContainerName": "[toLower(replace(replace(trim(variables('containerName')), ' ', '-'), '_', '-'))]",
+        "location": "[resourceGroup().location]",
+        "dnsNameLabel": "[variables('sanitisedContainerName')]",
+        "identityName": "[concat('uami-', variables('uniqueHash'))]",
+        "roleAssignmentName": "[guid(variables('uniqueHash'), 'roleAssignment')]",
+        "contributorRoleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+        "CourseEnrolmentURL": {
+            "Artificial Intelligence (AI) - GPU resources will be deployed": "https://scryptiq.ai/product/artificial-intelligence/",
+            "Python Fundamentals - No GPU resources will be deployed": "https://scryptiq.ai/product/python-fundamentals/",
+            "Data Processing - No GPU resources will be deployed": "https://scryptiq.ai/product/data-processing/",
+            "Classical Machine Learning - GPU resources will be deployed": "https://scryptiq.ai/product/classical-machine-learning/",
+            "Networks - No GPU resources will be deployed": "https://scryptiq.ai/product/networks/"
+        }
+
+    },
+    "resources": [
+        {
+            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+            "apiVersion": "2023-01-31",
+            "name": "[variables('identityName')]",
+            "location": "[variables('location')]"
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2022-04-01",
+            "name": "[variables('roleAssignmentName')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]"
+            ],
+            "properties": {
+                "roleDefinitionId": "[variables('contributorRoleDefinitionId')]",
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName')), '2023-01-31').principalId]",
+                "principalType": "ServicePrincipal"
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deploymentScripts",
+            "apiVersion": "2023-08-01",
+            "name": "stopContainerScript",
+            "location": "[variables('location')]",
+            "kind": "AzureCLI",
+            "dependsOn": [
+                "[resourceId('Microsoft.Authorization/roleAssignments', variables('roleAssignmentName'))]",
+                "[resourceId('Microsoft.ContainerInstance/containerGroups', variables('sanitisedContainerName'))]"
+            ],
+            "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                    "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('identityName'))]": {}
+                }
+            },
+            "properties": {
+                "azCliVersion": "2.52.0",
+                "timeout": "PT5M",
+                "retentionInterval": "P1D",
+                "scriptContent": "az container stop --resource-group $1 --name $2",
+                "arguments": "[format('{0} {1}', resourceGroup().name, variables('sanitisedContainerName'))]"
+            }
+        },
+        {
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "apiVersion": "2023-05-01",
+            "name": "[variables('sanitisedContainerName')]",
+            "location": "[variables('location')]",
+            "properties": {
+                "containers": [
+                    {
+                        "name": "[variables('sanitisedContainerName')]",
+                        "properties": {
+                            "image": "[variables('containerImage')]",
+                            "resources": {
+                                "requests": {
+                                    "cpu": 1,
+                                    "memoryInGB": 2
+                                }
+                            },
+                            "ports": [
+                                {
+                                    "protocol": "TCP",
+                                    "port": 8888
+                                }
+                            ],
+                            "environmentVariables": [
+                                {
+                                    "name": "JUPYTER_TOKEN",
+                                    "value": "[parameters('password')]"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "osType": "Linux",
+                "restartPolicy": "Always",
+                "ipAddress": {
+                    "type": "Public",
+                    "dnsNameLabel": "[variables('dnsNameLabel')]",
+                    "ports": [
+                        {
+                            "protocol": "TCP",
+                            "port": 8888
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "containerInstanceName": {
+            "type": "string",
+            "value": "[variables('sanitisedContainerName')]"
+        },
+        "containerUri": {
+            "type": "string",
+            "value": "[concat('http://', reference(resourceId('Microsoft.ContainerInstance/containerGroups', variables('sanitisedContainerName'))).ipAddress.fqdn, ':8888')]"
+        },
+        "courseEnrolmentURLLink": {
+            "type": "string",
+            "value": "[variables('CourseEnrolmentURL')[parameters('Module')]]"
+        }
+    }
+}
