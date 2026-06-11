@@ -190,11 +190,13 @@
         "name": "[variables('publicIpAddressName')]",
         "location": "[variables('location')]",
         "sku": {
-          "name": "Basic",
+          "name": "Standard",
           "tier": "Regional"
         },
         "properties": {
-          "publicIpAllocationMethod": "Dynamic","dnsSettings": {
+          "publicIpAllocationMethod": "Static",
+          "publicIPAddressVersion": "IPv4",
+          "dnsSettings": {
             "domainNameLabel": "[variables('uniqueVMName')]"
             }
         }
