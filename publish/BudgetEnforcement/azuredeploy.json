@@ -44,9 +44,10 @@
         "appName": "[concat('loome-budget-', variables('uniqueHash'))]",
         "storageName": "[concat('loomebudg', substring(variables('uniqueHash'), 0, 13))]",
         "planName": "[concat('loome-budget-plan-', variables('uniqueHash'))]",
-        "identityName": "[concat('loome-budget-ds-id-', variables('uniqueHash'))]",
+        "identityName": "[concat(variables('uniqueHash'),'loome-budget-id')]",
         "appInsightsName": "[concat('loome-budget-ai-', variables('uniqueHash'))]",
         "functionName": "BudgetEnforcement",
+        "appStackPowerShellVersion": "7.6",
         "selectedAction": {
             "Stop compute resources, do not delete storage accounts or disks (Recommended)": "stop",
             "Delete compute resources and disks, keep storage accounts  ***CAUTION: Possible data loss!***": "deleteComputeOnly",
@@ -259,7 +260,7 @@
                             "value": "[string(parameters('enforcementFrequency'))]"
                         }
                     ],
-                    "powerShellVersion": "7.4"
+                    "powerShellVersion": "[variables('appStackPowerShellVersion')]"
                 },
                 "httpsOnly": true
             }
@@ -360,5 +361,19 @@
                 "scriptContent": "$appName = $env:APP_NAME\r\n$rg = $env:RESOURCE_GROUP\r\n$funcName = $env:FUNC_NAME\r\n$schedule = $env:SCHEDULE\r\n\r\n# Create local folder structure\r\n$path = Join-Path $HOME 'site'\r\nNew-Item -Path $path -ItemType Directory -Force | Out-Null\r\n\r\n# function.json\r\n$funcJson = @{\r\n    retry = @{\r\n        strategy = 'fixedDelay'\r\n        maxRetryCount = 3\r\n        delayInterval = '00:01:00'\r\n    }\r\n    bindings = @(\r\n        @{\r\n            name = 'Timer'\r\n            type = 'timerTrigger'\r\n            direction = 'in'\r\n            schedule = $schedule\r\n        }\r\n    )\r\n}\r\n$funcPath = Join-Path $path $funcName\r\nNew-Item -Path $funcPath -ItemType Directory -Force | Out-Null\r\nSet-Content -Path (Join-Path $funcPath 'function.json') -Value ($funcJson | ConvertTo-Json -Depth 5)\r\n\r\n# run.ps1\r\nSet-Content -Path (Join-Path $funcPath 'run.ps1') -Value $env:SCRIPT_CONTENT\r\n\r\n# requirements.psd1\r\n$reqContent = \"@{\r\n    'Az' = '10.*'\r\n}\"\r\nSet-Content -Path (Join-Path $path 'requirements.psd1') -Value $reqContent\r\n\r\n# profile.ps1\r\n$profileContent = 'if ($env:MSI_SECRET) {\r\n    Disable-AzContextAutosave -Scope Process | Out-Null\r\n    Connect-AzAccount -Identity\r\n}'\r\nSet-Content -Path (Join-Path $path 'profile.ps1') -Value $profileContent\r\n\r\n# host.json\r\n$hostJson = @{\r\n    version = '2.0'\r\n    functionTimeout = '00:10:00'\r\n    managedDependency = @{\r\n        enabled = $true\r\n    }\r\n    logging = @{\r\n        applicationInsights = @{\r\n            samplingSettings = @{\r\n                isEnabled = $true\r\n                excludedTypes = 'Request'\r\n            }\r\n        }\r\n    }\r\n    extensionBundle = @{\r\n        id = 'Microsoft.Azure.Functions.ExtensionBundle'\r\n        version = '[4.*, 5.0.0)'\r\n    }\r\n}\r\nSet-Content -Path (Join-Path $path 'host.json') -Value ($hostJson | ConvertTo-Json -Depth 5)\r\n\r\n# Zip it\r\n$zipPath = Join-Path $HOME 'site.zip'\r\nCompress-Archive -Path \"$path\\*\" -DestinationPath $zipPath -Force\r\n\r\n# Deploy\r\nWrite-Host \"Deploying to Function App: $appName\"\r\nPublish-AzWebApp -ResourceGroupName $rg -Name $appName -ArchivePath $zipPath -Force"
             }
         }
-    ]
+    ],
+    "outputs": {
+        "functionAppName": {
+            "type": "string",
+            "value": "[variables('appName')]"
+        },
+        "functionName": {
+            "type": "string",
+            "value": "[variables('functionName')]"
+        },
+        "functionAppResourceId": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Web/sites', variables('appName'))]"
+        }
+    }
 }
