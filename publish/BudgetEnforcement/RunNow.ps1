@@ -2,51 +2,84 @@
 # Comment or uncomment the line below to keep or remove (default) script file that Loome runs.
 $keepFile="True"
 
-# Install the Az.Functions module if not already installed
-if (-not (Get-Module -ListAvailable -Name Az.Functions)) {
-    Install-Module -Name Az.Functions -Force -Scope CurrentUser
-}
-
-# Find the Function App in the RG
-$functionApp = Get-AzFunctionApp -ResourceGroupName $resourceGroupName -SubscriptionId $subscriptionId | Where-Object { $_.Name -like 'loome-budget-*' } | Select-Object -First 1
-
-if (-not $functionApp) {
-    Write-Error "No Budget Enforcement Function App found in resource group $resourceGroupName."
-    exit 1
-}
-
-$appName = $functionApp.Name
+# The fixed name used for the function within the Function App
 $functionName = "BudgetEnforcement"
 
-Write-Host "Found Function App: $appName"
-Write-Host "Triggering function: $functionName..."
-
-# Get the Master Key to authenticate to the Admin API
-# We use Invoke-AzRestMethod to get the key from the ARM control plane
-$subId = $subscriptionId
-$keysUri = "/subscriptions/$subId/resourceGroups/$resourceGroupName/providers/Microsoft.Web/sites/$appName/host/default/listkeys?api-version=2022-09-01"
-
 try {
-    $keysResponse = Invoke-AzRestMethod -Method POST -Path $keysUri
-    if ($keysResponse.StatusCode -ne 200) {
-        throw "Failed to retrieve Function App keys. Status: $($keysResponse.StatusCode)"
-    }
+    # ********** There is a bug in Az.Functions module versions 4.3.0 or newer that causes Get-AzFunctionAppSetting to fail!!
+    # ********** Using REST API calls instead.
+
+    # Set the context for Azure authentication
+    ## Connect to azure account via managed identity
+    Write-Host "Connecting to Azure using Managed Identity..." -ForegroundColor Cyan
+    Connect-AzAccount -Identity -Subscription $subscriptionId
+    Write-Host "Successfully connected to Azure." -ForegroundColor Green
+
+    # Acquire an access token for Azure Resource Management
+    Write-Host "Searching for Function App $functionAppName in resource group $resourceGroupName..." -ForegroundColor Cyan
+    Write-Host "Acquiring access token for Azure Resource Management..." -ForegroundColor Cyan
+    $secureToken = (Get-AzAccessToken -ResourceUrl "https://management.azure.com").Token
+    $token = [System.Net.NetworkCredential]::new("", $secureToken).Password
+    Write-Host "Access token acquired successfully: $token " -ForegroundColor Green
     
-    $keysInfo = $keysResponse.Content | ConvertFrom-Json
-    $masterKey = $keysInfo.masterKey
-    
-    # Trigger the function via Admin API
-    $triggerUri = "https://$appName.azurewebsites.net/admin/functions/$functionName"
+    # Check if the Function App exists by calling the ARM REST API directly
     $headers = @{
-        "x-functions-key" = $masterKey
-        "Content-Type" = "application/json"
+        "Authorization" = "Bearer $token"
+        "Content-Type"  = "application/json"
     }
+    $baseUrl  = "https://management.azure.com"
+    $apiVer   = "2023-12-01"
+    $siteUrl  = "$baseUrl/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName" + "/providers/Microsoft.Web/sites/$functionAppName"
+    try {
+        Write-Host "`nChecking Function App: '$functionAppName' ..." -ForegroundColor Cyan
+        $app = Invoke-RestMethod -Uri "$siteUrl`?api-version=$apiVer" -Headers $headers -Method GET -ErrorAction Stop
+    }
+    catch {
+        $statusCode = $_.Exception.Response.StatusCode.value__
+        if ($statusCode -eq 404) {
+            Write-Host "  ✗ Function App '$functionAppName' does NOT exist." -ForegroundColor Red
+            $result = "{""code"":""Failed"", ""message"":""No Budget Enforcement solution found in resource group $resourceGroupName."", ""isOngoing"": false}"
+            exit 1
+        }
+        Write-Error "No Budget Enforcement solution found in resource group $resourceGroupName." -ForegroundColor Red
+        $result = "{""code"":""Failed"", ""message"":""No Budget Enforcement solution found in resource group $resourceGroupName."", ""isOngoing"": false}"
+        exit 1
+    }
+
+    Write-Host "Found Function App: $functionAppName" -ForegroundColor Green
     
-    # We post an empty body `{}` (input is usually ignored for manual timer run, or we can pass input)
-    Invoke-RestMethod -Method POST -Uri $triggerUri -Headers $headers -Body "{}" -ContentType "application/json"
-    
-    $result = "Function triggered successfully. Check the Function App logs for execution details."
-    
-} catch {
-    $result = "Failed to run now. $($_.Exception.Message)"
+    Write-Host "Triggering function: $functionName..."
+
+    # Get the Master Key to authenticate to the Admin API
+    # We use Invoke-AzRestMethod to get the key from the ARM control plane
+    $keysUri = "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Web/sites/$functionAppName/host/default/listkeys?api-version=2022-09-01"
+
+    try {
+        $keysResponse = Invoke-AzRestMethod -Method POST -Path $keysUri
+        if ($keysResponse.StatusCode -ne 200) {
+            throw "Failed to retrieve Function App keys. Status: $($keysResponse.StatusCode)"
+        }
+        
+        $keysInfo = $keysResponse.Content | ConvertFrom-Json
+        $masterKey = $keysInfo.masterKey
+        
+        # Trigger the function via Admin API
+        $triggerUri = "https://$functionAppName.azurewebsites.net/admin/functions/$functionName"
+        $headers = @{
+            "x-functions-key" = $masterKey
+            "Content-Type" = "application/json"
+        }
+        
+        # We post an empty body `{}` (input is usually ignored for manual timer run, or we can pass input)
+        Invoke-RestMethod -Method POST -Uri $triggerUri -Headers $headers -Body "{}" -ContentType "application/json"
+        Write-Host "Function triggered successfully. Check the Function App logs for execution details." -ForegroundColor Green
+        $result = "Function triggered successfully. Check the Function App logs for execution details."
+    } catch {
+        Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
+        $result = "Failed to run now. Try again in a few moments. $($_.Exception.Message)"
+    }
+}
+catch {
+    Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
+    $result = "Failed to run now. Try again in a few moments. $($_.Exception.Message)"
 }
